@@ -1,0 +1,7 @@
+APP_NAME = "LearnIn"
+
+VERSION = "1.0.0"
+
+API_PREFIX = "/api"
+
+DEFAULT_PAGE_SIZE = 20

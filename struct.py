@@ -1,187 +1,242 @@
-import os
+# ============================================================
+# PART 1C.2
+# Generate Boilerplate for Every Module
+# ============================================================
+
+from pathlib import Path
 
 PROJECT_NAME = "LearnIn"
 
-structure = {
-    PROJECT_NAME: {
-        "backend": {
-            "app": {
-                "routers": [
-                    "__init__.py",
-                    "home.py",
-                    "exam.py",
-                    "department.py",
-                    "subject.py",
-                    "paper.py",
-                    "practice.py",
-                    "mock_test.py",
-                    "search.py",
-                    "blog.py",
-                    "download.py",
-                ],
-
-                "models": [
-                    "__init__.py",
-                    "exam.py",
-                    "department.py",
-                    "subject.py",
-                    "paper.py",
-                    "question.py",
-                    "option.py",
-                    "mock_test.py",
-                    "download.py",
-                    "note.py",
-                    "blog.py",
-                ],
-
-                "schemas": [
-                    "__init__.py",
-                ],
-
-                "repositories": [
-                    "__init__.py",
-                    "exam_repository.py",
-                    "department_repository.py",
-                    "subject_repository.py",
-                    "paper_repository.py",
-                    "question_repository.py",
-                    "mock_repository.py",
-                ],
-
-                "services": [
-                    "__init__.py",
-                    "drive_service.py",
-                    "pdf_service.py",
-                    "search_service.py",
-                    "practice_service.py",
-                    "mock_service.py",
-                ],
-
-                "utils": [
-                    "__init__.py",
-                    "constants.py",
-                    "helpers.py",
-                ],
-
-                "middleware": [
-                    "__init__.py",
-                ],
-
-                "templates": {
-                    "layouts": [
-                        "base.html",
-                        "navbar.html",
-                        "footer.html",
-                    ],
-
-                    "home": [
-                        "index.html",
-                    ],
-
-                    "exam": [
-                        "exam.html",
-                    ],
-
-                    "department": [
-                        "department.html",
-                    ],
-
-                    "subject": [
-                        "subject.html",
-                    ],
-
-                    "paper": [
-                        "papers.html",
-                        "practice.html",
-                    ],
-
-                    "mock_test": [
-                        "mock_test.html",
-                    ],
-
-                    "blog": [
-                        "blog.html",
-                    ],
-
-                    "search": [
-                        "search.html",
-                    ],
-
-                    "errors": [
-                        "404.html",
-                    ],
-                },
-
-                "static": {
-                    "css": [
-                        "base.css",
-                        "layout.css",
-                        "navbar.css",
-                        "footer.css",
-                        "home.css",
-                        "exam.css",
-                        "subject.css",
-                        "practice.css",
-                        "mobile.css",
-                    ],
-
-                    "js": [
-                        "main.js",
-                        "search.js",
-                        "practice.js",
-                        "mock_test.js",
-                    ],
-
-                    "images": [],
-                    "icons": [],
-                },
-
-                "main.py": None,
-                "database.py": None,
-                "config.py": None,
-                "dependencies.py": None,
-            },
-
-            "alembic": {},
-            "tests": {},
-            "requirements.txt": None,
-            ".env": None,
-            ".gitignore": None,
-        },
-
-        "admin": {
-            "templates": {},
-            "static": {},
-            "main.py": None,
-        },
-
-        "docs": {
-            "README.md": None,
-            "DATABASE.md": None,
-            "ROADMAP.md": None,
-        }
-    }
-}
+root = Path(PROJECT_NAME)
 
 
-def create(base, tree):
-    for name, content in tree.items():
-        path = os.path.join(base, name)
+from pathlib import Path
 
-        if isinstance(content, dict):
-            os.makedirs(path, exist_ok=True)
-            create(path, content)
+MODULES = [
 
-        elif isinstance(content, list):
-            os.makedirs(path, exist_ok=True)
-            for file in content:
-                open(os.path.join(path, file), "a").close()
+    "exam",
+    "department",
+    "subject",
+    "paper",
+    "question",
+    "mock_test",
+    "note",
+    "download",
+    "blog",
 
-        elif content is None:
-            os.makedirs(base, exist_ok=True)
-            open(path, "a").close()
+]
+
+# ============================================================
+# model.py
+# ============================================================
+
+MODEL = '''from sqlalchemy import Column, Integer
+from app.core.database import Base
 
 
-create(".", structure)
+class {class_name}(Base):
 
-print("✅ LearnIn folder structure created successfully.")
+    __tablename__ = "{table_name}"
+
+    id = Column(Integer, primary_key=True, index=True)
+'''
+
+# ============================================================
+# schema.py
+# ============================================================
+
+SCHEMA = '''from pydantic import BaseModel
+
+
+class {class_name}Base(BaseModel):
+    pass
+
+
+class {class_name}Create({class_name}Base):
+    pass
+
+
+class {class_name}Update({class_name}Base):
+    pass
+
+
+class {class_name}Response({class_name}Base):
+
+    id: int
+
+    class Config:
+        from_attributes = True
+'''
+
+# ============================================================
+# repository.py
+# ============================================================
+
+REPOSITORY = '''from sqlalchemy.orm import Session
+
+from .model import {class_name}
+
+
+class {class_name}Repository:
+
+    @staticmethod
+    def get_all(db: Session):
+
+        return db.query({class_name}).all()
+
+
+    @staticmethod
+    def get_by_id(db: Session, item_id: int):
+
+        return db.query({class_name}).filter(
+            {class_name}.id == item_id
+        ).first()
+
+
+    @staticmethod
+    def create(db: Session, obj):
+
+        db.add(obj)
+
+        db.commit()
+
+        db.refresh(obj)
+
+        return obj
+
+
+    @staticmethod
+    def delete(db: Session, obj):
+
+        db.delete(obj)
+
+        db.commit()
+'''
+
+# ============================================================
+# service.py
+# ============================================================
+
+SERVICE = '''from sqlalchemy.orm import Session
+
+from .repository import {class_name}Repository
+
+
+class {class_name}Service:
+
+    @staticmethod
+    def list(db: Session):
+
+        return {class_name}Repository.get_all(db)
+
+
+    @staticmethod
+    def details(db: Session, item_id: int):
+
+        return {class_name}Repository.get_by_id(
+            db,
+            item_id
+        )
+'''
+
+# ============================================================
+# router.py
+# ============================================================
+
+ROUTER = '''from fastapi import APIRouter
+
+router = APIRouter(
+
+    prefix="/{table_name}",
+
+    tags=["{class_name}"]
+
+)
+
+
+@router.get("/")
+
+def list_items():
+
+    return {{
+
+        "message":"{class_name} List"
+
+    }}
+
+
+@router.get("/{{item_id}}")
+
+def details(item_id:int):
+
+    return {{
+
+        "message":"{class_name} Details",
+
+        "id":item_id
+
+    }}
+'''
+
+# ============================================================
+# Write Files
+# ============================================================
+
+for module in MODULES:
+
+    class_name = "".join(
+        word.capitalize()
+        for word in module.split("_")
+    )
+
+    table_name = module + "s"
+
+    module_path = Path(PROJECT_NAME) / "backend" / "app" / "modules" / module
+
+    (module_path / "model.py").write_text(
+        MODEL.format(
+            class_name=class_name,
+            table_name=table_name
+        ),
+        encoding="utf-8"
+    )
+
+    (module_path / "schema.py").write_text(
+        SCHEMA.format(
+            class_name=class_name
+        ),
+        encoding="utf-8"
+    )
+
+    (module_path / "repository.py").write_text(
+        REPOSITORY.format(
+            class_name=class_name
+        ),
+        encoding="utf-8"
+    )
+
+    (module_path / "service.py").write_text(
+        SERVICE.format(
+            class_name=class_name
+        ),
+        encoding="utf-8"
+    )
+
+    (module_path / "router.py").write_text(
+        ROUTER.format(
+            class_name=class_name,
+            table_name=table_name
+        ),
+        encoding="utf-8"
+    )
+
+print("✅ Module boilerplate generated.")
+# =====================================================
+# Create Files
+# =====================================================
+from pathlib import Path
+
+PROJECT_NAME = "LearnIn"
+
+root = Path(PROJECT_NAME)
+
