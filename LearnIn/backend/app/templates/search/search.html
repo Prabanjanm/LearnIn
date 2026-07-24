@@ -1,0 +1,41 @@
+{% extends "layouts/base.html" %}
+{% from "components/breadcrumbs.html" import render_breadcrumbs %}
+
+{% block title %}{% if query %}Search: {{ query }}{% else %}Search{% endif %} | LearnIn{% endblock %}
+{% block description %}Search LearnIn for exams, departments, subjects, papers, questions, resources and blog posts.{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/search.css">{% endblock %}
+
+{% block breadcrumbs %}{{ render_breadcrumbs([{"label": "Search", "url": None}]) }}{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <section class="page-hero">
+        <h1>Search LearnIn</h1>
+
+        <form method="get" action="/search" class="search-form">
+            <input type="text" name="q" value="{{ query }}" placeholder="Search exams, papers, blogs..." autofocus>
+            <button type="submit" class="btn">Search</button>
+        </form>
+    </section>
+
+    {% if results %}
+    <section>
+        <h2>{{ results.total }} result{{ "s" if results.total != 1 else "" }} for "{{ results.query }}"</h2>
+
+        <div class="search-results">
+            {% for item in results.results %}
+            <a class="search-result" href="{{ item.url }}">
+                <span class="search-result-type">{{ item.type }}</span>
+                <h3>{{ item.title }}</h3>
+            </a>
+            {% else %}
+            <p>No results found. Try a different search term.</p>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+</div>
+{% endblock %}

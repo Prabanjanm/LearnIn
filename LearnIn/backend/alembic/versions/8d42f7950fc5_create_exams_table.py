@@ -28,18 +28,19 @@ def upgrade() -> None:
     sa.Column('icon', sa.String(length=255), nullable=True),
     sa.Column('display_order', sa.Integer(), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('slug', sa.String(length=255), nullable=False),
     sa.Column('status', sa.Enum('DRAFT', 'PUBLISHED', 'ARCHIVED', name='statusenum'), nullable=False),
     sa.Column('meta_title', sa.String(length=255), nullable=True),
     sa.Column('meta_description', sa.Text(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('code'),
-    sa.UniqueConstraint('name')
+    sa.UniqueConstraint('name'),
+    sa.UniqueConstraint('slug', name='uq_exams_slug')
     )
     op.create_index(op.f('ix_exams_id'), 'exams', ['id'], unique=False)
-    op.create_index(op.f('ix_exams_slug'), 'exams', ['slug'], unique=True)
+    op.create_index(op.f('ix_exams_slug'), 'exams', ['slug'], unique=False)
     # ### end Alembic commands ###
 
 
@@ -50,3 +51,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_exams_id'), table_name='exams')
     op.drop_table('exams')
     # ### end Alembic commands ###
+
+    # statusenum is shared across tables (departments, admins downgrade
+    # runs before this one) - only drop it once nothing else references it.
+    sa.Enum(name='statusenum').drop(op.get_bind(), checkfirst=True)

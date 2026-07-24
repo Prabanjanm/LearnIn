@@ -1,0 +1,39 @@
+{% extends "layouts/base.html" %}
+{% from "components/breadcrumbs.html" import render_breadcrumbs %}
+
+{% block title %}{{ blog.meta_title or blog.title }} | LearnIn{% endblock %}
+{% block description %}{{ blog.meta_description or (blog.content[:150] ~ "...") }}{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/blog.css">{% endblock %}
+
+{% block breadcrumbs %}
+{{ render_breadcrumbs([
+    {"label": "Blog", "url": "/blogs"},
+    {"label": blog.title, "url": None},
+]) }}
+{% endblock %}
+
+{% block content %}
+<div class="container blog-post">
+
+    <h1>{{ blog.title }}</h1>
+
+    <p class="blog-meta">
+        {% if blog.category %}{{ blog.category }} &middot; {% endif %}
+        {% if blog.published_date %}{{ blog.published_date }}{% endif %}
+    </p>
+
+    <div class="blog-content">
+        {{ content_html | safe }}
+    </div>
+
+    {% if blog.tags %}
+    <div class="blog-tags">
+        {% for tag in blog.tags.split(',') %}
+        {% if tag.strip() %}<span class="blog-tag">{{ tag.strip() }}</span>{% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

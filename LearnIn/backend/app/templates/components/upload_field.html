@@ -1,0 +1,39 @@
+{#
+    Reusable "automatic Drive upload" field - used for every image/file
+    field across the admin (exam/department/subject icons, blog thumbnail,
+    resource/paper PDFs, question images). The admin never sees or types a
+    Drive id/URL: choosing a file immediately uploads it in the background
+    (static/js/components/upload-widget.js drives the drag-drop/preview/
+    progress behavior) and the result is stashed as JSON in one hidden
+    input, expanded server-side into file_id/mime_type/size/filename
+    columns by admin/pages.py.
+#}
+{% macro render_upload_field(field) %}
+<div class="admin-field upload-field">
+    <label>{{ field.label }}{% if field.required %} *{% endif %}</label>
+
+    <div class="upload-dropzone" data-upload-category="{{ field.category or '' }}">
+        <input type="file" class="upload-input" accept="{{ field.accept or '*/*' }}" hidden>
+
+        <div class="upload-preview" data-upload-preview>
+            <p class="upload-placeholder">
+                <span class="upload-icon">&#8593;</span>
+                Drag &amp; drop a file here, or <span class="upload-browse-link">choose a file</span>
+            </p>
+        </div>
+
+        <div class="upload-progress-track" data-upload-progress hidden>
+            <div class="upload-progress-bar"></div>
+        </div>
+
+        <p class="upload-status" data-upload-status></p>
+    </div>
+
+    <input
+        type="hidden"
+        name="{{ field.name }}"
+        data-upload-hidden
+        {% if field.required %}required{% endif %}
+    >
+</div>
+{% endmacro %}

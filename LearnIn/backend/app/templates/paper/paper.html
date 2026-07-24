@@ -1,0 +1,60 @@
+{% extends "layouts/base.html" %}
+{% from "components/breadcrumbs.html" import render_breadcrumbs %}
+{% from "components/card_grid.html" import render_card_grid %}
+
+{% block title %}{{ paper.title }} ({{ paper.year }}) - {{ subject.name }} | LearnIn{% endblock %}
+{% block description %}{{ paper.title }} previous year question paper for {{ subject.name }}, {{ department.name }}, {{ exam.name }}.{% endblock %}
+
+{% block structured_data %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "{{ request.base_url }}"},
+        {"@type": "ListItem", "position": 2, "name": "{{ exam.name }}", "item": "{{ request.base_url }}{{ exam.slug }}"},
+        {"@type": "ListItem", "position": 3, "name": "{{ department.name }}", "item": "{{ request.base_url }}{{ exam.slug }}/{{ department.slug }}"},
+        {"@type": "ListItem", "position": 4, "name": "{{ subject.name }}", "item": "{{ request.base_url }}{{ exam.slug }}/{{ department.slug }}/{{ subject.slug }}"},
+        {"@type": "ListItem", "position": 5, "name": "{{ paper.year }}", "item": "{{ self.canonical() }}"}
+    ]
+}
+</script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ render_breadcrumbs(breadcrumbs) }}{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <section class="page-hero">
+        <h1>{{ paper.title }} ({{ paper.year }})</h1>
+        <p>{{ paper.total_questions }} questions{% if paper.duration %} &middot; {{ paper.duration }} minutes{% endif %}</p>
+    </section>
+
+    <section class="action-row">
+        <a class="btn" href="/{{ exam.slug }}/{{ department.slug }}/{{ subject.slug }}/{{ paper.year }}/practice">
+            Practice Online
+        </a>
+
+        <a class="btn btn-secondary" href="https://drive.google.com/file/d/{{ paper.question_file_id }}/view" target="_blank" rel="noopener">
+            View Question Paper
+        </a>
+
+        <a class="btn btn-secondary" href="https://drive.google.com/uc?export=download&id={{ paper.question_file_id }}">
+            Download PDF
+        </a>
+
+        {% if paper.answer_file_id %}
+        <a class="btn btn-secondary" href="https://drive.google.com/file/d/{{ paper.answer_file_id }}/view" target="_blank" rel="noopener">
+            Answer Key
+        </a>
+        {% endif %}
+    </section>
+
+    <section>
+        <h2>Mock Tests</h2>
+        {{ render_card_grid(mock_test_cards, "No mock tests published yet for this paper.") }}
+    </section>
+
+</div>
+{% endblock %}

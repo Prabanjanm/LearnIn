@@ -1,0 +1,22 @@
+{% macro render_navbar(request) %}
+{% set nav_items = [
+    {"href": "/", "label": "Home", "exact": true},
+    {"href": "/blogs", "label": "Blogs"},
+    {"href": "/search", "label": "Search"},
+    {"href": "/about", "label": "About"},
+] %}
+<header>
+    <div class="container">
+
+        <a href="/" class="logo">LearnIn</a>
+
+        <nav>
+            {% for item in nav_items %}
+            {% set is_active = (request.url.path == item.href) if item.exact else request.url.path.startswith(item.href) %}
+            <a href="{{ item.href }}" class="{% if is_active %}nav-link--active{% endif %}">{{ item.label }}</a>
+            {% endfor %}
+        </nav>
+
+    </div>
+</header>
+{% endmacro %}

@@ -15,11 +15,15 @@ class SlugMixin:
         gate
         dbms
         operating-system
+
+    Uniqueness is scoped to the parent (e.g. one slug per department),
+    not global - each model declares its own UniqueConstraint in
+    __table_args__ covering (parent_id, slug). Exam has no parent, so it
+    declares UniqueConstraint("slug") for a global scope instead.
     """
 
     slug: Mapped[str] = mapped_column(
         String(255),
-        unique=True,
         nullable=False,
         index=True
     )
@@ -30,17 +34,15 @@ class StatusMixin:
     Common publishing status
     """
 
-
-
-status: Mapped[StatusEnum] = mapped_column(
-    Enum(
-        StatusEnum,
-        name="statusenum",
-        create_type=False
-    ),
-    default=StatusEnum.DRAFT,
-    nullable=False
-)
+    status: Mapped[StatusEnum] = mapped_column(
+        Enum(
+            StatusEnum,
+            name="statusenum",
+            create_type=False
+        ),
+        default=StatusEnum.DRAFT,
+        nullable=False
+    )
 
 
 class SeoMixin:

@@ -45,7 +45,37 @@ class Paper(
         nullable=False
     )
 
+    question_file_mime_type: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    question_file_size: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True
+    )
+
+    question_filename: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True
+    )
+
     answer_file_id: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True
+    )
+
+    answer_file_mime_type: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    answer_file_size: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True
+    )
+
+    answer_filename: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True
     )

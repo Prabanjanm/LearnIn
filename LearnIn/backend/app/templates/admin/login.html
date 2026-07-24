@@ -1,0 +1,23 @@
+{% extends "admin/_layout.html" %}
+
+{% block title %}Admin Login - LearnIn{% endblock %}
+
+{% block guest_content %}
+<div class="admin-auth-wrapper">
+    <form method="post" action="/admin/login" class="admin-auth-form">
+        <h1>LearnIn Admin</h1>
+
+        {% if error %}
+        <p class="admin-error">{{ error }}</p>
+        {% endif %}
+
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autofocus>
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+
+        <button type="submit">Sign in</button>
+    </form>
+</div>
+{% endblock %}

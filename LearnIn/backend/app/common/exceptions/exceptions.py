@@ -9,3 +9,11 @@ class NotFoundException(LearnInException):
 
 class AlreadyExistsException(LearnInException):
     pass
+
+
+class InvalidCredentialsException(LearnInException):
+    pass
+
+
+class GoogleDriveConfigError(LearnInException):
+    pass

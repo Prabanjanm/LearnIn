@@ -1,49 +1,34 @@
-{% extends "base.html" %}
+{% extends "layouts/base.html" %}
 
-{% block title %}
-LearnIn
-{% endblock %}
+{% block title %}LearnIn - GATE Previous Year Papers, Mock Tests & Study Materials{% endblock %}
+{% block description %}Previous Year Question Papers, Notes and Mock Tests for GATE and other government exams.{% endblock %}
 
 {% block css %}
 <link rel="stylesheet" href="/static/css/home.css">
 {% endblock %}
 
 {% block content %}
-
 <div class="container">
 
     <section class="hero">
-
         <h1>LearnIn</h1>
 
-        <p>
-            Previous Year Question Papers, Notes and Mock Tests
-        </p>
+        <p>Previous Year Question Papers, Notes and Mock Tests</p>
 
-        <input
-            id="search"
-            type="text"
-            placeholder="Search Exams..."
-        >
-
+        <form action="/search" method="get" class="hero-search">
+            <input type="text" name="q" placeholder="Search exams, papers, blogs..." autofocus>
+        </form>
     </section>
 
-
     <section>
-
         <h2>Popular Exams</h2>
 
-        <div
-            id="exam-container"
-            class="exam-grid"
-        >
-
+        <div id="exam-container" class="card-grid">
+            <p>Loading exams...</p>
         </div>
-
     </section>
 
 </div>
-
 {% endblock %}
 
 {% block js %}

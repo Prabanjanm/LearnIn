@@ -1,3 +1,4 @@
+from app.modules.admin.model import Admin
 from app.modules.exam.model import Exam
 from app.modules.department.model import Department
 from app.modules.subject.model import Subject
@@ -8,3 +9,4 @@ from app.modules.mock_test.model import MockTest
 from app.modules.mock_test_question.model import MockTestQuestion
 from app.modules.resource.model import Resource
 from app.modules.blog.model import Blog
+from app.modules.search.model import SearchLog

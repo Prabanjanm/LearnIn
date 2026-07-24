@@ -1,0 +1,66 @@
+{% extends "admin/_layout.html" %}
+{% from "components/icons.html" import icon %}
+{% from "components/status_badge.html" import status_badge %}
+
+{% block title %}{{ label }} - LearnIn Admin{% endblock %}
+
+{% block breadcrumb %}
+<span class="admin-breadcrumb-sep">/</span>
+<span>{{ label }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <div>
+        <h1>{{ label }}</h1>
+        <p class="admin-page-subtitle">{{ rows|length }} total</p>
+    </div>
+    <a class="admin-btn admin-btn-primary" href="/admin/manage/{{ entity_key }}/new">{{ icon('plus', 16) }} New</a>
+</div>
+
+<form data-bulk-form method="post" action="/admin/manage/{{ entity_key }}/bulk">
+<input type="hidden" name="action" value="" data-bulk-action-input>
+
+<div class="admin-table-toolbar">
+    <div class="admin-table-search">
+        {{ icon('search', 16) }}
+        <input type="text" data-table-search placeholder="Search {{ label|lower }}...">
+    </div>
+    <div class="admin-bulk-actions" data-bulk-actions hidden>
+        <span><span data-bulk-count>0</span> selected</span>
+        {% if 'status' in columns %}
+        <button type="submit" class="admin-btn admin-btn-secondary admin-btn-sm" data-bulk-submit="PUBLISHED">Publish</button>
+        <button type="submit" class="admin-btn admin-btn-secondary admin-btn-sm" data-bulk-submit="ARCHIVED">Archive</button>
+        {% endif %}
+        <button type="submit" class="admin-btn admin-btn-danger admin-btn-sm" data-bulk-submit="delete" data-confirm="Delete the selected {{ label|lower }}? This cannot be undone.">{{ icon('trash', 14) }} Delete</button>
+    </div>
+</div>
+
+<div class="admin-table-wrapper">
+    <table class="admin-table" data-admin-table data-page-size="10">
+        <thead>
+            <tr>
+                <th class="admin-table-checkbox-col"><input type="checkbox" data-select-all aria-label="Select all rows"></th>
+                {% for column in columns %}
+                <th data-sortable data-col-index="{{ loop.index0 }}">{{ column }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td class="admin-table-checkbox-col"><input type="checkbox" name="ids" value="{{ row.id }}" data-row-checkbox></td>
+                {% for column in columns %}
+                <td>{% if column == 'status' %}{{ status_badge(row[column]) }}{% else %}{{ row[column] }}{% endif %}</td>
+                {% endfor %}
+            </tr>
+            {% else %}
+            <tr><td colspan="{{ columns|length + 1 }}" class="admin-table-empty">No records yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="admin-pagination" data-pagination hidden></div>
+</form>
+{% endblock %}

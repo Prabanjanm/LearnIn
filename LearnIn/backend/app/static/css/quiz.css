@@ -1,0 +1,115 @@
+/* Practice + Mock Test shared quiz UI */
+
+.quiz-container {
+    margin-top: 20px;
+}
+
+.quiz-question {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: 20px;
+    margin-bottom: 18px;
+}
+
+.quiz-question-header {
+    display: flex;
+    justify-content: space-between;
+    color: var(--color-text-muted);
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 14px 0;
+}
+
+.quiz-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+}
+
+.quiz-option.selected {
+    border-color: var(--color-primary);
+    background: var(--color-primary-bg);
+}
+
+.quiz-option.correct {
+    border-color: var(--color-success-border);
+    background: var(--color-success-bg);
+}
+
+.quiz-option.incorrect {
+    border-color: var(--color-danger-border);
+    background: var(--color-danger-bg);
+}
+
+.quiz-feedback {
+    margin-top: 12px;
+    padding: 10px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+}
+
+.quiz-feedback.correct {
+    background: var(--color-success-bg);
+    color: var(--color-success-text);
+}
+
+.quiz-feedback.incorrect {
+    background: var(--color-danger-bg);
+    color: var(--color-danger-text);
+}
+
+.quiz-nat-input {
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    width: 200px;
+}
+
+.quiz-timer {
+    position: sticky;
+    top: 0;
+    background: var(--color-dark);
+    color: var(--color-text-on-dark);
+    padding: 12px 20px;
+    border-radius: var(--radius-lg);
+    border-bottom: 3px solid var(--color-primary);
+    margin-bottom: 20px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.quiz-result-summary {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: 20px;
+    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    text-align: center;
+}
+
+.quiz-result-stat span {
+    display: block;
+    font-size: 24px;
+    font-weight: 700;
+    font-family: var(--font-heading);
+    color: var(--color-dark);
+}
+
+.quiz-result-stat label {
+    font-size: 12px;
+    color: var(--color-text-muted);
+}

@@ -58,6 +58,21 @@ class Question(
         nullable=True
     )
 
+    image_mime_type: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    image_file_size: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True
+    )
+
+    image_filename: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True
+    )
+
     correct_answer: Mapped[str] = mapped_column(
         String(50),
         nullable=False
@@ -65,6 +80,26 @@ class Question(
 
     explanation: Mapped[str | None] = mapped_column(
         Text,
+        nullable=True
+    )
+
+    explanation_image_file_id: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True
+    )
+
+    explanation_image_mime_type: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    explanation_image_file_size: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True
+    )
+
+    explanation_image_filename: Mapped[str | None] = mapped_column(
+        String(255),
         nullable=True
     )
 

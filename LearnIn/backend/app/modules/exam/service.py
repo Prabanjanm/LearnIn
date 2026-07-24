@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.common.exceptions.exceptions import AlreadyExistsException, NotFoundException
 from app.common.services.base_service import BaseService
 from app.common.utils.slug import generate_slug
 
@@ -19,9 +20,9 @@ class ExamService(BaseService):
         data: ExamCreate
     ):
 
-        if self.repository.exists_by_code(db, data.code):
+        if self.repository.exists_by_code(db, data.code.upper()):
 
-            raise Exception("Exam already exists")
+            raise AlreadyExistsException("Exam already exists")
 
         exam = Exam(
 
@@ -33,9 +34,17 @@ class ExamService(BaseService):
 
             description=data.description,
 
-            icon=data.icon,
+            icon_file_id=data.icon_file_id,
 
-            display_order=data.display_order
+            icon_mime_type=data.icon_mime_type,
+
+            icon_file_size=data.icon_file_size,
+
+            icon_filename=data.icon_filename,
+
+            display_order=data.display_order,
+
+            status=data.status,
 
         )
 
@@ -43,6 +52,38 @@ class ExamService(BaseService):
             db,
             exam
         )
+
+    def get_published_by_slug(
+        self,
+        db: Session,
+        slug: str
+    ) -> Exam:
+
+        exam = self.repository.get_published_by_slug(db, slug)
+
+        if exam is None:
+            raise NotFoundException("Exam not found")
+
+        return exam
+
+    def get_published_by_id(
+        self,
+        db: Session,
+        exam_id: int
+    ) -> Exam:
+
+        exam = self.repository.get_published_by_id(db, exam_id)
+
+        if exam is None:
+            raise NotFoundException("Exam not found")
+
+        return exam
+
+    def get_published(
+        self,
+        db: Session
+    ):
+        return self.repository.get_published(db)
 
 
 exam_service = ExamService()

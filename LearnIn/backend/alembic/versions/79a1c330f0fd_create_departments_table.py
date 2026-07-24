@@ -27,8 +27,8 @@ def upgrade() -> None:
     sa.Column('code', sa.String(length=20), nullable=False),
     sa.Column('display_order', sa.Integer(), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('slug', sa.String(length=255), nullable=False),
     sa.Column(
     "status",
@@ -44,11 +44,13 @@ def upgrade() -> None:
     sa.Column('meta_title', sa.String(length=255), nullable=True),
     sa.Column('meta_description', sa.Text(), nullable=True),
     sa.ForeignKeyConstraint(['exam_id'], ['exams.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('exam_id', 'code', name='uq_exam_department'),
+    sa.UniqueConstraint('exam_id', 'slug', name='uq_exam_department_slug')
     )
     op.create_index(op.f('ix_departments_exam_id'), 'departments', ['exam_id'], unique=False)
     op.create_index(op.f('ix_departments_id'), 'departments', ['id'], unique=False)
-    op.create_index(op.f('ix_departments_slug'), 'departments', ['slug'], unique=True)
+    op.create_index(op.f('ix_departments_slug'), 'departments', ['slug'], unique=False)
     # ### end Alembic commands ###
 
 

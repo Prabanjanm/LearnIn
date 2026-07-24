@@ -1,5 +1,6 @@
 from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
+from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
 
@@ -42,6 +43,21 @@ class Resource(
     google_drive_file_id: Mapped[str] = mapped_column(
         String(255),
         nullable=False
+    )
+
+    google_drive_mime_type: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    google_drive_file_size: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True
+    )
+
+    google_drive_filename: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True
     )
 
     subject = relationship(

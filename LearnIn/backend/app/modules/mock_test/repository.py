@@ -1,39 +1,40 @@
 from sqlalchemy.orm import Session
 
+from app.common.repositories.base_repository import BaseRepository
+from app.core.enums import StatusEnum
+
 from .model import MockTest
 
 
-class MockTestRepository:
+class MockTestRepository(BaseRepository):
 
-    @staticmethod
-    def get_all(db: Session):
+    def __init__(self):
+        super().__init__(MockTest)
 
-        return db.query(MockTest).all()
+    def get_published_by_paper(
+        self,
+        db: Session,
+        paper_id: int
+    ):
+        return (
+            db.query(MockTest)
+            .filter(
+                MockTest.paper_id == paper_id,
+                MockTest.status == StatusEnum.PUBLISHED,
+            )
+            .all()
+        )
 
-
-    @staticmethod
-    def get_by_id(db: Session, item_id: int):
-
-        return db.query(MockTest).filter(
-            MockTest.id == item_id
-        ).first()
-
-
-    @staticmethod
-    def create(db: Session, obj):
-
-        db.add(obj)
-
-        db.commit()
-
-        db.refresh(obj)
-
-        return obj
-
-
-    @staticmethod
-    def delete(db: Session, obj):
-
-        db.delete(obj)
-
-        db.commit()
+    def get_published_by_id(
+        self,
+        db: Session,
+        mock_test_id: int
+    ):
+        return (
+            db.query(MockTest)
+            .filter(
+                MockTest.id == mock_test_id,
+                MockTest.status == StatusEnum.PUBLISHED,
+            )
+            .first()
+        )

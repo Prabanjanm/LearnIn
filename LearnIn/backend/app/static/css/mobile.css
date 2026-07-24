@@ -1,0 +1,36 @@
+@media (max-width: 640px) {
+    header .container {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    header nav a {
+        margin: 0 10px;
+    }
+
+    .page-hero h1 {
+        font-size: 26px;
+    }
+
+    .card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .action-row {
+        flex-direction: column;
+    }
+
+    .action-row .btn,
+    .action-row .btn-secondary {
+        text-align: center;
+    }
+
+    .quiz-result-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .hero-search input {
+        width: 100%;
+    }
+}

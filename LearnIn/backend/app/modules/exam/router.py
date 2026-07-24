@@ -3,8 +3,9 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.modules.admin.dependencies import get_current_admin
 
-from .schema import ExamCreate
+from .schema import ExamCreate, ExamResponse
 from .service import exam_service
 
 router = APIRouter(
@@ -13,28 +14,29 @@ router = APIRouter(
 )
 
 
-@router.get("/")
+@router.get("/", response_model=list[ExamResponse])
 def get_all(
     db: Session = Depends(get_db)
 ):
-    return exam_service.get_all(db)
+    return exam_service.get_published(db)
 
 
-@router.get("/{exam_id}")
+@router.get("/{exam_id}", response_model=ExamResponse)
 def get_one(
     exam_id: int,
     db: Session = Depends(get_db)
 ):
-    return exam_service.get_by_id(
+    return exam_service.get_published_by_id(
         db,
         exam_id
     )
 
 
-@router.post("/")
+@router.post("/", response_model=ExamResponse)
 def create(
     data: ExamCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _admin=Depends(get_current_admin),
 ):
     return exam_service.create_exam(
         db,

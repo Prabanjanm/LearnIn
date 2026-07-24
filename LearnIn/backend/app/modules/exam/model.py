@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Text
+from sqlalchemy import Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.base import BaseModel
@@ -24,7 +24,17 @@ class Exam(
 
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    icon: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Uploaded via the admin's automatic Drive upload widget - the actual
+    # image lives in Drive, only its metadata is stored here. URLs are
+    # never persisted; they're derived from icon_file_id on demand
+    # (see app.common.utils.drive_urls).
+    icon_file_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    icon_mime_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    icon_file_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    icon_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     display_order: Mapped[int] = mapped_column(default=0)
 
@@ -32,4 +42,8 @@ class Exam(
     departments: Mapped[list["Department"]] = relationship(
         back_populates="exam",
         cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        UniqueConstraint("slug", name="uq_exams_slug"),
     )

@@ -1,33 +1,48 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+
+from app.common.schemas.pagination import PaginatedResponse
+from app.core.database import get_db
+from app.modules.admin.dependencies import get_current_admin
+
+from .schema import BlogCreate, BlogResponse
+from .service import blog_service
 
 router = APIRouter(
-
-    prefix="/blogs",
-
-    tags=["Blog"]
-
+    prefix="/api/blogs",
+    tags=["Blogs"]
 )
 
 
-@router.get("/")
+@router.get("/", response_model=PaginatedResponse[BlogResponse])
+def get_all(
+    category: str | None = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    items, total = blog_service.get_published(db, category, page, page_size)
 
-def list_items():
+    return PaginatedResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
 
-    return {
 
-        "message":"Blog List"
+@router.get("/{slug}", response_model=BlogResponse)
+def get_one(
+    slug: str,
+    db: Session = Depends(get_db)
+):
+    return blog_service.get_published_by_slug(db, slug)
 
-    }
 
-
-@router.get("/{item_id}")
-
-def details(item_id:int):
-
-    return {
-
-        "message":"Blog Details",
-
-        "id":item_id
-
-    }
+@router.post("/", response_model=BlogResponse)
+def create(
+    data: BlogCreate,
+    db: Session = Depends(get_db),
+    _admin=Depends(get_current_admin),
+):
+    return blog_service.create_blog(db, data)

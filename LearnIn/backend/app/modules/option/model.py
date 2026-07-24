@@ -1,4 +1,5 @@
 from sqlalchemy import ForeignKey, UniqueConstraint
+from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy.orm import relationship
@@ -26,6 +27,26 @@ class Option(BaseModel):
     option_text: Mapped[str] = mapped_column(
         Text,
         nullable=False
+    )
+
+    image_file_id: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True
+    )
+
+    image_mime_type: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    image_file_size: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True
+    )
+
+    image_filename: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True
     )
 
     question = relationship(

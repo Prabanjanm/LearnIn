@@ -1,0 +1,23 @@
+{% extends "layouts/base.html" %}
+{% from "components/breadcrumbs.html" import render_breadcrumbs %}
+{% from "components/card_grid.html" import render_card_grid %}
+
+{% block title %}{{ department.meta_title or (department.name ~ " - " ~ exam.name) }} | LearnIn{% endblock %}
+{% block description %}{{ department.meta_description or "" }}{% endblock %}
+
+{% block breadcrumbs %}{{ render_breadcrumbs(breadcrumbs) }}{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <section class="page-hero">
+        <h1>{{ department.name }}</h1>
+    </section>
+
+    <section>
+        <h2>Subjects</h2>
+        {{ render_card_grid(subject_cards, "No subjects published yet.") }}
+    </section>
+
+</div>
+{% endblock %}

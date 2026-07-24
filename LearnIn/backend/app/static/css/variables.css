@@ -1,0 +1,81 @@
+/*
+    Shared design tokens. Every component/page stylesheet should reference
+    these instead of hardcoding colors, so the palette can change in one
+    place (e.g. a future re-brand or dark mode) without hunting through
+    every CSS file.
+
+    Admin CMS palette: white / yellow / dark blue / light gray - bright,
+    clean, education-focused. Deliberately not a dark admin theme.
+*/
+:root {
+    /* Brand */
+    --color-primary: #FFC107;
+    --color-primary-dark: #FFB300;
+    --color-primary-contrast: #1E3A5F;
+    --color-dark: #1E3A5F;
+    --color-dark-hover: #274A73;
+    --color-dark-active: #2F5688;
+
+    /* Public-site brand (unchanged from before) */
+    --color-brand-blue: #2563eb;
+    --color-brand-blue-dark: #1d4ed8;
+
+    /* Text */
+    --color-text: #111827;
+    --color-text-muted: #6b7280;
+    --color-text-on-dark: #ffffff;
+    --color-text-on-dark-muted: #B9C6D6;
+
+    /* Surfaces */
+    --color-bg: #ffffff;
+    --color-bg-muted: #F9F9F9;
+    --color-bg-alt: #F9F9F9;
+    --color-border: #EAEAEA;
+    --color-card: #ffffff;
+
+    /* Feedback */
+    --color-success-bg: #f0fdf4;
+    --color-success-text: #166534;
+    --color-success-border: #16a34a;
+    --color-danger-bg: #fef2f2;
+    --color-danger-text: #991b1b;
+    --color-danger-border: #dc2626;
+    --color-info-bg: #eff6ff;
+    --color-info-text: var(--color-brand-blue);
+    --color-warning-bg: #fffbeb;
+    --color-warning-text: #92400e;
+    --color-warning-border: #f59e0b;
+    --color-primary-bg: #FFF8E1;
+
+    /* Status badges */
+    --status-draft-bg: #F3F4F6;
+    --status-draft-text: #4B5563;
+    --status-published-bg: #DCFCE7;
+    --status-published-text: #15803D;
+    --status-archived-bg: #FEF3C7;
+    --status-archived-text: #92400E;
+
+    /* Radius */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 18px;
+    --radius-pill: 999px;
+
+    /* Spacing */
+    --spacing-xs: 6px;
+    --spacing-sm: 10px;
+    --spacing-md: 15px;
+    --spacing-lg: 20px;
+    --spacing-xl: 30px;
+
+    /* Shadow */
+    --shadow-sm: 0 1px 2px rgba(30, 58, 95, 0.06);
+    --shadow-md: 0 4px 16px rgba(30, 58, 95, 0.08);
+    --shadow-lg: 0 12px 32px rgba(30, 58, 95, 0.12);
+
+    /* Typography */
+    --font-sans: Arial, sans-serif;
+    --font-heading: "Poppins", "Inter", Arial, sans-serif;
+    --font-body: "Inter", "Nunito", Arial, sans-serif;
+}

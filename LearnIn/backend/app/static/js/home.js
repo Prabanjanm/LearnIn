@@ -1,39 +1,25 @@
 async function loadExams() {
-
     const response = await fetch("/api/exams/");
-
     const exams = await response.json();
 
-    const container =
-        document.getElementById("exam-container");
-
+    const container = document.getElementById("exam-container");
     container.innerHTML = "";
 
-    exams.forEach(exam => {
+    if (exams.length === 0) {
+        container.innerHTML = "<p>No exams published yet.</p>";
+        return;
+    }
 
-        container.innerHTML += `
-
-        <div
-            class="exam-card"
-            onclick="openExam('${exam.slug}')"
-        >
-
+    exams.forEach((exam) => {
+        const card = document.createElement("a");
+        card.className = "entity-card";
+        card.href = `/${exam.slug}`;
+        card.innerHTML = `
             <h3>${exam.name}</h3>
-
-            <p>${exam.description ?? ""}</p>
-
-        </div>
-
+            <span class="entity-card-meta">${exam.description ?? ""}</span>
         `;
-
+        container.appendChild(card);
     });
-
-}
-
-function openExam(slug){
-
-    window.location.href=`/exam/${slug}`;
-
 }
 
 loadExams();
