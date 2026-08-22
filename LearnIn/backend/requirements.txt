@@ -57,7 +57,7 @@ cffi==2.1.0
 charset-normalizer==3.4.9
 click==8.4.2
 colorama==0.4.6
-cryptography==41.0.0
+cryptography==41.0.5
 h11==0.16.0
 idna==3.18
 pyparsing==3.3.2

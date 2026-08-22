@@ -10,3 +10,4 @@ from app.modules.mock_test_question.model import MockTestQuestion
 from app.modules.resource.model import Resource
 from app.modules.blog.model import Blog
 from app.modules.search.model import SearchLog
+from app.modules.temporary_upload.model import TemporaryUpload

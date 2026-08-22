@@ -1,8 +1,10 @@
 import json
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import ValidationError
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -23,11 +25,18 @@ from app.modules.mock_test.model import MockTest
 from app.modules.mock_test.schema import MockTestCreate
 from app.modules.mock_test.service import mock_test_service
 from app.modules.paper.model import Paper
+from app.modules.paper.schema import PaperCreate
+from app.modules.paper.service import paper_service
 from app.modules.question.model import Question
 from app.modules.question.schema import OptionIn, QuestionCreate
 from app.modules.question.service import question_service
 from app.modules.resource.model import Resource
 from app.modules.subject.model import Subject
+from app.modules.temporary_upload.service import (
+    create_temporary_upload,
+    delete_temporary_upload,
+    mark_temporary_uploads_committed,
+)
 
 from .crud_config import ENTITY_REGISTRY, FIELD_UPLOAD, STATUS_FIELD, coerce_form_value
 from .dependencies import ACCESS_TOKEN_COOKIE_NAME, get_current_admin, get_optional_admin
@@ -67,6 +76,53 @@ def apply_upload_field(field: dict, raw_value: str | None, payload: dict) -> Non
     payload[f"{prefix}_mime_type"] = data.get("mime_type")
     payload[f"{prefix}_file_size"] = data.get("file_size")
     payload[f"{prefix}_filename"] = data.get("filename")
+
+
+def cleanup_uncommitted_uploads(db: Session, payload: dict) -> None:
+    file_ids = {
+        value
+        for key, value in payload.items()
+        if key.endswith("_file_id") and value
+    }
+    if not file_ids:
+        return
+
+    try:
+        client = get_drive_client()
+    except Exception:
+        return
+
+    for file_id in file_ids:
+        try:
+            delete_temporary_upload(db, client, file_id)
+        except Exception:
+            db.rollback()
+
+
+def parse_required_paper_int(value: str, field_name: str) -> int:
+    if value is None or not value.strip():
+        raise ValueError(f"{field_name} is required")
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{field_name} must be an integer") from None
+
+
+def build_paper_preflight(
+    subject_id: str,
+    title: str,
+    year: str,
+    duration: str,
+    status: str,
+) -> PaperCreate:
+    return PaperCreate(
+        subject_id=parse_required_paper_int(subject_id, "Subject"),
+        title=title,
+        year=parse_required_paper_int(year, "Year"),
+        question_file_id="__preflight__",
+        duration=duration or None,
+        status=status,
+    )
 
 
 # ---------------------------------------------------------------- auth ----
@@ -577,6 +633,8 @@ async def entity_create(
         method = getattr(config["service"], config["create_method"])
         method(db, schema_instance)
     except (AlreadyExistsException, NotFoundException, GoogleDriveConfigError) as exc:
+        if entity_key == "papers":
+            cleanup_uncommitted_uploads(db, payload)
         return templates.TemplateResponse(
             request=request,
             name="admin/form.html",
@@ -591,6 +649,8 @@ async def entity_create(
         )
     except IntegrityError:
         db.rollback()
+        if entity_key == "papers":
+            cleanup_uncommitted_uploads(db, payload)
         return templates.TemplateResponse(
             request=request,
             name="admin/form.html",
@@ -603,7 +663,12 @@ async def entity_create(
             },
             status_code=400,
         )
-    except ValueError as exc:
+    except (ValidationError, ValueError) as exc:
+        if entity_key == "papers":
+            cleanup_uncommitted_uploads(db, payload)
+        error = str(exc)
+        if isinstance(exc, ValidationError):
+            error = exc.errors()[0].get("msg", "Invalid input")
         return templates.TemplateResponse(
             request=request,
             name="admin/form.html",
@@ -612,7 +677,22 @@ async def entity_create(
                 "entity_key": entity_key,
                 "label": config["label"],
                 "fields": config["form_fields"],
-                "error": f"Invalid input: {exc}",
+                "error": f"Invalid input: {error}",
+            },
+            status_code=400,
+        )
+    except Exception as exc:
+        if entity_key == "papers":
+            cleanup_uncommitted_uploads(db, payload)
+        return templates.TemplateResponse(
+            request=request,
+            name="admin/form.html",
+            context={
+                "admin": admin,
+                "entity_key": entity_key,
+                "label": config["label"],
+                "fields": config["form_fields"],
+                "error": str(exc),
             },
             status_code=400,
         )
@@ -658,24 +738,102 @@ async def entity_bulk_action(
 async def upload_file(
     file: UploadFile = File(...),
     category: str | None = Form(None),
+    subject_id: str = Form(""),
+    title: str = Form(""),
+    year: str = Form(""),
+    duration: str = Form(""),
+    status: str = Form("DRAFT"),
     _admin: Admin = Depends(get_current_admin),
+    db: Session = Depends(get_db),
 ):
-    content = await file.read()
-    client = get_drive_client()
+    client = None
+    result = None
 
     try:
+        if category == "papers":
+            paper_data = build_paper_preflight(subject_id, title, year, duration, status)
+            paper_service.validate_paper_available(
+                db,
+                paper_data.subject_id,
+                paper_data.year,
+            )
+
+        content = await file.read()
+        client = get_drive_client()
         result = client.upload_file(
             content,
             filename=file.filename or "upload",
             mime_type=file.content_type or "application/octet-stream",
             category=category,
         )
-    except GoogleDriveConfigError as exc:
-        return {"error": str(exc)}
 
-    return {
-        "file_id": result.file_id,
-        "mime_type": result.mime_type,
-        "file_size": result.file_size,
-        "filename": result.name,
-    }
+        create_temporary_upload(
+            db,
+            drive_file_id=result.file_id,
+            filename=result.name,
+            mime_type=result.mime_type,
+            file_size=result.file_size,
+            upload_type=category or "general",
+            committed=False,
+            expires_at=datetime.now(timezone.utc) + timedelta(minutes=30),
+        )
+
+        return {
+            "file_id": result.file_id,
+            "mime_type": result.mime_type,
+            "file_size": result.file_size,
+            "filename": result.name,
+        }
+    except (GoogleDriveConfigError, Exception) as exc:
+        db.rollback()
+        if client is not None and result is not None:
+            try:
+                client.delete_file(result.file_id)
+            except Exception:
+                pass
+        return JSONResponse({"error": str(exc)}, status_code=200)
+
+
+@router.post("/admin/papers/validate")
+def validate_paper_upload(
+    subject_id: str = Form(""),
+    title: str = Form(""),
+    year: str = Form(""),
+    duration: str = Form(""),
+    status: str = Form("DRAFT"),
+    _admin: Admin = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    try:
+        paper_data = build_paper_preflight(subject_id, title, year, duration, status)
+        paper_service.validate_paper_available(
+            db,
+            paper_data.subject_id,
+            paper_data.year,
+        )
+    except AlreadyExistsException as exc:
+        return JSONResponse({"valid": False, "error": str(exc)}, status_code=200)
+    except NotFoundException as exc:
+        return JSONResponse({"valid": False, "error": str(exc)}, status_code=200)
+    except ValidationError as exc:
+        error = exc.errors()[0].get("msg", "Invalid Paper details")
+        return JSONResponse({"valid": False, "error": error}, status_code=200)
+    except ValueError as exc:
+        return JSONResponse({"valid": False, "error": str(exc)}, status_code=200)
+
+    return {"valid": True}
+
+
+@router.post("/admin/upload/remove")
+async def remove_temporary_upload(
+    file_id: str = Form(...),
+    _admin: Admin = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    try:
+        client = get_drive_client()
+        deleted = delete_temporary_upload(db, client, file_id)
+        return {"deleted": deleted}
+    except Exception as exc:
+        db.rollback()
+        return JSONResponse({"deleted": False, "error": str(exc)}, status_code=200)

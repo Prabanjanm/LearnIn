@@ -11,8 +11,6 @@ router = APIRouter(
     prefix="/api/papers",
     tags=["Papers"]
 )
-
-
 @router.get("/", response_model=list[PaperResponse])
 def get_all(
     subject_id: int,

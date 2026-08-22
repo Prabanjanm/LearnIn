@@ -1,7 +1,12 @@
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+import asyncio
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import select
 
 import app.models
 
@@ -28,10 +33,40 @@ from app.modules.mock_test_question.router import router as mock_test_question_r
 from app.modules.blog.router import router as blog_router
 from app.modules.search.router import router as search_router
 from app.modules.pages.router import router as pages_router
+from app.modules.temporary_upload.model import TemporaryUpload
+from app.modules.temporary_upload.service import cleanup_expired_uploads
+from app.core.database import SessionLocal, get_db
+from app.core.google_drive import get_drive_client
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async def cleanup_loop():
+        while True:
+            db = SessionLocal()
+            try:
+                await cleanup_expired_uploads(db, get_drive_client())
+            except Exception as exc:
+                print(f"Temporary upload cleanup failed: {exc}")
+            finally:
+                db.close()
+            await asyncio.sleep(300)
+
+    task = asyncio.create_task(cleanup_loop())
+    try:
+        yield
+    finally:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
 
 app = FastAPI(
     title=settings.APP_NAME,
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan,
 )
 
 templates = Jinja2Templates(directory="app/templates")

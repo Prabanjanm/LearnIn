@@ -11,12 +11,55 @@
 */
 
 function initUploadWidgets(root = document) {
+    registerPaperUnloadCleanup();
     root.querySelectorAll(".upload-dropzone").forEach((dropzone) => {
         if (dropzone.dataset.uploadInitialized) {
             return;
         }
         dropzone.dataset.uploadInitialized = "true";
         wireDropzone(dropzone);
+    });
+}
+
+function registerPaperUnloadCleanup() {
+    if (window.paperUploadCleanupRegistered) {
+        return;
+    }
+    window.paperUploadCleanupRegistered = true;
+
+    window.addEventListener("pagehide", () => {
+        document.querySelectorAll('form[data-entity-key="papers"]').forEach((form) => {
+            if (form.dataset.paperSaveSubmitted === "true") {
+                return;
+            }
+
+            form.querySelectorAll("[data-upload-hidden]").forEach((hiddenInput) => {
+                if (!hiddenInput.value) {
+                    return;
+                }
+
+                let uploadData;
+                try {
+                    uploadData = JSON.parse(hiddenInput.value);
+                } catch (error) {
+                    return;
+                }
+
+                if (!uploadData.file_id) {
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append("file_id", uploadData.file_id);
+                navigator.sendBeacon("/admin/upload/remove", formData);
+            });
+        });
+    });
+
+    document.querySelectorAll('form[data-entity-key="papers"]').forEach((form) => {
+        form.addEventListener("submit", () => {
+            form.dataset.paperSaveSubmitted = "true";
+        });
     });
 }
 
@@ -28,6 +71,7 @@ function wireDropzone(dropzone) {
     const statusEl = dropzone.querySelector("[data-upload-status]");
     const hiddenInput = dropzone.parentElement.querySelector("[data-upload-hidden]");
     const category = dropzone.dataset.uploadCategory || "";
+    const form = dropzone.closest("form");
 
     dropzone.addEventListener("click", () => fileInput.click());
 
@@ -56,9 +100,39 @@ function wireDropzone(dropzone) {
         }
     });
 
-    function handleFile(file) {
+    async function handleFile(file) {
         showLocalPreview(file);
-        uploadFile(file);
+        try {
+            await validateBeforeUpload();
+            uploadFile(file);
+        } catch (error) {
+            statusEl.textContent = `Upload failed: ${error.message}`;
+            statusEl.classList.add("upload-status--error");
+        }
+    }
+
+    async function validateBeforeUpload() {
+        if (!form || form.dataset.entityKey !== "papers") {
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("subject_id", form.elements.subject_id.value);
+        formData.append("title", form.elements.title.value);
+        formData.append("year", form.elements.year.value);
+        formData.append("duration", form.elements.duration.value);
+        formData.append("status", form.elements.status.value);
+
+        const response = await fetch("/admin/papers/validate", {
+            method: "POST",
+            body: formData,
+            credentials: "same-origin",
+        });
+        const data = await response.json();
+
+        if (!response.ok || !data.valid) {
+            throw new Error(data.error || "invalid Paper details");
+        }
     }
 
     function showLocalPreview(file) {
@@ -83,6 +157,13 @@ function wireDropzone(dropzone) {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("category", category);
+        if (form && form.dataset.entityKey === "papers") {
+            formData.append("subject_id", form.elements.subject_id.value);
+            formData.append("title", form.elements.title.value);
+            formData.append("year", form.elements.year.value);
+            formData.append("duration", form.elements.duration.value);
+            formData.append("status", form.elements.status.value);
+        }
 
         const xhr = new XMLHttpRequest();
         xhr.open("POST", "/admin/upload");
@@ -137,8 +218,18 @@ function wireDropzone(dropzone) {
         removeBtn.type = "button";
         removeBtn.className = "upload-remove-btn";
         removeBtn.textContent = "Remove";
-        removeBtn.addEventListener("click", (event) => {
+        removeBtn.addEventListener("click", async (event) => {
             event.stopPropagation();
+            const uploadData = hiddenInput.value ? JSON.parse(hiddenInput.value) : null;
+            if (uploadData && uploadData.file_id) {
+                const formData = new FormData();
+                formData.append("file_id", uploadData.file_id);
+                await fetch("/admin/upload/remove", {
+                    method: "POST",
+                    body: formData,
+                    credentials: "same-origin",
+                });
+            }
             hiddenInput.value = "";
             fileInput.value = "";
             statusEl.textContent = "";

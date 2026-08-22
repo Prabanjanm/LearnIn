@@ -2,6 +2,8 @@ from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import AlreadyExistsException, NotFoundException
 from app.common.services.base_service import BaseService
+from app.modules.subject.model import Subject
+from app.modules.temporary_upload.service import mark_temporary_uploads_committed
 
 from .model import Paper
 from .repository import PaperRepository
@@ -19,10 +21,7 @@ class PaperService(BaseService):
         data: PaperCreate
     ) -> Paper:
 
-        if self.repository.get_by_year(db, data.subject_id, data.year):
-            raise AlreadyExistsException(
-                "A paper already exists for this subject and year"
-            )
+        self.validate_paper_available(db, data.subject_id, data.year)
 
         paper = Paper(
             subject_id=data.subject_id,
@@ -40,7 +39,31 @@ class PaperService(BaseService):
             status=data.status,
         )
 
-        return self.repository.create(db, paper)
+        db.add(paper)
+        db.flush()
+
+        file_ids = [data.question_file_id]
+        if data.answer_file_id:
+            file_ids.append(data.answer_file_id)
+
+        mark_temporary_uploads_committed(db, file_ids, commit=False)
+        db.commit()
+        db.refresh(paper)
+        return paper
+
+    def validate_paper_available(
+        self,
+        db: Session,
+        subject_id: int,
+        year: int,
+    ) -> None:
+        if db.get(Subject, subject_id) is None:
+            raise NotFoundException("Subject not found")
+
+        if self.repository.get_by_year(db, subject_id, year):
+            raise AlreadyExistsException(
+                "A paper already exists for this subject and year"
+            )
 
     def get_published_by_subject(
         self,

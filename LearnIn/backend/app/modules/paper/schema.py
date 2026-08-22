@@ -2,14 +2,10 @@ from pydantic import BaseModel, ConfigDict, computed_field
 
 from app.common.utils.drive_urls import drive_download_url, drive_view_url
 from app.core.enums import StatusEnum
-
-
 class PaperBase(BaseModel):
     title: str
     year: int
     duration: int | None = None
-
-
 class PaperCreate(PaperBase):
     subject_id: int
     question_file_id: str
@@ -28,7 +24,6 @@ class PaperUpdate(BaseModel):
     duration: int | None = None
     answer_file_id: str | None = None
     status: StatusEnum | None = None
-
 
 class PaperResponse(PaperBase):
 
