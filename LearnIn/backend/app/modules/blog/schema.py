@@ -30,6 +30,12 @@ class BlogUpdate(BaseModel):
     category: str | None = None
     tags: str | None = None
     published_date: date | None = None
+    thumbnail_file_id: str | None = None
+    thumbnail_mime_type: str | None = None
+    thumbnail_file_size: int | None = None
+    thumbnail_filename: str | None = None
+    meta_title: str | None = None
+    meta_description: str | None = None
     status: StatusEnum | None = None
 
 

@@ -6,6 +6,12 @@ class BaseRepository:
     def get_all(self, db):
         return db.query(self.model).all()
 
+    def get_all_paginated(self, db, page: int = 1, page_size: int = 20):
+        query = db.query(self.model).order_by(self.model.id.desc())
+        total = query.count()
+        items = query.offset((page - 1) * page_size).limit(page_size).all()
+        return items, total
+
     def get_by_id(self, db, obj_id):
         return (
             db.query(self.model)

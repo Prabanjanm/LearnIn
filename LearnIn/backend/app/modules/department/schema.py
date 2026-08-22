@@ -16,6 +16,17 @@ class DepartmentCreate(BaseModel):
     status: StatusEnum = StatusEnum.DRAFT
 
 
+class DepartmentUpdate(BaseModel):
+    name: str | None = None
+    code: str | None = None
+    display_order: int | None = None
+    icon_file_id: str | None = None
+    icon_mime_type: str | None = None
+    icon_file_size: int | None = None
+    icon_filename: str | None = None
+    status: StatusEnum | None = None
+
+
 class DepartmentResponse(BaseModel):
 
     id: int

@@ -1,7 +1,8 @@
 import json
+import logging
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
@@ -13,18 +14,22 @@ from app.common.exceptions.exceptions import (
     InvalidCredentialsException,
     NotFoundException,
 )
+from app.common.utils.file_tracking import cleanup_drive_files
 from app.core.database import get_db
+from app.core.enums import StatusEnum
 from app.core.google_drive import get_drive_client
 from app.core.security import create_access_token
+from app.core.upload_policy import UploadValidationError, validate_upload
 from app.modules.blog.model import Blog
 from app.modules.department.model import Department
 from app.modules.exam.model import Exam
 from app.modules.mock_test.model import MockTest
-from app.modules.mock_test.schema import MockTestCreate
+from app.modules.mock_test.schema import MockTestCreate, MockTestUpdate
 from app.modules.mock_test.service import mock_test_service
+from app.modules.mock_test_question.service import mock_test_question_service
 from app.modules.paper.model import Paper
 from app.modules.question.model import Question
-from app.modules.question.schema import OptionIn, QuestionCreate
+from app.modules.question.schema import OptionIn, QuestionCreate, QuestionUpdate
 from app.modules.question.service import question_service
 from app.modules.resource.model import Resource
 from app.modules.subject.model import Subject
@@ -38,23 +43,52 @@ router = APIRouter(tags=["Admin Pages"])
 
 templates = Jinja2Templates(directory="app/templates")
 
+logger = logging.getLogger(__name__)
+
+
+def _collect_uploaded_file_ids(fields: list[dict], payload: dict) -> list[str]:
+    """
+    File ids in `payload` for FIELD_UPLOAD fields, from this submission's own
+    /admin/upload call(s). On a create failure every id here is a fresh
+    orphan. On an edit failure some may be the entity's pre-existing file
+    (the widget pre-fills the hidden input with it when nothing new was
+    chosen) - `_cleanup_uploaded_files` uses `cleanup_drive_files`, which
+    checks `is_file_referenced` before deleting anything, so a still-current
+    file is never touched even though it's collected here too.
+    """
+    file_ids = []
+    for field in fields:
+        if field["type"] == FIELD_UPLOAD:
+            file_id = payload.get(field["name"])
+            if file_id:
+                file_ids.append(file_id)
+    return file_ids
+
+
+def _cleanup_uploaded_files(db: Session, file_ids: list[str]) -> None:
+    cleanup_drive_files(db, file_ids)
+
 
 def apply_upload_field(field: dict, raw_value: str | None, payload: dict) -> None:
     """
     Expands one upload field's JSON blob ({file_id, mime_type, file_size,
     filename}, produced by upload-widget.js) into the schema keys the
     entity's Create schema actually declares: `field["name"]` gets the
-    file_id, and metadata_prefix + "_mime_type" / "_file_size" / "_filename"
-    get the rest. Shared by the generic form engine and the custom
-    Question/MockTest forms so this parsing only lives in one place.
+    file_id, and metadata_prefix + "_mime_type" / "_file_size" get the rest.
+    The filename column defaults to metadata_prefix + "_filename" too, but
+    can be overridden via field["filename_field"] for the couple of models
+    (Paper.question_filename/answer_filename) whose filename column doesn't
+    follow that convention. Shared by the generic form engine and the
+    custom Question/MockTest forms so this parsing only lives in one place.
     """
     prefix = field.get("metadata_prefix", field["name"])
+    filename_key = field.get("filename_field", f"{prefix}_filename")
 
     if not raw_value:
         payload[field["name"]] = None
         payload[f"{prefix}_mime_type"] = None
         payload[f"{prefix}_file_size"] = None
-        payload[f"{prefix}_filename"] = None
+        payload[filename_key] = None
         return
 
     try:
@@ -66,7 +100,42 @@ def apply_upload_field(field: dict, raw_value: str | None, payload: dict) -> Non
     payload[field["name"]] = data.get("file_id")
     payload[f"{prefix}_mime_type"] = data.get("mime_type")
     payload[f"{prefix}_file_size"] = data.get("file_size")
-    payload[f"{prefix}_filename"] = data.get("filename")
+    payload[filename_key] = data.get("filename")
+
+
+def build_edit_values(obj, fields: list[dict]) -> tuple[dict, dict]:
+    """
+    Pre-fills an edit form from an existing row: plain fields become
+    values[name] (string/number, enums unwrapped to their .value), and
+    FIELD_UPLOAD fields become upload_values[name] = {file_id, mime_type,
+    file_size, filename} so render_upload_field can show "current file"
+    and the widget's hidden input can default to it (kept as-is unless the
+    admin chooses a new file).
+    """
+    values: dict = {}
+    upload_values: dict = {}
+
+    for field in fields:
+        if field["type"] == FIELD_UPLOAD:
+            prefix = field.get("metadata_prefix", field["name"])
+            filename_key = field.get("filename_field", f"{prefix}_filename")
+            file_id = getattr(obj, field["name"], None)
+            if file_id:
+                upload_values[field["name"]] = {
+                    "file_id": file_id,
+                    "mime_type": getattr(obj, f"{prefix}_mime_type", None),
+                    "file_size": getattr(obj, f"{prefix}_file_size", None),
+                    "filename": getattr(obj, filename_key, None),
+                }
+        else:
+            value = getattr(obj, field["name"], None)
+            if value is not None:
+                # Omit (rather than store None) so a template's
+                # values.get(name, default) still falls back correctly -
+                # a stored None would print as the literal text "None".
+                values[field["name"]] = getattr(value, "value", value)
+
+    return values, upload_values
 
 
 # ---------------------------------------------------------------- auth ----
@@ -353,6 +422,19 @@ async def question_create(
         explanation_image_payload,
     )
 
+    # Collect every file_id uploaded for this submission (question image,
+    # explanation image, and each option's image) so a failed create can
+    # clean them all up from Drive instead of leaving orphans.
+    question_file_ids = [
+        fid
+        for fid in (
+            image_payload.get("image_file_id"),
+            explanation_image_payload.get("explanation_image_file_id"),
+            *(opt.image_file_id for opt in options),
+        )
+        if fid
+    ]
+
     try:
         data = QuestionCreate(
             paper_id=int(form_data.get("paper_id")),
@@ -376,17 +458,25 @@ async def question_create(
             status=form_data.get("status") or "DRAFT",
         )
         question_service.create_question(db, data)
-    except IntegrityError as e:
+    except IntegrityError:
         db.rollback()
-
-        print("========== IntegrityError ==========")
-        print(e)
-        print("---------- ORIGINAL ERROR ----------")
-        print(e.orig)
-
-        raise
+        _cleanup_uploaded_files(db, question_file_ids)
+        logger.exception("IntegrityError creating question for paper_id=%s", form_data.get("paper_id"))
+        return templates.TemplateResponse(
+            request=request,
+            name="admin/form.html",
+            context={
+                "admin": admin,
+                "entity_key": "questions",
+                "label": "Questions",
+                "fields": QUESTION_FORM_FIELDS,
+                "error": "This conflicts with an existing record (duplicate value in a unique field).",
+            },
+            status_code=400,
+        )
 
     except (ValueError, NotFoundException) as exc:
+        _cleanup_uploaded_files(db, question_file_ids)
         return templates.TemplateResponse(
             request=request,
             name="admin/form.html",
@@ -401,6 +491,223 @@ async def question_create(
         )
 
     return RedirectResponse("/admin/manage/questions?success=1", status_code=303)
+
+
+def _question_edit_context(question: Question) -> tuple[dict, dict]:
+    values, upload_values = build_edit_values(question, QUESTION_FORM_FIELDS)
+
+    options_by_label = {option.label: option for option in question.options}
+    for label in ("A", "B", "C", "D"):
+        option = options_by_label.get(label)
+        if option is None:
+            continue
+
+        values[f"option_{label.lower()}_text"] = option.option_text
+
+        if option.image_file_id:
+            upload_values[f"option_{label.lower()}_image_file_id"] = {
+                "file_id": option.image_file_id,
+                "mime_type": option.image_mime_type,
+                "file_size": option.image_file_size,
+                "filename": option.image_filename,
+            }
+
+    return values, upload_values
+
+
+def _edit_template_name(embed: bool) -> str:
+    """
+    The drawer's iframe renders a bare, sidebar-free page (form_embed.html);
+    a direct visit to the edit URL still gets the full admin layout
+    (form.html). Both include the same admin/_form_fields.html partial.
+    """
+    return "admin/form_embed.html" if embed else "admin/form.html"
+
+
+def _edit_success_response(request: Request, entity_key: str, embed: bool):
+    """
+    A normal redirect would navigate the drawer's iframe to the full
+    sidebar layout, which looks broken inside a slide-over panel - so an
+    embedded save returns a tiny page that tells the parent window (via
+    postMessage) to close the drawer and refresh the list instead.
+    """
+    if embed:
+        return templates.TemplateResponse(request=request, name="admin/form_saved.html", context={})
+    return RedirectResponse(f"/admin/manage/{entity_key}?success=1", status_code=303)
+
+
+@router.get("/admin/manage/questions/{question_id}/view")
+def question_view(
+    question_id: int,
+    request: Request,
+    admin: Admin | None = Depends(get_optional_admin),
+    db: Session = Depends(get_db),
+):
+    if admin is None:
+        return RedirectResponse("/admin/login", status_code=303)
+
+    question = question_service.get_by_id(db, question_id)
+    if question is None:
+        return RedirectResponse("/admin/manage/questions", status_code=303)
+
+    values, upload_values = _question_edit_context(question)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin/detail_embed.html",
+        context={
+            "label": "Question",
+            "fields": QUESTION_FORM_FIELDS,
+            "values": values,
+            "upload_values": upload_values,
+        },
+    )
+
+
+@router.get("/admin/manage/questions/{question_id}/edit")
+def question_edit_form(
+    question_id: int,
+    request: Request,
+    embed: bool = False,
+    admin: Admin | None = Depends(get_optional_admin),
+    db: Session = Depends(get_db),
+):
+    if admin is None:
+        return RedirectResponse("/admin/login", status_code=303)
+
+    question = question_service.get_by_id(db, question_id)
+    if question is None:
+        return RedirectResponse("/admin/manage/questions", status_code=303)
+
+    values, upload_values = _question_edit_context(question)
+
+    return templates.TemplateResponse(
+        request=request,
+        name=_edit_template_name(embed),
+        context={
+            "admin": admin,
+            "entity_key": "questions",
+            "label": "Questions",
+            "fields": QUESTION_FORM_FIELDS,
+            "error": None,
+            "is_edit": True,
+            "embed": embed,
+            "values": values,
+            "upload_values": upload_values,
+            "submit_url": f"/admin/manage/questions/{question_id}/edit",
+        },
+    )
+
+
+@router.post("/admin/manage/questions/{question_id}/edit")
+async def question_edit_submit(
+    question_id: int,
+    request: Request,
+    admin: Admin | None = Depends(get_optional_admin),
+    db: Session = Depends(get_db),
+):
+    if admin is None:
+        return RedirectResponse("/admin/login", status_code=303)
+
+    question = question_service.get_by_id(db, question_id)
+    if question is None:
+        return RedirectResponse("/admin/manage/questions", status_code=303)
+
+    form_data = await request.form()
+
+    options = []
+    for label in ("A", "B", "C", "D"):
+        text = form_data.get(f"option_{label.lower()}_text")
+        if not text:
+            continue
+
+        option_image_field = _question_form_field(f"option_{label.lower()}_image_file_id")
+        option_image_payload: dict = {}
+        apply_upload_field(option_image_field, form_data.get(option_image_field["name"]), option_image_payload)
+
+        prefix = f"option_{label.lower()}_image"
+        options.append(OptionIn(
+            label=label,
+            option_text=text,
+            image_file_id=option_image_payload.get(f"{prefix}_file_id"),
+            image_mime_type=option_image_payload.get(f"{prefix}_mime_type"),
+            image_file_size=option_image_payload.get(f"{prefix}_file_size"),
+            image_filename=option_image_payload.get(f"{prefix}_filename"),
+        ))
+
+    image_payload: dict = {}
+    apply_upload_field(_question_form_field("image_file_id"), form_data.get("image_file_id"), image_payload)
+
+    explanation_image_payload: dict = {}
+    apply_upload_field(
+        _question_form_field("explanation_image_file_id"),
+        form_data.get("explanation_image_file_id"),
+        explanation_image_payload,
+    )
+
+    question_file_ids = [
+        fid
+        for fid in (
+            image_payload.get("image_file_id"),
+            explanation_image_payload.get("explanation_image_file_id"),
+            *(opt.image_file_id for opt in options),
+        )
+        if fid
+    ]
+
+    embed = form_data.get("embed") == "1"
+
+    def _render_error(message: str, status_code: int = 400):
+        values, upload_values = _question_edit_context(question)
+        return templates.TemplateResponse(
+            request=request,
+            name=_edit_template_name(embed),
+            context={
+                "admin": admin,
+                "entity_key": "questions",
+                "label": "Questions",
+                "fields": QUESTION_FORM_FIELDS,
+                "error": message,
+                "is_edit": True,
+                "embed": embed,
+                "values": values,
+                "upload_values": upload_values,
+                "submit_url": f"/admin/manage/questions/{question_id}/edit",
+            },
+            status_code=status_code,
+        )
+
+    try:
+        data = QuestionUpdate(
+            question_number=int(form_data.get("question_number")),
+            question_type=form_data.get("question_type"),
+            difficulty=form_data.get("difficulty"),
+            question_text=form_data.get("question_text"),
+            image_file_id=image_payload.get("image_file_id"),
+            image_mime_type=image_payload.get("image_mime_type"),
+            image_file_size=image_payload.get("image_file_size"),
+            image_filename=image_payload.get("image_filename"),
+            marks=float(form_data.get("marks") or 1),
+            negative_marks=float(form_data.get("negative_marks") or 0),
+            correct_answer=form_data.get("correct_answer"),
+            explanation=form_data.get("explanation") or None,
+            explanation_image_file_id=explanation_image_payload.get("explanation_image_file_id"),
+            explanation_image_mime_type=explanation_image_payload.get("explanation_image_mime_type"),
+            explanation_image_file_size=explanation_image_payload.get("explanation_image_file_size"),
+            explanation_image_filename=explanation_image_payload.get("explanation_image_filename"),
+            options=options,
+            status=form_data.get("status") or "DRAFT",
+        )
+        question_service.update_question(db, question, data)
+    except IntegrityError as e:
+        db.rollback()
+        _cleanup_uploaded_files(db, question_file_ids)
+        return _render_error("This conflicts with an existing record (duplicate value in a unique field).")
+    except (ValueError, NotFoundException) as exc:
+        _cleanup_uploaded_files(db, question_file_ids)
+        return _render_error(f"Invalid input: {exc}")
+
+    return _edit_success_response(request, "questions", embed)
 
 
 # ------------------------------------------------- custom: mock tests ----
@@ -490,12 +797,143 @@ async def mock_test_create(
     return RedirectResponse("/admin/manage/mock_tests?success=1", status_code=303)
 
 
+@router.get("/admin/manage/mock_tests/{mock_test_id}/view")
+def mock_test_view(
+    mock_test_id: int,
+    request: Request,
+    admin: Admin | None = Depends(get_optional_admin),
+    db: Session = Depends(get_db),
+):
+    if admin is None:
+        return RedirectResponse("/admin/login", status_code=303)
+
+    mock_test = mock_test_service.get_by_id(db, mock_test_id)
+    if mock_test is None:
+        return RedirectResponse("/admin/manage/mock_tests", status_code=303)
+
+    values, _ = build_edit_values(mock_test, MOCK_TEST_FORM_FIELDS)
+    links = mock_test_question_service.get_by_mock_test(db, mock_test_id)
+    values["question_ids"] = ", ".join(str(link.question_id) for link in links)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin/detail_embed.html",
+        context={
+            "label": "Mock Test",
+            "fields": MOCK_TEST_FORM_FIELDS,
+            "values": values,
+            "upload_values": {},
+        },
+    )
+
+
+@router.get("/admin/manage/mock_tests/{mock_test_id}/edit")
+def mock_test_edit_form(
+    mock_test_id: int,
+    request: Request,
+    embed: bool = False,
+    admin: Admin | None = Depends(get_optional_admin),
+    db: Session = Depends(get_db),
+):
+    if admin is None:
+        return RedirectResponse("/admin/login", status_code=303)
+
+    mock_test = mock_test_service.get_by_id(db, mock_test_id)
+    if mock_test is None:
+        return RedirectResponse("/admin/manage/mock_tests", status_code=303)
+
+    values, _ = build_edit_values(mock_test, MOCK_TEST_FORM_FIELDS)
+    links = mock_test_question_service.get_by_mock_test(db, mock_test_id)
+    values["question_ids"] = ",".join(str(link.question_id) for link in links)
+
+    return templates.TemplateResponse(
+        request=request,
+        name=_edit_template_name(embed),
+        context={
+            "admin": admin,
+            "entity_key": "mock_tests",
+            "label": "Mock Tests",
+            "fields": MOCK_TEST_FORM_FIELDS,
+            "error": None,
+            "is_edit": True,
+            "embed": embed,
+            "values": values,
+            "submit_url": f"/admin/manage/mock_tests/{mock_test_id}/edit",
+        },
+    )
+
+
+@router.post("/admin/manage/mock_tests/{mock_test_id}/edit")
+async def mock_test_edit_submit(
+    mock_test_id: int,
+    request: Request,
+    admin: Admin | None = Depends(get_optional_admin),
+    db: Session = Depends(get_db),
+):
+    if admin is None:
+        return RedirectResponse("/admin/login", status_code=303)
+
+    mock_test = mock_test_service.get_by_id(db, mock_test_id)
+    if mock_test is None:
+        return RedirectResponse("/admin/manage/mock_tests", status_code=303)
+
+    form_data = await request.form()
+    embed = form_data.get("embed") == "1"
+
+    def _render_error(message: str, status_code: int = 400):
+        values, _ = build_edit_values(mock_test, MOCK_TEST_FORM_FIELDS)
+        values["question_ids"] = form_data.get("question_ids", "")
+        return templates.TemplateResponse(
+            request=request,
+            name=_edit_template_name(embed),
+            context={
+                "admin": admin,
+                "entity_key": "mock_tests",
+                "label": "Mock Tests",
+                "fields": MOCK_TEST_FORM_FIELDS,
+                "error": message,
+                "is_edit": True,
+                "embed": embed,
+                "values": values,
+                "submit_url": f"/admin/manage/mock_tests/{mock_test_id}/edit",
+            },
+            status_code=status_code,
+        )
+
+    try:
+        data = MockTestUpdate(
+            title=form_data.get("title"),
+            description=form_data.get("description") or None,
+            duration=int(form_data.get("duration") or 180),
+            total_marks=int(form_data.get("total_marks") or 100),
+            status=form_data.get("status") or "DRAFT",
+        )
+        mock_test_service.update_mock_test(db, mock_test, data)
+
+        raw_ids = form_data.get("question_ids", "")
+        question_ids = [int(part.strip()) for part in raw_ids.split(",") if part.strip()]
+        mock_test_question_service.set_questions(db, mock_test_id, question_ids)
+    except IntegrityError:
+        db.rollback()
+        return _render_error("This conflicts with an existing record.")
+    except ValueError as exc:
+        return _render_error(f"Invalid input: {exc}")
+
+    return _edit_success_response(request, "mock_tests", embed)
+
+
 # ------------------------------------------------------ generic CRUD -----
+
+ADMIN_LIST_PAGE_SIZE_OPTIONS = [10, 20, 50, 100]
+ADMIN_LIST_DEFAULT_PAGE_SIZE = 20
+
 
 @router.get("/admin/manage/{entity_key}")
 def entity_list(
     entity_key: str,
     request: Request,
+    page: int = 1,
+    page_size: int = ADMIN_LIST_DEFAULT_PAGE_SIZE,
     admin: Admin | None = Depends(get_optional_admin),
     db: Session = Depends(get_db),
 ):
@@ -506,7 +944,15 @@ def entity_list(
     if config is None:
         return RedirectResponse("/admin", status_code=303)
 
-    rows = config["service"].get_all(db)
+    page = max(page, 1)
+    page_size = page_size if page_size in ADMIN_LIST_PAGE_SIZE_OPTIONS else ADMIN_LIST_DEFAULT_PAGE_SIZE
+
+    rows, total = config["service"].get_all_paginated(db, page, page_size)
+    total_pages = max((total + page_size - 1) // page_size, 1)
+    page = min(page, total_pages)
+
+    range_start = 0 if total == 0 else (page - 1) * page_size + 1
+    range_end = min(page * page_size, total)
 
     return templates.TemplateResponse(
         request=request,
@@ -517,6 +963,13 @@ def entity_list(
             "label": config["label"],
             "columns": config["list_columns"],
             "rows": rows,
+            "page": page,
+            "page_size": page_size,
+            "page_size_options": ADMIN_LIST_PAGE_SIZE_OPTIONS,
+            "total": total,
+            "total_pages": total_pages,
+            "range_start": range_start,
+            "range_end": range_end,
         },
     )
 
@@ -577,6 +1030,7 @@ async def entity_create(
         method = getattr(config["service"], config["create_method"])
         method(db, schema_instance)
     except (AlreadyExistsException, NotFoundException, GoogleDriveConfigError) as exc:
+        _cleanup_uploaded_files(db, _collect_uploaded_file_ids(config["form_fields"], payload))
         return templates.TemplateResponse(
             request=request,
             name="admin/form.html",
@@ -591,6 +1045,7 @@ async def entity_create(
         )
     except IntegrityError:
         db.rollback()
+        _cleanup_uploaded_files(db, _collect_uploaded_file_ids(config["form_fields"], payload))
         return templates.TemplateResponse(
             request=request,
             name="admin/form.html",
@@ -604,6 +1059,7 @@ async def entity_create(
             status_code=400,
         )
     except ValueError as exc:
+        _cleanup_uploaded_files(db, _collect_uploaded_file_ids(config["form_fields"], payload))
         return templates.TemplateResponse(
             request=request,
             name="admin/form.html",
@@ -616,8 +1072,184 @@ async def entity_create(
             },
             status_code=400,
         )
+    except Exception:
+        # Safety net: any unexpected error (a DB error type other than
+        # IntegrityError, a template/data edge case, etc.) must still show
+        # the admin a normal in-app error instead of leaking a raw 500 -
+        # the specific cause is logged server-side for follow-up.
+        db.rollback()
+        _cleanup_uploaded_files(db, _collect_uploaded_file_ids(config["form_fields"], payload))
+        logger.exception("Unexpected error creating %s", entity_key)
+        return templates.TemplateResponse(
+            request=request,
+            name="admin/form.html",
+            context={
+                "admin": admin,
+                "entity_key": entity_key,
+                "label": config["label"],
+                "fields": config["form_fields"],
+                "error": "Something went wrong while saving. Please try again.",
+            },
+            status_code=500,
+        )
 
     return RedirectResponse(f"/admin/manage/{entity_key}?success=1", status_code=303)
+
+
+@router.get("/admin/manage/{entity_key}/{obj_id}/view")
+def entity_view(
+    entity_key: str,
+    obj_id: int,
+    request: Request,
+    admin: Admin | None = Depends(get_optional_admin),
+    db: Session = Depends(get_db),
+):
+    if admin is None:
+        return RedirectResponse("/admin/login", status_code=303)
+
+    config = ENTITY_REGISTRY.get(entity_key)
+    if config is None:
+        return RedirectResponse("/admin", status_code=303)
+
+    obj = config["service"].get_by_id(db, obj_id)
+    if obj is None:
+        return RedirectResponse(f"/admin/manage/{entity_key}", status_code=303)
+
+    fields = config["form_fields"] or [{"name": c, "label": c, "type": "text"} for c in config["list_columns"]]
+    values, upload_values = build_edit_values(obj, fields)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin/detail_embed.html",
+        context={
+            "label": config["label"][:-1] if config["label"].endswith("s") else config["label"],
+            "fields": fields,
+            "values": values,
+            "upload_values": upload_values,
+        },
+    )
+
+
+@router.get("/admin/manage/{entity_key}/{obj_id}/edit")
+def entity_edit_form(
+    entity_key: str,
+    obj_id: int,
+    request: Request,
+    embed: bool = False,
+    admin: Admin | None = Depends(get_optional_admin),
+    db: Session = Depends(get_db),
+):
+    if admin is None:
+        return RedirectResponse("/admin/login", status_code=303)
+
+    config = ENTITY_REGISTRY.get(entity_key)
+    if config is None or not config.get("update_schema"):
+        return RedirectResponse("/admin", status_code=303)
+
+    obj = config["service"].get_by_id(db, obj_id)
+    if obj is None:
+        return RedirectResponse(f"/admin/manage/{entity_key}", status_code=303)
+
+    values, upload_values = build_edit_values(obj, config["form_fields"])
+
+    return templates.TemplateResponse(
+        request=request,
+        name=_edit_template_name(embed),
+        context={
+            "admin": admin,
+            "entity_key": entity_key,
+            "label": config["label"],
+            "fields": config["form_fields"],
+            "error": None,
+            "is_edit": True,
+            "embed": embed,
+            "values": values,
+            "upload_values": upload_values,
+            "submit_url": f"/admin/manage/{entity_key}/{obj_id}/edit",
+        },
+    )
+
+
+@router.post("/admin/manage/{entity_key}/{obj_id}/edit")
+async def entity_edit_submit(
+    entity_key: str,
+    obj_id: int,
+    request: Request,
+    admin: Admin | None = Depends(get_optional_admin),
+    db: Session = Depends(get_db),
+):
+    if admin is None:
+        return RedirectResponse("/admin/login", status_code=303)
+
+    config = ENTITY_REGISTRY.get(entity_key)
+    if config is None or not config.get("update_schema"):
+        return RedirectResponse("/admin", status_code=303)
+
+    obj = config["service"].get_by_id(db, obj_id)
+    if obj is None:
+        return RedirectResponse(f"/admin/manage/{entity_key}", status_code=303)
+
+    form_data = await request.form()
+    embed = form_data.get("embed") == "1"
+    payload = {}
+
+    for field in config["form_fields"]:
+        raw_value = form_data.get(field["name"])
+
+        if field["type"] == FIELD_UPLOAD:
+            # Only touch the file if the widget actually sent something
+            # (either a fresh upload or the pre-filled current-file JSON).
+            # An empty value here means the field was never rendered with a
+            # current file and nothing new was chosen - leave it unset so
+            # the partial Update schema doesn't try to clear it.
+            if raw_value:
+                apply_upload_field(field, raw_value, payload)
+        else:
+            value = coerce_form_value(field, raw_value)
+            if value is not None:
+                payload[field["name"]] = value
+
+    def _render_error(message: str, status_code: int = 400):
+        values, upload_values = build_edit_values(obj, config["form_fields"])
+        return templates.TemplateResponse(
+            request=request,
+            name=_edit_template_name(embed),
+            context={
+                "admin": admin,
+                "entity_key": entity_key,
+                "label": config["label"],
+                "fields": config["form_fields"],
+                "error": message,
+                "is_edit": True,
+                "embed": embed,
+                "values": values,
+                "upload_values": upload_values,
+                "submit_url": f"/admin/manage/{entity_key}/{obj_id}/edit",
+            },
+            status_code=status_code,
+        )
+
+    try:
+        data = config["update_schema"](**payload)
+        method = getattr(config["service"], config["update_method"])
+        method(db, obj, data)
+    except (AlreadyExistsException, NotFoundException, GoogleDriveConfigError) as exc:
+        _cleanup_uploaded_files(db, _collect_uploaded_file_ids(config["form_fields"], payload))
+        return _render_error(str(exc))
+    except IntegrityError:
+        db.rollback()
+        _cleanup_uploaded_files(db, _collect_uploaded_file_ids(config["form_fields"], payload))
+        return _render_error("This conflicts with an existing record (duplicate value in a unique field).")
+    except ValueError as exc:
+        _cleanup_uploaded_files(db, _collect_uploaded_file_ids(config["form_fields"], payload))
+        return _render_error(f"Invalid input: {exc}")
+    except Exception:
+        db.rollback()
+        _cleanup_uploaded_files(db, _collect_uploaded_file_ids(config["form_fields"], payload))
+        logger.exception("Unexpected error updating %s %s", entity_key, obj_id)
+        return _render_error("Something went wrong while saving. Please try again.", status_code=500)
+
+    return _edit_success_response(request, entity_key, embed)
 
 
 @router.post("/admin/manage/{entity_key}/bulk")
@@ -638,18 +1270,35 @@ async def entity_bulk_action(
     action = form_data.get("action")
     ids = [int(raw_id) for raw_id in form_data.getlist("ids") if raw_id]
 
+    failed = 0
     for obj_id in ids:
-        obj = config["service"].get_by_id(db, obj_id)
-        if obj is None:
-            continue
+        try:
+            obj = config["service"].get_by_id(db, obj_id)
+            if obj is None:
+                continue
 
-        if action == "delete":
-            config["service"].delete(db, obj)
-        elif action in ("DRAFT", "PUBLISHED", "ARCHIVED") and hasattr(obj, "status"):
-            obj.status = action
-            config["service"].update(db, obj)
+            if action == "delete":
+                delete_method = getattr(config["service"], f"delete_{entity_key.rstrip('s')}", None)
+                if delete_method is not None:
+                    # Use the entity's own delete_<entity> when it exists -
+                    # it also cleans up any Drive files the row owns, unlike
+                    # the generic BaseService.delete which just removes the row.
+                    delete_method(db, obj)
+                else:
+                    config["service"].delete(db, obj)
+            elif action in ("DRAFT", "PUBLISHED", "ARCHIVED") and hasattr(obj, "status"):
+                obj.status = StatusEnum(action)
+                config["service"].update(db, obj)
+        except Exception:
+            db.rollback()
+            logger.exception("Bulk action %s failed for %s id=%s", action, entity_key, obj_id)
+            failed += 1
 
-    return RedirectResponse(f"/admin/manage/{entity_key}?success=1", status_code=303)
+    redirect_url = f"/admin/manage/{entity_key}?success=1"
+    if failed:
+        redirect_url = f"/admin/manage/{entity_key}?bulk_failed={failed}"
+
+    return RedirectResponse(redirect_url, status_code=303)
 
 
 # ------------------------------------------------------- file uploads ----
@@ -661,17 +1310,28 @@ async def upload_file(
     _admin: Admin = Depends(get_current_admin),
 ):
     content = await file.read()
+    filename = file.filename or "upload"
+    mime_type = file.content_type or "application/octet-stream"
+
+    try:
+        validate_upload(category, filename, mime_type, len(content))
+    except UploadValidationError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
     client = get_drive_client()
 
     try:
         result = client.upload_file(
             content,
-            filename=file.filename or "upload",
-            mime_type=file.content_type or "application/octet-stream",
+            filename=filename,
+            mime_type=mime_type,
             category=category,
         )
     except GoogleDriveConfigError as exc:
-        return {"error": str(exc)}
+        return JSONResponse({"error": str(exc)}, status_code=503)
+    except Exception:
+        logger.exception("Google Drive upload failed for category=%s filename=%s", category, filename)
+        return JSONResponse({"error": "File upload failed. Please try again."}, status_code=502)
 
     return {
         "file_id": result.file_id,

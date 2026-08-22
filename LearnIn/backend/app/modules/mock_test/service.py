@@ -12,6 +12,7 @@ from .schema import (
     MockTestCreate,
     MockTestResult,
     MockTestSubmission,
+    MockTestUpdate,
     QuestionResult,
 )
 
@@ -125,6 +126,29 @@ class MockTestService(BaseService):
             unanswered_count=unanswered_count,
             results=results,
         )
+
+    def update_mock_test(
+        self,
+        db: Session,
+        mock_test: MockTest,
+        data: MockTestUpdate
+    ) -> MockTest:
+
+        updates = data.model_dump(exclude_unset=True)
+
+        for field, value in updates.items():
+            setattr(mock_test, field, value)
+
+        return self.repository.update(db, mock_test)
+
+    def delete_mock_test(
+        self,
+        db: Session,
+        mock_test: MockTest
+    ) -> None:
+        # No Drive files are owned directly by MockTest/MockTestQuestion rows,
+        # so this is a plain cascade delete - nothing to clean up in Drive.
+        self.repository.delete(db, mock_test)
 
 
 mock_test_service = MockTestService()

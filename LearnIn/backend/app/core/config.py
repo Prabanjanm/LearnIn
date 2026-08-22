@@ -43,5 +43,9 @@ class Settings:
     GOOGLE_DRIVE_QUESTION_IMAGES_FOLDER_ID = os.getenv("GOOGLE_DRIVE_QUESTION_IMAGES_FOLDER_ID")
     GOOGLE_DRIVE_THUMBNAILS_FOLDER_ID = os.getenv("GOOGLE_DRIVE_THUMBNAILS_FOLDER_ID")
 
+    # Admin upload size limits, in MB, converted to bytes for upload_policy.py.
+    MAX_IMAGE_UPLOAD_BYTES = int(os.getenv("MAX_IMAGE_UPLOAD_MB", "5")) * 1024 * 1024
+    MAX_PDF_UPLOAD_BYTES = int(os.getenv("MAX_PDF_UPLOAD_MB", "20")) * 1024 * 1024
+
 
 settings = Settings()

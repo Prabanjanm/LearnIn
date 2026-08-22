@@ -1,0 +1,18 @@
+{#
+    Returned instead of a redirect when an embed=1 form (drawer) saves
+    successfully - a normal 303 redirect would navigate the drawer's iframe
+    to the full sidebar layout, which looks broken inside a slide-over panel.
+    This tiny page just tells the parent window to close the drawer and
+    refresh the list behind it.
+#}
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Saved</title></head>
+<body>
+<script>
+    if (window.parent) {
+        window.parent.postMessage({ type: "admin-drawer-saved" }, window.location.origin);
+    }
+</script>
+</body>
+</html>

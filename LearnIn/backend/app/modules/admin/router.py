@@ -1,7 +1,12 @@
-from fastapi import APIRouter, Depends
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
+from app.common.exceptions.exceptions import GoogleDriveConfigError
 from app.core.database import get_db
+from app.core.google_drive import get_drive_client
 
 from .dependencies import get_current_admin
 from .model import Admin
@@ -12,6 +17,8 @@ router = APIRouter(
     prefix="/api/admin",
     tags=["Admin"]
 )
+
+logger = logging.getLogger(__name__)
 
 
 @router.post("/login", response_model=Token)
@@ -27,3 +34,47 @@ def get_me(
     current_admin: Admin = Depends(get_current_admin)
 ):
     return current_admin
+
+
+@router.get("/files/{file_id}/download")
+def download_file(
+    file_id: str,
+    filename: str | None = None,
+    mime_type: str | None = None,
+    _admin: Admin = Depends(get_current_admin),
+):
+    """
+    Proxies a Drive file's bytes through our own backend (rather than
+    linking straight to Drive) so downloads always go through admin auth,
+    work the same regardless of the file's Drive sharing permission, and
+    give an attachment Content-Disposition instead of Drive's viewer page.
+
+    filename/mime_type are optional query params: every caller in this
+    codebase already knows them (they're the same *_filename/*_mime_type
+    columns stored alongside the file id), so passing them skips an extra
+    serial get_file_metadata round trip to Drive before the actual content
+    fetch - the single biggest thing making a "click to download" feel slow.
+    A caller that doesn't have them yet still works via the metadata fallback.
+    """
+    client = get_drive_client()
+
+    try:
+        if not filename or not mime_type:
+            metadata = client.get_file_metadata(file_id)
+            filename = filename or metadata.get("name") or file_id
+            mime_type = mime_type or metadata.get("mimeType") or "application/octet-stream"
+
+        content = client.download_file(file_id)
+    except GoogleDriveConfigError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    except Exception:
+        logger.exception("Failed to download Drive file %s", file_id)
+        raise HTTPException(status_code=502, detail="Failed to download file from Drive")
+
+    safe_filename = filename.replace('"', "")
+
+    return Response(
+        content=content,
+        media_type=mime_type,
+        headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
+    )

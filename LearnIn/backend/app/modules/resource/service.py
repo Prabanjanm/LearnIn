@@ -2,10 +2,11 @@ from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import NotFoundException
 from app.common.services.base_service import BaseService
+from app.common.utils.file_tracking import cleanup_drive_file
 
 from .model import Resource
 from .repository import ResourceRepository
-from .schema import ResourceCreate
+from .schema import ResourceCreate, ResourceUpdate
 
 
 class ResourceService(BaseService):
@@ -52,6 +53,37 @@ class ResourceService(BaseService):
             raise NotFoundException("Resource not found")
 
         return resource
+
+    def update_resource(
+        self,
+        db: Session,
+        resource: Resource,
+        data: ResourceUpdate
+    ) -> Resource:
+
+        updates = data.model_dump(exclude_unset=True)
+
+        old_file_id = resource.google_drive_file_id
+        replacing_file = "google_drive_file_id" in updates and updates["google_drive_file_id"] != old_file_id
+
+        for field, value in updates.items():
+            setattr(resource, field, value)
+
+        updated = self.repository.update(db, resource)
+
+        if replacing_file:
+            cleanup_drive_file(db, old_file_id)
+
+        return updated
+
+    def delete_resource(
+        self,
+        db: Session,
+        resource: Resource
+    ) -> None:
+        file_id = resource.google_drive_file_id
+        self.repository.delete(db, resource)
+        cleanup_drive_file(db, file_id)
 
 
 resource_service = ResourceService()

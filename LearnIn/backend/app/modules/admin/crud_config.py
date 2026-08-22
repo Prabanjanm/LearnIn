@@ -13,21 +13,21 @@ file_size, filename} as JSON in one form field; `metadata_prefix` tells
 admin/pages.py which model columns to expand that JSON into
 (e.g. prefix "icon" -> icon_file_id/icon_mime_type/icon_file_size/icon_filename).
 """
-from app.modules.blog.schema import BlogCreate
+from app.modules.blog.schema import BlogCreate, BlogUpdate
 from app.modules.blog.service import blog_service
-from app.modules.department.schema import DepartmentCreate
+from app.modules.department.schema import DepartmentCreate, DepartmentUpdate
 from app.modules.department.service import department_service
-from app.modules.exam.schema import ExamCreate
+from app.modules.exam.schema import ExamCreate, ExamUpdate
 from app.modules.exam.service import exam_service
 from app.modules.mock_test.service import mock_test_service
-from app.modules.option.schema import OptionCreate
+from app.modules.option.schema import OptionCreate, OptionUpdate
 from app.modules.option.service import option_service
-from app.modules.paper.schema import PaperCreate
+from app.modules.paper.schema import PaperCreate, PaperUpdate
 from app.modules.paper.service import paper_service
 from app.modules.question.service import question_service
-from app.modules.resource.schema import ResourceCreate
+from app.modules.resource.schema import ResourceCreate, ResourceUpdate
 from app.modules.resource.service import resource_service
-from app.modules.subject.schema import SubjectCreate
+from app.modules.subject.schema import SubjectCreate, SubjectUpdate
 from app.modules.subject.service import subject_service
 
 FIELD_TEXT = "text"
@@ -53,6 +53,8 @@ ENTITY_REGISTRY = {
         "service": exam_service,
         "create_method": "create_exam",
         "schema": ExamCreate,
+        "update_schema": ExamUpdate,
+        "update_method": "update_exam",
         "list_columns": ["id", "name", "code", "slug", "status", "display_order"],
         "form_fields": [
             {"name": "name", "label": "Name", "type": FIELD_TEXT, "required": True},
@@ -76,6 +78,8 @@ ENTITY_REGISTRY = {
         "service": department_service,
         "create_method": "create_department",
         "schema": DepartmentCreate,
+        "update_schema": DepartmentUpdate,
+        "update_method": "update_department",
         "list_columns": ["id", "exam_id", "name", "code", "slug", "status", "display_order"],
         "form_fields": [
             {"name": "exam_id", "label": "Exam ID", "type": FIELD_NUMBER, "required": True},
@@ -99,6 +103,8 @@ ENTITY_REGISTRY = {
         "service": subject_service,
         "create_method": "create_subject",
         "schema": SubjectCreate,
+        "update_schema": SubjectUpdate,
+        "update_method": "update_subject",
         "list_columns": ["id", "department_id", "name", "slug", "status", "display_order"],
         "form_fields": [
             {"name": "department_id", "label": "Department ID", "type": FIELD_NUMBER, "required": True},
@@ -121,6 +127,8 @@ ENTITY_REGISTRY = {
         "service": paper_service,
         "create_method": "create_paper",
         "schema": PaperCreate,
+        "update_schema": PaperUpdate,
+        "update_method": "update_paper",
         "list_columns": ["id", "subject_id", "title", "year", "status", "total_questions"],
         "form_fields": [
             {"name": "subject_id", "label": "Subject ID", "type": FIELD_NUMBER, "required": True},
@@ -133,6 +141,9 @@ ENTITY_REGISTRY = {
                 "category": "papers",
                 "accept": ".pdf",
                 "metadata_prefix": "question_file",
+                # Paper.question_filename (not question_file_filename) -
+                # the one column that breaks the {prefix}_filename convention.
+                "filename_field": "question_filename",
                 "required": True,
             },
             {
@@ -142,6 +153,7 @@ ENTITY_REGISTRY = {
                 "category": "papers",
                 "accept": ".pdf",
                 "metadata_prefix": "answer_file",
+                "filename_field": "answer_filename",
                 "required": False,
             },
             {"name": "duration", "label": "Duration (minutes)", "type": FIELD_NUMBER, "required": False},
@@ -153,6 +165,8 @@ ENTITY_REGISTRY = {
         "service": resource_service,
         "create_method": "create_resource",
         "schema": ResourceCreate,
+        "update_schema": ResourceUpdate,
+        "update_method": "update_resource",
         "list_columns": ["id", "subject_id", "title", "resource_type", "status"],
         "form_fields": [
             {"name": "subject_id", "label": "Subject ID", "type": FIELD_NUMBER, "required": True},
@@ -182,6 +196,8 @@ ENTITY_REGISTRY = {
         "service": option_service,
         "create_method": "create_option",
         "schema": OptionCreate,
+        "update_schema": OptionUpdate,
+        "update_method": "update_option",
         "list_columns": ["id", "question_id", "label", "option_text"],
         "form_fields": [
             {"name": "question_id", "label": "Question ID", "type": FIELD_NUMBER, "required": True},
@@ -199,20 +215,24 @@ ENTITY_REGISTRY = {
         ],
     },
     "questions": {
-        # Create form is custom (nested options) - see admin/pages.py.
+        # Create/edit forms are custom (nested options) - see admin/pages.py.
         "label": "Questions",
         "service": question_service,
         "create_method": None,
         "schema": None,
+        "update_schema": None,
+        "update_method": None,
         "list_columns": ["id", "paper_id", "question_number", "question_type", "difficulty", "status"],
         "form_fields": [],
     },
     "mock_tests": {
-        # Create form is custom (question_ids list) - see admin/pages.py.
+        # Create/edit forms are custom (question_ids list) - see admin/pages.py.
         "label": "Mock Tests",
         "service": mock_test_service,
         "create_method": None,
         "schema": None,
+        "update_schema": None,
+        "update_method": None,
         "list_columns": ["id", "paper_id", "title", "total_questions", "duration", "status"],
         "form_fields": [],
     },
@@ -221,6 +241,8 @@ ENTITY_REGISTRY = {
         "service": blog_service,
         "create_method": "create_blog",
         "schema": BlogCreate,
+        "update_schema": BlogUpdate,
+        "update_method": "update_blog",
         "list_columns": ["id", "title", "slug", "category", "status"],
         "form_fields": [
             {"name": "title", "label": "Title", "type": FIELD_TEXT, "required": True},

@@ -39,6 +39,29 @@ class QuestionCreate(QuestionBase):
     status: StatusEnum = StatusEnum.DRAFT
 
 
+class QuestionUpdate(BaseModel):
+    question_number: int | None = None
+    question_type: QuestionType | None = None
+    question_text: str | None = None
+    marks: float | None = None
+    negative_marks: float | None = None
+    difficulty: DifficultyEnum | None = None
+    image_file_id: str | None = None
+    image_mime_type: str | None = None
+    image_file_size: int | None = None
+    image_filename: str | None = None
+    correct_answer: str | None = None
+    explanation: str | None = None
+    explanation_image_file_id: str | None = None
+    explanation_image_mime_type: str | None = None
+    explanation_image_file_size: int | None = None
+    explanation_image_filename: str | None = None
+    # None (the default) means "leave options untouched" - an explicit list,
+    # even an empty one, replaces the full option set in one transaction.
+    options: list[OptionIn] | None = None
+    status: StatusEnum | None = None
+
+
 class PublicOptionResponse(BaseModel):
     """Options without any hint of which one is correct."""
 

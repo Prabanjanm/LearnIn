@@ -2,11 +2,12 @@ from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import AlreadyExistsException, NotFoundException
 from app.common.services.base_service import BaseService
+from app.common.utils.file_tracking import cleanup_drive_file, collect_subtree_file_ids
 from app.common.utils.slug import generate_slug
 
 from .model import Exam
 from .repository import ExamRepository
-from .schema import ExamCreate
+from .schema import ExamCreate, ExamUpdate
 
 
 class ExamService(BaseService):
@@ -84,6 +85,49 @@ class ExamService(BaseService):
         db: Session
     ):
         return self.repository.get_published(db)
+
+    def update_exam(
+        self,
+        db: Session,
+        exam: Exam,
+        data: ExamUpdate
+    ) -> Exam:
+
+        updates = data.model_dump(exclude_unset=True)
+
+        if "code" in updates and updates["code"] is not None:
+            new_code = updates["code"].upper()
+            existing = self.repository.exists_by_code(db, new_code)
+            if existing is not None and existing.id != exam.id:
+                raise AlreadyExistsException("Exam already exists")
+            updates["code"] = new_code
+
+        if "name" in updates and updates["name"] is not None:
+            updates["slug"] = generate_slug(updates["name"])
+
+        old_icon_file_id = exam.icon_file_id
+        replacing_icon = "icon_file_id" in updates and updates["icon_file_id"] != old_icon_file_id
+
+        for field, value in updates.items():
+            setattr(exam, field, value)
+
+        updated = self.repository.update(db, exam)
+
+        if replacing_icon:
+            cleanup_drive_file(db, old_icon_file_id)
+
+        return updated
+
+    def delete_exam(
+        self,
+        db: Session,
+        exam: Exam
+    ) -> None:
+        file_ids = collect_subtree_file_ids(exam)
+        self.repository.delete(db, exam)
+
+        for file_id in file_ids:
+            cleanup_drive_file(db, file_id)
 
 
 exam_service = ExamService()

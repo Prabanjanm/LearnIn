@@ -16,6 +16,14 @@ class MockTestCreate(MockTestBase):
     status: StatusEnum = StatusEnum.DRAFT
 
 
+class MockTestUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    duration: int | None = None
+    total_marks: int | None = None
+    status: StatusEnum | None = None
+
+
 class MockTestResponse(MockTestBase):
 
     id: int

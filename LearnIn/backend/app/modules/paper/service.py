@@ -2,10 +2,11 @@ from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import AlreadyExistsException, NotFoundException
 from app.common.services.base_service import BaseService
+from app.common.utils.file_tracking import cleanup_drive_file, cleanup_drive_files, collect_subtree_file_ids
 
 from .model import Paper
 from .repository import PaperRepository
-from .schema import PaperCreate
+from .schema import PaperCreate, PaperUpdate
 
 
 class PaperService(BaseService):
@@ -75,6 +76,45 @@ class PaperService(BaseService):
             raise NotFoundException("Paper not found")
 
         return paper
+
+    def update_paper(
+        self,
+        db: Session,
+        paper: Paper,
+        data: PaperUpdate
+    ) -> Paper:
+
+        updates = data.model_dump(exclude_unset=True)
+
+        old_question_file_id = paper.question_file_id
+        old_answer_file_id = paper.answer_file_id
+        replacing_question_file = (
+            "question_file_id" in updates and updates["question_file_id"] != old_question_file_id
+        )
+        replacing_answer_file = (
+            "answer_file_id" in updates and updates["answer_file_id"] != old_answer_file_id
+        )
+
+        for field, value in updates.items():
+            setattr(paper, field, value)
+
+        updated = self.repository.update(db, paper)
+
+        if replacing_question_file:
+            cleanup_drive_file(db, old_question_file_id)
+        if replacing_answer_file:
+            cleanup_drive_file(db, old_answer_file_id)
+
+        return updated
+
+    def delete_paper(
+        self,
+        db: Session,
+        paper: Paper
+    ) -> None:
+        file_ids = collect_subtree_file_ids(paper)
+        self.repository.delete(db, paper)
+        cleanup_drive_files(db, file_ids)
 
 
 paper_service = PaperService()

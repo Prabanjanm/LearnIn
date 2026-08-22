@@ -24,6 +24,10 @@ class ExamUpdate(BaseModel):
     code: str | None = None
     description: str | None = None
     display_order: int | None = None
+    icon_file_id: str | None = None
+    icon_mime_type: str | None = None
+    icon_file_size: int | None = None
+    icon_filename: str | None = None
     status: StatusEnum | None = None
 
 

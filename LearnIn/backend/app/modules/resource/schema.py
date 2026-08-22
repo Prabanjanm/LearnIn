@@ -19,6 +19,17 @@ class ResourceCreate(ResourceBase):
     status: StatusEnum = StatusEnum.DRAFT
 
 
+class ResourceUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    resource_type: ResourceType | None = None
+    google_drive_file_id: str | None = None
+    google_drive_mime_type: str | None = None
+    google_drive_file_size: int | None = None
+    google_drive_filename: str | None = None
+    status: StatusEnum | None = None
+
+
 class ResourceResponse(ResourceBase):
 
     id: int

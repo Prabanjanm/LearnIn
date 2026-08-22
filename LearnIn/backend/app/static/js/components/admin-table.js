@@ -20,6 +20,7 @@ function initTable(table) {
     const selectAll = table.querySelector("[data-select-all]");
     const bulkActionInput = wrapper.querySelector("[data-bulk-action-input]");
     const bulkForm = wrapper.matches("[data-bulk-form]") ? wrapper : null;
+    const filterInputs = Array.from(table.querySelectorAll("[data-col-filter]"));
 
     const getDataRows = () =>
         Array.from(tbody.querySelectorAll("tr")).filter((row) => row.querySelector("[data-row-checkbox]"));
@@ -32,10 +33,22 @@ function initTable(table) {
         return row.textContent.toLowerCase().includes(query);
     }
 
+    function matchesColumnFilters(row) {
+        return filterInputs.every((input) => {
+            const term = input.value.trim().toLowerCase();
+            if (!term) return true;
+
+            const index = parseInt(input.getAttribute("data-col-filter"), 10);
+            const cell = row.children[index + 1];
+            const text = cell ? cell.textContent.trim().toLowerCase() : "";
+            return text.includes(term);
+        });
+    }
+
     function applyView() {
         const rows = getDataRows();
         const query = (searchInput?.value || "").trim().toLowerCase();
-        const matched = rows.filter((row) => matchesSearch(row, query));
+        const matched = rows.filter((row) => matchesSearch(row, query) && matchesColumnFilters(row));
 
         const totalPages = Math.max(1, Math.ceil(matched.length / pageSize));
         currentPage = Math.min(currentPage, totalPages);
@@ -89,6 +102,14 @@ function initTable(table) {
             applyView();
         });
     }
+
+    filterInputs.forEach((input) => {
+        input.addEventListener("input", () => {
+            currentPage = 1;
+            applyView();
+        });
+        input.addEventListener("click", (event) => event.stopPropagation());
+    });
 
     table.querySelectorAll("th[data-sortable]").forEach((th) => {
         th.addEventListener("click", () => {

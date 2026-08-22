@@ -2,13 +2,14 @@ from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import NotFoundException
 from app.common.services.base_service import BaseService
+from app.common.utils.file_tracking import cleanup_drive_file, cleanup_drive_files, collect_subtree_file_ids
 from app.core.enums import QuestionType
 from app.modules.option.model import Option
 from app.modules.paper.repository import PaperRepository
 
 from .model import Question
 from .repository import QuestionRepository
-from .schema import AnswerCheckResult, QuestionCreate
+from .schema import AnswerCheckResult, QuestionCreate, QuestionUpdate
 
 
 class QuestionService(BaseService):
@@ -117,6 +118,89 @@ class QuestionService(BaseService):
                 return expected == submitted
 
         return expected == submitted
+
+    def update_question(
+        self,
+        db: Session,
+        question: Question,
+        data: QuestionUpdate
+    ) -> Question:
+        """
+        A single commit for scalar fields + (optionally) a full option-set
+        replacement, so a failure partway through never leaves some new
+        options persisted while others are missing - it's all one flush.
+        """
+
+        updates = data.model_dump(exclude_unset=True, exclude={"options"})
+
+        old_image_file_id = question.image_file_id
+        old_explanation_image_file_id = question.explanation_image_file_id
+        old_option_image_ids = [opt.image_file_id for opt in question.options if opt.image_file_id]
+
+        replacing_image = "image_file_id" in updates and updates["image_file_id"] != old_image_file_id
+        replacing_explanation_image = (
+            "explanation_image_file_id" in updates
+            and updates["explanation_image_file_id"] != old_explanation_image_file_id
+        )
+
+        for field, value in updates.items():
+            setattr(question, field, value)
+
+        replacing_options = data.options is not None
+        if replacing_options:
+            try:
+                # Flush the deletes before adding the new rows - otherwise a
+                # new option can collide with an old one still awaiting
+                # deletion under the same (question_id, label) unique constraint.
+                question.options = []
+                db.flush()
+
+                question.options = [
+                    Option(
+                        label=option.label,
+                        option_text=option.option_text,
+                        image_file_id=option.image_file_id,
+                        image_mime_type=option.image_mime_type,
+                        image_file_size=option.image_file_size,
+                        image_filename=option.image_filename,
+                    )
+                    for option in data.options
+                ]
+            except Exception:
+                db.rollback()
+                raise
+
+        try:
+            updated = self.repository.update(db, question)
+        except Exception:
+            db.rollback()
+            raise
+
+        if replacing_image:
+            cleanup_drive_file(db, old_image_file_id)
+        if replacing_explanation_image:
+            cleanup_drive_file(db, old_explanation_image_file_id)
+        if replacing_options:
+            kept_image_ids = {option.image_file_id for option in data.options if option.image_file_id}
+            cleanup_drive_files(db, [fid for fid in old_option_image_ids if fid not in kept_image_ids])
+
+        return updated
+
+    def delete_question(
+        self,
+        db: Session,
+        question: Question
+    ) -> None:
+        file_ids = collect_subtree_file_ids(question)
+        paper = self._paper_repository.get_by_id(db, question.paper_id)
+
+        self.repository.delete(db, question)
+
+        if paper is not None and paper.total_questions > 0:
+            paper.total_questions -= 1
+            db.commit()
+
+        cleanup_drive_files(db, file_ids)
 
 
 question_service = QuestionService()

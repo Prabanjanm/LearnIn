@@ -16,6 +16,15 @@ class OptionCreate(OptionBase):
     question_id: int
 
 
+class OptionUpdate(BaseModel):
+    label: str | None = None
+    option_text: str | None = None
+    image_file_id: str | None = None
+    image_mime_type: str | None = None
+    image_file_size: int | None = None
+    image_filename: str | None = None
+
+
 class OptionResponse(OptionBase):
 
     id: int

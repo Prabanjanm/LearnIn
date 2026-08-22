@@ -110,8 +110,19 @@
             </div>
         </header>
 
+        <div class="admin-toast-stack" data-toast-stack aria-live="polite"></div>
+
         {% if request.query_params.get('success') %}
-        <div class="admin-toast admin-toast--success" data-auto-dismiss>Saved successfully.</div>
+        <script>window.__adminFlashToasts = window.__adminFlashToasts || [];
+            window.__adminFlashToasts.push({ message: "Saved successfully.", variant: "success" });</script>
+        {% endif %}
+
+        {% if request.query_params.get('bulk_failed') %}
+        <script>window.__adminFlashToasts = window.__adminFlashToasts || [];
+            window.__adminFlashToasts.push({
+                message: "{{ request.query_params.get('bulk_failed') }} of the selected items could not be updated. Check the server logs for details.",
+                variant: "error"
+            });</script>
         {% endif %}
 
         <main class="admin-main">
@@ -120,12 +131,23 @@
     </div>
 
 </div>
+
+<div class="admin-drawer-overlay" data-drawer-overlay hidden>
+    <div class="admin-drawer-panel" data-drawer-panel>
+        <div class="admin-drawer-header">
+            <h2 data-drawer-title>Edit</h2>
+            <button type="button" class="admin-drawer-close" data-drawer-close aria-label="Close">&times;</button>
+        </div>
+        <iframe class="admin-drawer-iframe" data-drawer-iframe title="Edit form"></iframe>
+    </div>
+</div>
 {% else %}
     {% block guest_content %}{% endblock %}
 {% endif %}
 
 <script src="/static/js/components/upload-widget.js"></script>
 <script src="/static/js/components/admin-table.js"></script>
+<script src="/static/js/components/admin-drawer.js"></script>
 <script src="/static/js/components/markdown-preview.js"></script>
 <script src="/static/js/admin.js"></script>
 {% block js %}{% endblock %}

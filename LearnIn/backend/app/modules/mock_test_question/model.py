@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
+from sqlalchemy import UniqueConstraint
 
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -17,6 +18,9 @@ if TYPE_CHECKING:
 class MockTestQuestion(BaseModel):
 
     __tablename__ = "mock_test_questions"
+    __table_args__ = (
+        UniqueConstraint("mock_test_id", "question_id", name="uq_mock_test_question"),
+    )
 
     mock_test_id: Mapped[int] = mapped_column(
         ForeignKey("mock_tests.id"),

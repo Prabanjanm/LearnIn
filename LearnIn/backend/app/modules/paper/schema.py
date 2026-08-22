@@ -26,7 +26,14 @@ class PaperCreate(PaperBase):
 class PaperUpdate(BaseModel):
     title: str | None = None
     duration: int | None = None
+    question_file_id: str | None = None
+    question_file_mime_type: str | None = None
+    question_file_size: int | None = None
+    question_filename: str | None = None
     answer_file_id: str | None = None
+    answer_file_mime_type: str | None = None
+    answer_file_size: int | None = None
+    answer_filename: str | None = None
     status: StatusEnum | None = None
 
 

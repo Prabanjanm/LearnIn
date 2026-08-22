@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.enums import StatusEnum
 from app.modules.admin.dependencies import get_current_admin
 
-from .schema import SubjectCreate, SubjectResponse
+from .schema import SubjectCreate, SubjectResponse, SubjectUpdate
 from .service import subject_service
 
 router = APIRouter(
@@ -36,3 +37,44 @@ def create(
     _admin=Depends(get_current_admin),
 ):
     return subject_service.create_subject(db, data)
+
+
+@router.patch("/{subject_id}", response_model=SubjectResponse)
+def update(
+    subject_id: int,
+    data: SubjectUpdate,
+    db: Session = Depends(get_db),
+    _admin=Depends(get_current_admin),
+):
+    subject = subject_service.get_or_404(db, subject_id, "Subject not found")
+    return subject_service.update_subject(db, subject, data)
+
+
+@router.post("/{subject_id}/publish", response_model=SubjectResponse)
+def publish(
+    subject_id: int,
+    db: Session = Depends(get_db),
+    _admin=Depends(get_current_admin),
+):
+    subject = subject_service.get_or_404(db, subject_id, "Subject not found")
+    return subject_service.update_subject(db, subject, SubjectUpdate(status=StatusEnum.PUBLISHED))
+
+
+@router.post("/{subject_id}/archive", response_model=SubjectResponse)
+def archive(
+    subject_id: int,
+    db: Session = Depends(get_db),
+    _admin=Depends(get_current_admin),
+):
+    subject = subject_service.get_or_404(db, subject_id, "Subject not found")
+    return subject_service.update_subject(db, subject, SubjectUpdate(status=StatusEnum.ARCHIVED))
+
+
+@router.delete("/{subject_id}", status_code=204)
+def delete(
+    subject_id: int,
+    db: Session = Depends(get_db),
+    _admin=Depends(get_current_admin),
+):
+    subject = subject_service.get_or_404(db, subject_id, "Subject not found")
+    subject_service.delete_subject(db, subject)

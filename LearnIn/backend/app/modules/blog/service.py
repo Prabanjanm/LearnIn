@@ -2,11 +2,12 @@ from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import AlreadyExistsException, NotFoundException
 from app.common.services.base_service import BaseService
+from app.common.utils.file_tracking import cleanup_drive_file
 from app.common.utils.slug import generate_slug
 
 from .model import Blog
 from .repository import BlogRepository
-from .schema import BlogCreate
+from .schema import BlogCreate, BlogUpdate
 
 
 class BlogService(BaseService):
@@ -64,6 +65,46 @@ class BlogService(BaseService):
             raise NotFoundException("Blog not found")
 
         return blog
+
+    def update_blog(
+        self,
+        db: Session,
+        blog: Blog,
+        data: BlogUpdate
+    ) -> Blog:
+
+        updates = data.model_dump(exclude_unset=True)
+
+        if "title" in updates and updates["title"] is not None:
+            new_slug = generate_slug(updates["title"])
+            existing = self.repository.get_by_slug(db, new_slug)
+            if existing is not None and existing.id != blog.id:
+                raise AlreadyExistsException("A blog with this title already exists")
+            updates["slug"] = new_slug
+
+        old_thumbnail_file_id = blog.thumbnail_file_id
+        replacing_thumbnail = (
+            "thumbnail_file_id" in updates and updates["thumbnail_file_id"] != old_thumbnail_file_id
+        )
+
+        for field, value in updates.items():
+            setattr(blog, field, value)
+
+        updated = self.repository.update(db, blog)
+
+        if replacing_thumbnail:
+            cleanup_drive_file(db, old_thumbnail_file_id)
+
+        return updated
+
+    def delete_blog(
+        self,
+        db: Session,
+        blog: Blog
+    ) -> None:
+        file_id = blog.thumbnail_file_id
+        self.repository.delete(db, blog)
+        cleanup_drive_file(db, file_id)
 
 
 blog_service = BlogService()

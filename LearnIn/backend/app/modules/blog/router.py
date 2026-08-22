@@ -3,9 +3,10 @@ from sqlalchemy.orm import Session
 
 from app.common.schemas.pagination import PaginatedResponse
 from app.core.database import get_db
+from app.core.enums import StatusEnum
 from app.modules.admin.dependencies import get_current_admin
 
-from .schema import BlogCreate, BlogResponse
+from .schema import BlogCreate, BlogResponse, BlogUpdate
 from .service import blog_service
 
 router = APIRouter(
@@ -46,3 +47,44 @@ def create(
     _admin=Depends(get_current_admin),
 ):
     return blog_service.create_blog(db, data)
+
+
+@router.patch("/{blog_id}", response_model=BlogResponse)
+def update(
+    blog_id: int,
+    data: BlogUpdate,
+    db: Session = Depends(get_db),
+    _admin=Depends(get_current_admin),
+):
+    blog = blog_service.get_or_404(db, blog_id, "Blog not found")
+    return blog_service.update_blog(db, blog, data)
+
+
+@router.post("/{blog_id}/publish", response_model=BlogResponse)
+def publish(
+    blog_id: int,
+    db: Session = Depends(get_db),
+    _admin=Depends(get_current_admin),
+):
+    blog = blog_service.get_or_404(db, blog_id, "Blog not found")
+    return blog_service.update_blog(db, blog, BlogUpdate(status=StatusEnum.PUBLISHED))
+
+
+@router.post("/{blog_id}/archive", response_model=BlogResponse)
+def archive(
+    blog_id: int,
+    db: Session = Depends(get_db),
+    _admin=Depends(get_current_admin),
+):
+    blog = blog_service.get_or_404(db, blog_id, "Blog not found")
+    return blog_service.update_blog(db, blog, BlogUpdate(status=StatusEnum.ARCHIVED))
+
+
+@router.delete("/{blog_id}", status_code=204)
+def delete(
+    blog_id: int,
+    db: Session = Depends(get_db),
+    _admin=Depends(get_current_admin),
+):
+    blog = blog_service.get_or_404(db, blog_id, "Blog not found")
+    blog_service.delete_blog(db, blog)

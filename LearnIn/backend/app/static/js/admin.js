@@ -9,9 +9,72 @@ document.addEventListener("DOMContentLoaded", () => {
     initSidebarToggle();
     initDropdowns();
     initTopbarSearch();
-    initAutoDismissToasts();
+    initFlashToasts();
     initFormSubmitState();
 });
+
+/*
+    Bottom-right floating toast stack (like a typical "Saved" / "Updated"
+    notification) - the single source of save/delete/bulk-action feedback
+    across the admin panel. Two ways to trigger one:
+      1. Server-rendered flash: a redirect landed with ?success=1 or
+         ?bulk_failed=N in the URL - admin/_layout.html queues those into
+         window.__adminFlashToasts before this script runs.
+      2. Programmatically from JS - e.g. the edit drawer calls
+         showAdminToast() directly when a save completes inside the iframe,
+         since that flow doesn't do a full page redirect.
+*/
+function showAdminToast(message, variant = "success") {
+    const stack = document.querySelector("[data-toast-stack]");
+    if (!stack) return;
+
+    const toast = document.createElement("div");
+    toast.className = `admin-toast admin-toast--${variant}`;
+    toast.setAttribute("role", "status");
+
+    const icon = document.createElement("span");
+    icon.className = "admin-toast-icon";
+    icon.innerHTML = variant === "error"
+        ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>'
+        : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>';
+
+    const text = document.createElement("span");
+    text.className = "admin-toast-message";
+    text.textContent = message;
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "admin-toast-close";
+    closeBtn.setAttribute("aria-label", "Dismiss");
+    closeBtn.innerHTML = "&times;";
+
+    toast.append(icon, text, closeBtn);
+    stack.appendChild(toast);
+
+    requestAnimationFrame(() => toast.classList.add("admin-toast--visible"));
+
+    let dismissTimer = window.setTimeout(dismiss, 4000);
+
+    function dismiss() {
+        window.clearTimeout(dismissTimer);
+        toast.classList.remove("admin-toast--visible");
+        window.setTimeout(() => toast.remove(), 250);
+    }
+
+    closeBtn.addEventListener("click", dismiss);
+}
+
+function initFlashToasts() {
+    const queued = window.__adminFlashToasts || [];
+    queued.forEach(({ message, variant }) => showAdminToast(message, variant));
+
+    if (queued.length && window.history.replaceState) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("success");
+        url.searchParams.delete("bulk_failed");
+        window.history.replaceState({}, "", url.toString());
+    }
+}
 
 function initSidebarToggle() {
     const toggle = document.querySelector("[data-sidebar-toggle]");
@@ -95,15 +158,6 @@ function initTopbarSearch() {
     });
 }
 
-function initAutoDismissToasts() {
-    document.querySelectorAll("[data-auto-dismiss]").forEach((toast) => {
-        setTimeout(() => {
-            toast.style.transition = "opacity .3s ease";
-            toast.style.opacity = "0";
-            setTimeout(() => toast.remove(), 300);
-        }, 4000);
-    });
-}
 
 function initFormSubmitState() {
     document.querySelectorAll("[data-admin-form]").forEach((form) => {

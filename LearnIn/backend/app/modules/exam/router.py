@@ -3,9 +3,10 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.enums import StatusEnum
 from app.modules.admin.dependencies import get_current_admin
 
-from .schema import ExamCreate, ExamResponse
+from .schema import ExamCreate, ExamResponse, ExamUpdate
 from .service import exam_service
 
 router = APIRouter(
@@ -42,3 +43,44 @@ def create(
         db,
         data
     )
+
+
+@router.patch("/{exam_id}", response_model=ExamResponse)
+def update(
+    exam_id: int,
+    data: ExamUpdate,
+    db: Session = Depends(get_db),
+    _admin=Depends(get_current_admin),
+):
+    exam = exam_service.get_or_404(db, exam_id, "Exam not found")
+    return exam_service.update_exam(db, exam, data)
+
+
+@router.post("/{exam_id}/publish", response_model=ExamResponse)
+def publish(
+    exam_id: int,
+    db: Session = Depends(get_db),
+    _admin=Depends(get_current_admin),
+):
+    exam = exam_service.get_or_404(db, exam_id, "Exam not found")
+    return exam_service.update_exam(db, exam, ExamUpdate(status=StatusEnum.PUBLISHED))
+
+
+@router.post("/{exam_id}/archive", response_model=ExamResponse)
+def archive(
+    exam_id: int,
+    db: Session = Depends(get_db),
+    _admin=Depends(get_current_admin),
+):
+    exam = exam_service.get_or_404(db, exam_id, "Exam not found")
+    return exam_service.update_exam(db, exam, ExamUpdate(status=StatusEnum.ARCHIVED))
+
+
+@router.delete("/{exam_id}", status_code=204)
+def delete(
+    exam_id: int,
+    db: Session = Depends(get_db),
+    _admin=Depends(get_current_admin),
+):
+    exam = exam_service.get_or_404(db, exam_id, "Exam not found")
+    exam_service.delete_exam(db, exam)

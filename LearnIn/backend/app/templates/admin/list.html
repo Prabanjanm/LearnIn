@@ -13,10 +13,14 @@
 <div class="admin-page-header">
     <div>
         <h1>{{ label }}</h1>
-        <p class="admin-page-subtitle">{{ rows|length }} total</p>
+        <p class="admin-page-subtitle">{{ total }} total{% if total_pages > 1 %} - page {{ page }} of {{ total_pages }}{% endif %}</p>
     </div>
     <a class="admin-btn admin-btn-primary" href="/admin/manage/{{ entity_key }}/new">{{ icon('plus', 16) }} New</a>
 </div>
+
+{% macro page_href(target_page) -%}
+/admin/manage/{{ entity_key }}?page={{ target_page }}&page_size={{ page_size }}
+{%- endmacro %}
 
 <form data-bulk-form method="post" action="/admin/manage/{{ entity_key }}/bulk">
 <input type="hidden" name="action" value="" data-bulk-action-input>
@@ -37,13 +41,24 @@
 </div>
 
 <div class="admin-table-wrapper">
-    <table class="admin-table" data-admin-table data-page-size="10">
+    <table class="admin-table" data-admin-table data-page-size="1000">
         <thead>
             <tr>
                 <th class="admin-table-checkbox-col"><input type="checkbox" data-select-all aria-label="Select all rows"></th>
                 {% for column in columns %}
                 <th data-sortable data-col-index="{{ loop.index0 }}">{{ column }}</th>
                 {% endfor %}
+                <th>Actions</th>
+            </tr>
+            <tr class="admin-table-filters">
+                <th class="admin-table-checkbox-col"></th>
+                {% for column in columns %}
+                <th>
+                    <input type="text" class="admin-table-filter-input" data-col-filter="{{ loop.index0 }}"
+                           placeholder="Filter {{ column }}...">
+                </th>
+                {% endfor %}
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -53,14 +68,70 @@
                 {% for column in columns %}
                 <td>{% if column == 'status' %}{{ status_badge(row[column]) }}{% else %}{{ row[column] }}{% endif %}</td>
                 {% endfor %}
+                <td class="admin-table-actions">
+                    <button type="button" class="admin-btn admin-btn-secondary admin-btn-sm admin-icon-action"
+                            data-drawer-open
+                            data-drawer-url="/admin/manage/{{ entity_key }}/{{ row.id }}/view"
+                            data-drawer-title="{{ label[:-1] if label.endswith('s') else label }} Details"
+                            title="View details" aria-label="View details">
+                        {{ icon('eye', 14) }}
+                    </button>
+                    <button type="button" class="admin-btn admin-btn-secondary admin-btn-sm"
+                            data-drawer-open
+                            data-drawer-url="/admin/manage/{{ entity_key }}/{{ row.id }}/edit?embed=1"
+                            data-drawer-title="Edit {{ label[:-1] if label.endswith('s') else label }}">
+                        {{ icon('edit', 14) }} Edit
+                    </button>
+                </td>
             </tr>
             {% else %}
-            <tr><td colspan="{{ columns|length + 1 }}" class="admin-table-empty">No records yet.</td></tr>
+            <tr><td colspan="{{ columns|length + 2 }}" class="admin-table-empty">No records yet.</td></tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
 
-<div class="admin-pagination" data-pagination hidden></div>
+<div class="admin-list-footer">
+    <div class="admin-page-size">
+        <select data-page-size-select aria-label="Rows per page">
+            {% for option in page_size_options %}
+            <option value="{{ option }}" {% if option == page_size %}selected{% endif %}>{{ option }}</option>
+            {% endfor %}
+        </select>
+        <span>{{ range_start }}-{{ range_end }} of {{ total }}</span>
+    </div>
+
+    <div class="admin-server-pagination">
+        <a class="admin-page-nav-btn {% if page <= 1 %}admin-page-nav-btn--disabled{% endif %}"
+           href="{{ page_href(1) if page > 1 else '#' }}" aria-label="First page">{{ icon('chevrons-left', 16) }}</a>
+        <a class="admin-page-nav-btn {% if page <= 1 %}admin-page-nav-btn--disabled{% endif %}"
+           href="{{ page_href(page - 1) if page > 1 else '#' }}" aria-label="Previous page">{{ icon('chevron-left', 16) }}</a>
+
+        <form class="admin-page-jump" method="get" action="/admin/manage/{{ entity_key }}">
+            <input type="hidden" name="page_size" value="{{ page_size }}">
+            <input type="number" name="page" min="1" max="{{ total_pages }}" value="{{ page }}" data-page-jump-input>
+            <span>/ {{ total_pages }}</span>
+        </form>
+
+        <a class="admin-page-nav-btn {% if page >= total_pages %}admin-page-nav-btn--disabled{% endif %}"
+           href="{{ page_href(page + 1) if page < total_pages else '#' }}" aria-label="Next page">{{ icon('chevron-right', 16) }}</a>
+        <a class="admin-page-nav-btn {% if page >= total_pages %}admin-page-nav-btn--disabled{% endif %}"
+           href="{{ page_href(total_pages) if page < total_pages else '#' }}" aria-label="Last page">{{ icon('chevrons-right', 16) }}</a>
+    </div>
+</div>
 </form>
+
+<script>
+    (function () {
+        var select = document.querySelector("[data-page-size-select]");
+        if (select) {
+            select.addEventListener("change", function () {
+                var url = new URL(window.location.href);
+                url.searchParams.set("page_size", select.value);
+                url.searchParams.set("page", "1");
+                window.location.href = url.toString();
+            });
+        }
+    })();
+</script>
 {% endblock %}
