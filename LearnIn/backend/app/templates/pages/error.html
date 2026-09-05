@@ -1,0 +1,15 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Something Went Wrong | LearnIn{% endblock %}
+{% block description %}We couldn't complete that request.{% endblock %}
+
+{% block content %}
+<div class="container static-page not-found">
+    <h1>{{ status_code }}</h1>
+    <p>{{ message or "Something went wrong. We couldn't complete that request." }}</p>
+    <div class="action-row">
+        <a class="btn" href="/">Back to LearnIn</a>
+        <a class="btn btn-secondary" href="javascript:history.back()">Try Again</a>
+    </div>
+</div>
+{% endblock %}

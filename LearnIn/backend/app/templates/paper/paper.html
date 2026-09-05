@@ -51,8 +51,11 @@
         {% endif %}
     </section>
 
-    <section>
-        <h2>Mock Tests</h2>
+    <section class="section">
+        <div class="section-head">
+            <h2>Mock Tests</h2>
+        </div>
+        <p class="section-subtitle">Simulate the real exam with a timed mock test based on this paper.</p>
         {{ render_card_grid(mock_test_cards, "No mock tests published yet for this paper.") }}
     </section>
 

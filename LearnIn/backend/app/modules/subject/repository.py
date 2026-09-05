@@ -23,7 +23,7 @@ class SubjectRepository(BaseRepository):
                 Subject.department_id == department_id,
                 Subject.status == StatusEnum.PUBLISHED,
             )
-            .order_by(Subject.display_order)
+            .order_by(Subject.display_order.asc(), Subject.name.asc())
             .all()
         )
 
@@ -43,19 +43,36 @@ class SubjectRepository(BaseRepository):
             .first()
         )
 
-    def get_published_by_id(
+    def get_filtered(
         self,
         db: Session,
-        subject_id: int
+        exam_id: int | None = None,
+        department_id: int | None = None,
+        term: str | None = None,
+        page: int = 1,
+        page_size: int = 24,
     ):
-        return (
+        """Powers the /practice discovery page - only real filters (exam,
+        department, name search) on real columns/relationships."""
+        query = (
             db.query(Subject)
-            .filter(
-                Subject.id == subject_id,
-                Subject.status == StatusEnum.PUBLISHED,
-            )
-            .first()
+            .join(Department, Subject.department_id == Department.id)
+            .options(selectinload(Subject.department).selectinload(Department.exam))
+            .filter(Subject.status == StatusEnum.PUBLISHED)
         )
+
+        if exam_id is not None:
+            query = query.filter(Department.exam_id == exam_id)
+        if department_id is not None:
+            query = query.filter(Subject.department_id == department_id)
+        if term:
+            query = query.filter(Subject.name.ilike(f"%{term}%"))
+
+        query = query.order_by(Subject.name.asc())
+
+        total = query.count()
+        items = query.offset((page - 1) * page_size).limit(page_size).all()
+        return items, total
 
     def search(
         self,
@@ -67,7 +84,8 @@ class SubjectRepository(BaseRepository):
         return (
             db.query(Subject)
             .options(
-                selectinload(Subject.department).selectinload(Department.exam)
+                selectinload(Subject.department)
+                .selectinload(Department.exam)
             )
             .filter(
                 Subject.status == StatusEnum.PUBLISHED,

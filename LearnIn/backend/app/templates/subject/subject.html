@@ -12,15 +12,22 @@
 
     <section class="page-hero">
         <h1>{{ subject.name }}</h1>
+        <p>{{ department.name }} &middot; {{ exam.name }}</p>
     </section>
 
-    <section>
-        <h2>Previous Year Papers</h2>
+    <section class="section">
+        <div class="section-head">
+            <h2>Previous Year Papers</h2>
+        </div>
+        <p class="section-subtitle">Practice each year's paper online, or download the question paper and answer key.</p>
         {{ render_card_grid(paper_cards, "No papers published yet.") }}
     </section>
 
-    <section id="resources">
-        <h2>Study Materials</h2>
+    <section class="section" id="resources">
+        <div class="section-head">
+            <h2>Study Materials</h2>
+        </div>
+        <p class="section-subtitle">Notes, formula sheets, and other resources for this subject.</p>
         {{ render_card_grid(resource_cards, "No resources published yet.") }}
     </section>
 

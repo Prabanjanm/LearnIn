@@ -1,5 +1,4 @@
-from fastapi import APIRouter
-from fastapi import Depends
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -22,15 +21,26 @@ def get_all(
     return exam_service.get_published(db)
 
 
-@router.get("/{exam_id}", response_model=ExamResponse)
-def get_one(
+@router.get("/{exam_id:int}", response_model=ExamResponse)
+def get_by_id(
     exam_id: int,
     db: Session = Depends(get_db)
 ):
-    return exam_service.get_published_by_id(
-        db,
-        exam_id
-    )
+    """
+    Registered before the slug route below: Starlette's `:int` converter
+    only matches an all-digit segment, so a numeric path (e.g. "/5") is
+    routed here and a real slug (e.g. "/gate-2027", never all-digit)
+    falls through to get_one unaffected.
+    """
+    return exam_service.get_published_by_id(db, exam_id)
+
+
+@router.get("/{slug}", response_model=ExamResponse)
+def get_one(
+    slug: str,
+    db: Session = Depends(get_db)
+):
+    return exam_service.get_published_by_slug(db, slug)
 
 
 @router.post("/", response_model=ExamResponse)
@@ -39,10 +49,7 @@ def create(
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):
-    return exam_service.create_exam(
-        db,
-        data
-    )
+    return exam_service.create_exam(db, data)
 
 
 @router.patch("/{exam_id}", response_model=ExamResponse)

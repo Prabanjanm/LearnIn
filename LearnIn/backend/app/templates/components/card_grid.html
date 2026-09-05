@@ -13,7 +13,7 @@
         {% if item.meta %}<span class="entity-card-meta">{{ item.meta }}</span>{% endif %}
     </a>
     {% else %}
-    <p>{{ empty_message }}</p>
+    <p class="empty-state">{{ empty_message }}</p>
     {% endfor %}
 </div>
 {% endmacro %}

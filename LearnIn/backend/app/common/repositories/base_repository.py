@@ -39,3 +39,6 @@ class BaseRepository:
 
     def count(self, db):
         return db.query(self.model).count()
+
+    def count_by_status(self, db, status):
+        return db.query(self.model).filter(self.model.status == status).count()

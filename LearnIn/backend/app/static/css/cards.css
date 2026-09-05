@@ -9,25 +9,35 @@
 }
 
 .entity-card {
-    display: block;
-    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 20px;
     border: 1px solid var(--color-border);
-    border-top: 3px solid var(--color-primary);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-lg);
     text-decoration: none;
     color: var(--color-text);
-    transition: .2s;
+    background: var(--color-card);
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+
+.entity-card h3 {
+    font-size: 17px;
+    font-weight: 700;
 }
 
 .entity-card:hover {
     transform: translateY(-3px);
     box-shadow: var(--shadow-md);
-    border-color: var(--color-primary);
+    border-color: var(--color-accent);
+}
+
+.entity-card:hover h3 {
+    color: var(--color-accent);
 }
 
 .entity-card-meta {
     display: block;
-    margin-top: 6px;
     font-size: 13px;
     color: var(--color-text-muted);
 }

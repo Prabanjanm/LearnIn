@@ -285,6 +285,16 @@ def test_list_page_has_view_icon_button(admin_auth_headers):
 
 
 def test_admin_file_download_proxies_drive_bytes(admin_auth_headers, monkeypatch):
+    # The download route only serves file_ids LearnIn actually tracks (see
+    # is_file_referenced in app/common/utils/file_tracking.py) - a real
+    # record must reference this file_id, or an admin could otherwise
+    # fetch any file the connected Drive account can see by guessing ids.
+    client.post(
+        "/api/exams/",
+        json={"name": "Download Test Exam", "code": "DLTEST", "icon_file_id": "some-file-id"},
+        headers=admin_auth_headers,
+    )
+
     class _FakeDriveClient:
         def get_file_metadata(self, file_id):
             return {"name": "question-paper.pdf", "mimeType": "application/pdf"}
@@ -302,6 +312,12 @@ def test_admin_file_download_proxies_drive_bytes(admin_auth_headers, monkeypatch
 
 
 def test_admin_file_download_skips_metadata_round_trip_when_hinted(admin_auth_headers, monkeypatch):
+    client.post(
+        "/api/exams/",
+        json={"name": "Download Test Exam 2", "code": "DLTEST2", "icon_file_id": "hinted-file-id"},
+        headers=admin_auth_headers,
+    )
+
     metadata_calls = []
 
     class _FakeDriveClient:
@@ -315,7 +331,7 @@ def test_admin_file_download_skips_metadata_round_trip_when_hinted(admin_auth_he
     monkeypatch.setattr("app.modules.admin.router.get_drive_client", lambda: _FakeDriveClient())
 
     response = client.get(
-        "/api/admin/files/some-file-id/download",
+        "/api/admin/files/hinted-file-id/download",
         params={"filename": "known.pdf", "mime_type": "application/pdf"},
         headers=admin_auth_headers,
     )
@@ -331,14 +347,27 @@ def test_admin_file_download_requires_admin():
 
 
 def test_admin_file_download_returns_502_on_drive_failure(admin_auth_headers, monkeypatch):
+    client.post(
+        "/api/exams/",
+        json={"name": "Download Test Exam 3", "code": "DLTEST3", "icon_file_id": "failing-file-id"},
+        headers=admin_auth_headers,
+    )
+
     class _FailingDriveClient:
         def get_file_metadata(self, file_id):
             raise RuntimeError("boom")
 
     monkeypatch.setattr("app.modules.admin.router.get_drive_client", lambda: _FailingDriveClient())
 
-    response = client.get("/api/admin/files/some-file-id/download", headers=admin_auth_headers)
+    response = client.get("/api/admin/files/failing-file-id/download", headers=admin_auth_headers)
     assert response.status_code == 502
+
+
+def test_admin_file_download_rejects_untracked_file_id(admin_auth_headers):
+    """The core security fix under test: a file_id no LearnIn record
+    references must never reach Drive at all, regardless of admin auth."""
+    response = client.get("/api/admin/files/never-uploaded-anywhere/download", headers=admin_auth_headers)
+    assert response.status_code == 404
 
 
 def test_question_edit_form_renders_and_submit_updates(admin_auth_headers):

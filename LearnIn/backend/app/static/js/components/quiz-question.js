@@ -24,7 +24,7 @@ export function createQuestionCard(question, index) {
     return card;
 }
 
-function createOptionsElement(question) {
+function createOptionsElement(question, previousAnswer) {
     const optionsWrap = document.createElement("div");
     optionsWrap.className = "quiz-options";
 
@@ -33,11 +33,17 @@ function createOptionsElement(question) {
         input.type = "text";
         input.className = "quiz-nat-input";
         input.placeholder = "Enter numeric answer";
+        if (previousAnswer) {
+            input.value = previousAnswer;
+        }
         optionsWrap.appendChild(input);
         return optionsWrap;
     }
 
     const inputType = question.question_type === "MSQ" ? "checkbox" : "radio";
+    const previousLabels = previousAnswer
+        ? previousAnswer.split(",").map((label) => label.trim().toUpperCase())
+        : [];
 
     question.options.forEach((option) => {
         const label = document.createElement("label");
@@ -49,12 +55,36 @@ function createOptionsElement(question) {
         input.name = `question-${question.id}`;
         input.value = option.label;
 
+        if (previousLabels.includes(option.label.toUpperCase())) {
+            input.checked = true;
+            label.classList.add("selected");
+        }
+
         label.appendChild(input);
         label.appendChild(document.createTextNode(`${option.label}. ${option.option_text}`));
+
+        input.addEventListener("change", () => {
+            if (inputType === "radio") {
+                optionsWrap.querySelectorAll(".quiz-option").forEach((el) => el.classList.remove("selected"));
+            }
+            label.classList.toggle("selected", input.checked);
+        });
+
         optionsWrap.appendChild(label);
     });
 
     return optionsWrap;
+}
+
+/*
+    Same rendering as createQuestionCard's option block, exposed directly
+    for mock_test.js's one-question-at-a-time CBT screen, which builds its
+    own question/meta/controls markup around just the options - and needs
+    to restore a previously selected answer when the student revisits a
+    question (or resumes a session after a refresh).
+*/
+export function createOptionsElementForResume(question, previousAnswer) {
+    return createOptionsElement(question, previousAnswer);
 }
 
 export function collectAnswer(question, card) {

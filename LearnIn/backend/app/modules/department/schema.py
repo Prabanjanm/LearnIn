@@ -4,10 +4,13 @@ from app.common.utils.drive_urls import drive_view_url
 from app.core.enums import StatusEnum
 
 
-class DepartmentCreate(BaseModel):
-    exam_id: int
+class DepartmentBase(BaseModel):
     name: str
     code: str
+
+
+class DepartmentCreate(DepartmentBase):
+    exam_id: int
     display_order: int = 0
     icon_file_id: str | None = None
     icon_mime_type: str | None = None
@@ -17,6 +20,7 @@ class DepartmentCreate(BaseModel):
 
 
 class DepartmentUpdate(BaseModel):
+    exam_id: int | None = None
     name: str | None = None
     code: str | None = None
     display_order: int | None = None
@@ -27,17 +31,15 @@ class DepartmentUpdate(BaseModel):
     status: StatusEnum | None = None
 
 
-class DepartmentResponse(BaseModel):
+class DepartmentResponse(DepartmentBase):
 
     id: int
     exam_id: int
-    name: str
-    code: str
     slug: str
     display_order: int
-    status: StatusEnum
     icon_file_id: str | None = None
     icon_filename: str | None = None
+    status: StatusEnum
     meta_title: str | None = None
     meta_description: str | None = None
 

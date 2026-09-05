@@ -14,6 +14,31 @@ class QuestionRepository(BaseRepository):
     def __init__(self):
         super().__init__(Question)
 
+    def get_by_id(
+        self,
+        db: Session,
+        question_id: int
+    ):
+        return (
+            db.query(Question)
+            .options(selectinload(Question.options))
+            .filter(Question.id == question_id)
+            .first()
+        )
+
+    def get_by_paper(
+        self,
+        db: Session,
+        paper_id: int
+    ):
+        return (
+            db.query(Question)
+            .options(selectinload(Question.options))
+            .filter(Question.paper_id == paper_id)
+            .order_by(Question.question_number)
+            .all()
+        )
+
     def get_published_by_paper(
         self,
         db: Session,
@@ -66,4 +91,20 @@ class QuestionRepository(BaseRepository):
             )
             .limit(limit)
             .all()
+        )
+
+    def exists_by_number(
+        self,
+        db: Session,
+        paper_id: int,
+        question_number: int
+    ) -> bool:
+        return (
+            db.query(Question)
+            .filter(
+                Question.paper_id == paper_id,
+                Question.question_number == question_number,
+            )
+            .first()
+            is not None
         )

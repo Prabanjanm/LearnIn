@@ -3,10 +3,23 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.common.exceptions.exceptions import GoogleDriveConfigError
+from app.core.config import settings
 from app.core.google_drive import GoogleDriveClient
 
 
-def test_missing_oauth_config_raises_config_error():
+def test_missing_oauth_config_raises_config_error(monkeypatch):
+    # conftest.py pops the GOOGLE_OAUTH_* env vars before any app import to
+    # simulate "not configured" - but app.core.config calls load_dotenv()
+    # at import time, and load_dotenv() re-populates any var that isn't
+    # currently set in os.environ. Since the pop happens, then the import
+    # (and its load_dotenv call) happens after, the real dev .env's
+    # credentials end up loaded into `settings` anyway if one exists on
+    # this machine. Monkeypatching the already-imported `settings` object's
+    # attributes directly sidesteps that load order entirely.
+    monkeypatch.setattr(settings, "GOOGLE_OAUTH_CLIENT_ID", None)
+    monkeypatch.setattr(settings, "GOOGLE_OAUTH_CLIENT_SECRET", None)
+    monkeypatch.setattr(settings, "GOOGLE_OAUTH_REFRESH_TOKEN", None)
+
     client = GoogleDriveClient()
 
     with pytest.raises(GoogleDriveConfigError):

@@ -13,14 +13,15 @@ from app.core.base import BaseModel
 from app.core.mixins import StatusMixin
 
 if TYPE_CHECKING:
-    from app.modules.paper.model import Paper
     from app.modules.mock_test_question.model import MockTestQuestion
+    from app.modules.paper.model import Paper
 
 
 class MockTest(
     BaseModel,
     StatusMixin
 ):
+
     __tablename__ = "mock_tests"
 
     paper_id: Mapped[int] = mapped_column(
@@ -41,26 +42,27 @@ class MockTest(
 
     duration: Mapped[int] = mapped_column(
         Integer,
-        default=180
+        nullable=False
     )
 
     total_marks: Mapped[int] = mapped_column(
         Integer,
-        default=100
+        nullable=False
     )
 
     total_questions: Mapped[int] = mapped_column(
         Integer,
+        nullable=False,
         default=0
     )
 
     # Relationships
-
     paper: Mapped["Paper"] = relationship(
         back_populates="mock_tests"
     )
 
     questions: Mapped[list["MockTestQuestion"]] = relationship(
         back_populates="mock_test",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        order_by="MockTestQuestion.question_order"
     )

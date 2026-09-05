@@ -13,21 +13,29 @@ from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
 
 from app.core.base import BaseModel
-from app.core.enums import DifficultyEnum
-from app.core.enums import QuestionType
+from app.core.enums import DifficultyEnum, QuestionType
 from app.core.mixins import StatusMixin
 
 if TYPE_CHECKING:
-    from app.modules.paper.model import Paper
-    from app.modules.option.model import Option
     from app.modules.mock_test_question.model import MockTestQuestion
+    from app.modules.option.model import Option
+    from app.modules.paper.model import Paper
 
 
 class Question(
     BaseModel,
     StatusMixin
 ):
+
     __tablename__ = "questions"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "paper_id",
+            "question_number",
+            name="uq_question_number"
+        ),
+    )
 
     paper_id: Mapped[int] = mapped_column(
         ForeignKey("papers.id"),
@@ -41,10 +49,7 @@ class Question(
     )
 
     question_type: Mapped[QuestionType] = mapped_column(
-        Enum(
-            QuestionType,
-            name="questiontype"
-        ),
+        Enum(QuestionType, name="questiontype"),
         nullable=False
     )
 
@@ -105,42 +110,30 @@ class Question(
 
     marks: Mapped[float] = mapped_column(
         Float,
-        default=1
+        nullable=False
     )
 
     negative_marks: Mapped[float] = mapped_column(
         Float,
-        default=0
+        nullable=False
     )
 
     difficulty: Mapped[DifficultyEnum] = mapped_column(
-        Enum(
-            DifficultyEnum,
-            name="difficultyenum"
-        ),
+        Enum(DifficultyEnum, name="difficultyenum"),
         nullable=False
     )
 
     # Relationships
-
     paper: Mapped["Paper"] = relationship(
         back_populates="questions"
     )
 
     options: Mapped[list["Option"]] = relationship(
         back_populates="question",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        order_by="Option.label"
     )
 
     mock_test_questions: Mapped[list["MockTestQuestion"]] = relationship(
-        back_populates="question",
-        cascade="all, delete-orphan"
-    )
-
-    __table_args__ = (
-        UniqueConstraint(
-            "paper_id",
-            "question_number",
-            name="uq_question_number"
-        ),
+        back_populates="question"
     )

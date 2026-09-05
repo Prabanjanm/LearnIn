@@ -20,6 +20,18 @@
     --color-brand-blue: #2563eb;
     --color-brand-blue-dark: #1d4ed8;
 
+    /*
+        Public-site accent - every public-only stylesheet (navbar, buttons,
+        cards, footer, breadcrumbs, pagination, home) should use this
+        instead of --color-primary/--color-dark, which remain the admin
+        CMS's amber/navy. Keeps the two surfaces on separate brand accents
+        without duplicating the whole token set.
+    */
+    --color-accent: var(--color-brand-blue);
+    --color-accent-hover: var(--color-brand-blue-dark);
+    --color-accent-light: #EFF4FF;
+    --color-accent-contrast: #ffffff;
+
     /* Text */
     --color-text: #111827;
     --color-text-muted: #6b7280;

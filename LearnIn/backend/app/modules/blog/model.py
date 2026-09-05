@@ -24,29 +24,13 @@ class Blog(
 
     __tablename__ = "blogs"
 
+    __table_args__ = (
+        UniqueConstraint("slug", name="uq_blogs_slug"),
+    )
+
     title: Mapped[str] = mapped_column(
         String(255),
         nullable=False
-    )
-
-    thumbnail_file_id: Mapped[str | None] = mapped_column(
-        String(255),
-        nullable=True
-    )
-
-    thumbnail_mime_type: Mapped[str | None] = mapped_column(
-        String(100),
-        nullable=True
-    )
-
-    thumbnail_file_size: Mapped[int | None] = mapped_column(
-        Integer,
-        nullable=True
-    )
-
-    thumbnail_filename: Mapped[str | None] = mapped_column(
-        String(255),
-        nullable=True
     )
 
     content: Mapped[str] = mapped_column(
@@ -70,6 +54,22 @@ class Blog(
         nullable=True
     )
 
-    __table_args__ = (
-        UniqueConstraint("slug", name="uq_blogs_slug"),
+    thumbnail_file_id: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True
+    )
+
+    thumbnail_mime_type: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    thumbnail_file_size: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True
+    )
+
+    thumbnail_filename: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True
     )

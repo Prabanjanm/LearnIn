@@ -38,8 +38,8 @@
 }
 
 .quiz-option.selected {
-    border-color: var(--color-primary);
-    background: var(--color-primary-bg);
+    border-color: var(--color-accent);
+    background: var(--color-accent-light);
 }
 
 .quiz-option.correct {
@@ -79,14 +79,30 @@
 .quiz-timer {
     position: sticky;
     top: 0;
+    z-index: 10;
     background: var(--color-dark);
     color: var(--color-text-on-dark);
     padding: 12px 20px;
     border-radius: var(--radius-lg);
-    border-bottom: 3px solid var(--color-primary);
+    border-bottom: 3px solid var(--color-accent);
     margin-bottom: 20px;
     font-size: 18px;
     font-weight: bold;
+}
+
+.quiz-timer.quiz-timer--low {
+    border-bottom-color: var(--color-danger-border);
+    animation: quiz-timer-pulse 1s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .quiz-timer.quiz-timer--low {
+        animation: none;
+    }
+}
+
+@keyframes quiz-timer-pulse {
+    50% { opacity: .7; }
 }
 
 .quiz-result-summary {
@@ -112,4 +128,282 @@
 .quiz-result-stat label {
     font-size: 12px;
     color: var(--color-text-muted);
+}
+
+/* ----------------------------------------------------- CBT test screen --
+   While a test is in progress the body carries .test-in-progress (set by
+   mock_test.js) so the normal marketing navbar/footer disappear and the
+   test becomes the whole screen - a CBT-style distraction-free layout. */
+
+body.test-in-progress header[data-navbar],
+body.test-in-progress footer,
+body.test-in-progress .breadcrumbs {
+    display: none;
+}
+
+body.test-in-progress main {
+    padding: 0;
+    min-height: 100vh;
+}
+
+.cbt-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 5%;
+    background: var(--color-dark);
+    color: var(--color-text-on-dark);
+    flex-wrap: wrap;
+}
+
+.cbt-header-title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cbt-save-status {
+    font-size: 12px;
+    color: var(--color-text-on-dark-muted);
+    white-space: nowrap;
+}
+
+.cbt-save-status--error {
+    color: #fca5a5;
+}
+
+.cbt-header .quiz-timer {
+    margin: 0;
+    position: static;
+    background: rgba(255, 255, 255, .08);
+}
+
+.cbt-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 24px;
+    padding: 24px 5% 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+    align-items: start;
+}
+
+.cbt-question-panel {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: 24px;
+}
+
+.cbt-question-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--color-text-muted);
+    font-size: 13px;
+    margin-bottom: 14px;
+}
+
+.cbt-question-text {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 6px;
+}
+
+.cbt-question-image {
+    max-width: 100%;
+    border-radius: var(--radius-md);
+    margin: 12px 0;
+}
+
+.cbt-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--color-border);
+}
+
+.cbt-controls .btn-ghost {
+    background: none;
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+}
+
+.cbt-controls .btn-ghost:hover {
+    background: var(--color-bg-muted);
+}
+
+.cbt-controls .spacer {
+    flex: 1;
+}
+
+.cbt-navigator {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: 18px;
+    position: sticky;
+    top: 90px;
+}
+
+.cbt-navigator-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    margin-bottom: 14px;
+}
+
+.cbt-navigator-legend span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cbt-legend-swatch {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    border: 1px solid var(--color-border);
+    flex-shrink: 0;
+}
+
+.cbt-legend-swatch--answered { background: var(--color-success-bg); border-color: var(--color-success-border); }
+.cbt-legend-swatch--unanswered { background: var(--color-bg-muted); }
+.cbt-legend-swatch--marked { background: var(--color-accent-light); border-color: var(--color-accent); }
+.cbt-legend-swatch--current { background: var(--color-accent); border-color: var(--color-accent); }
+
+.cbt-navigator-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.cbt-nav-q {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-muted);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--color-text);
+}
+
+.cbt-nav-q--answered {
+    background: var(--color-success-bg);
+    border-color: var(--color-success-border);
+    color: var(--color-success-text);
+}
+
+.cbt-nav-q--marked::after {
+    content: "";
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    border: 1px solid var(--color-bg);
+}
+
+.cbt-nav-q--current {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+}
+
+.cbt-navigator-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--color-text-muted);
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
+}
+
+/* ------------------------------------------------- submit confirmation -- */
+
+.cbt-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, .5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+}
+
+.cbt-modal {
+    background: var(--color-bg);
+    border-radius: var(--radius-xl);
+    padding: 28px;
+    max-width: 380px;
+    width: 100%;
+}
+
+.cbt-modal h2 {
+    font-size: 20px;
+    margin-bottom: 16px;
+}
+
+.cbt-modal-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 22px;
+    font-size: 14px;
+}
+
+.cbt-modal-stats span strong {
+    float: right;
+}
+
+.cbt-modal-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.cbt-modal-actions .btn,
+.cbt-modal-actions .btn-secondary {
+    flex: 1;
+    justify-content: center;
+}
+
+@media (max-width: 900px) {
+    .cbt-layout {
+        grid-template-columns: 1fr;
+        padding: 16px 4% 32px;
+    }
+
+    .cbt-navigator {
+        position: static;
+        order: -1;
+    }
+
+    .cbt-navigator-grid {
+        grid-template-columns: repeat(8, 1fr);
+        max-height: 180px;
+        overflow-y: auto;
+    }
+
+    .cbt-header-title {
+        font-size: 14px;
+    }
 }

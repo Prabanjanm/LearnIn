@@ -8,10 +8,10 @@ class ExamBase(BaseModel):
     name: str
     code: str
     description: str | None = None
-    display_order: int = 0
 
 
 class ExamCreate(ExamBase):
+    display_order: int = 0
     icon_file_id: str | None = None
     icon_mime_type: str | None = None
     icon_file_size: int | None = None
@@ -35,9 +35,10 @@ class ExamResponse(ExamBase):
 
     id: int
     slug: str
-    status: StatusEnum
+    display_order: int
     icon_file_id: str | None = None
     icon_filename: str | None = None
+    status: StatusEnum
     meta_title: str | None = None
     meta_description: str | None = None
 

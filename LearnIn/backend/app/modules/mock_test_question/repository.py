@@ -2,6 +2,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from app.common.repositories.base_repository import BaseRepository
+from app.modules.question.model import Question
 
 from .model import MockTestQuestion
 
@@ -18,7 +19,7 @@ class MockTestQuestionRepository(BaseRepository):
     ):
         return (
             db.query(MockTestQuestion)
-            .options(selectinload(MockTestQuestion.question))
+            .options(selectinload(MockTestQuestion.question).selectinload(Question.options))
             .filter(MockTestQuestion.mock_test_id == mock_test_id)
             .order_by(MockTestQuestion.question_order)
             .all()

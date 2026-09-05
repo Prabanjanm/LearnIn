@@ -15,6 +15,8 @@ from app.common.exceptions.exceptions import (
     NotFoundException,
 )
 from app.common.utils.file_tracking import cleanup_drive_files
+from app.common.rate_limit import rate_limit
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.enums import StatusEnum
 from app.core.google_drive import get_drive_client
@@ -152,7 +154,7 @@ def login_page(request: Request, admin: Admin | None = Depends(get_optional_admi
     )
 
 
-@router.post("/admin/login")
+@router.post("/admin/login", dependencies=[Depends(rate_limit(10, 60))])
 def login_submit(
     request: Request,
     email: str = Form(...),
@@ -177,6 +179,7 @@ def login_submit(
         value=token,
         httponly=True,
         samesite="lax",
+        secure=not settings.DEBUG,
         max_age=60 * 60 * 24,
     )
     return response
@@ -1314,7 +1317,7 @@ async def upload_file(
     mime_type = file.content_type or "application/octet-stream"
 
     try:
-        validate_upload(category, filename, mime_type, len(content))
+        validate_upload(category, filename, mime_type, len(content), content)
     except UploadValidationError as exc:
         return JSONResponse({"error": str(exc)}, status_code=400)
 

@@ -9,12 +9,12 @@ from app.core.enums import StatusEnum
 class BlogBase(BaseModel):
     title: str
     content: str
-    category: str | None = None
-    tags: str | None = None
-    published_date: date | None = None
 
 
 class BlogCreate(BlogBase):
+    category: str | None = None
+    tags: str | None = None
+    published_date: date | None = None
     thumbnail_file_id: str | None = None
     thumbnail_mime_type: str | None = None
     thumbnail_file_size: int | None = None
@@ -43,9 +43,12 @@ class BlogResponse(BlogBase):
 
     id: int
     slug: str
-    status: StatusEnum
+    category: str | None = None
+    tags: str | None = None
+    published_date: date | None = None
     thumbnail_file_id: str | None = None
     thumbnail_filename: str | None = None
+    status: StatusEnum
     meta_title: str | None = None
     meta_description: str | None = None
 
@@ -57,3 +60,10 @@ class BlogResponse(BlogBase):
     @property
     def thumbnail_url(self) -> str | None:
         return drive_view_url(self.thumbnail_file_id)
+
+
+class BlogListResponse(BaseModel):
+    items: list[BlogResponse]
+    total: int
+    page: int
+    page_size: int

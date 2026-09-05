@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.enums import StatusEnum
 from app.modules.admin.dependencies import get_current_admin
 
 from .schema import SubjectCreate, SubjectResponse, SubjectUpdate
@@ -22,12 +21,13 @@ def get_all(
     return subject_service.get_published_by_department(db, department_id)
 
 
-@router.get("/{subject_id}", response_model=SubjectResponse)
+@router.get("/{department_id}/{slug}", response_model=SubjectResponse)
 def get_one(
-    subject_id: int,
+    department_id: int,
+    slug: str,
     db: Session = Depends(get_db)
 ):
-    return subject_service.get_published_by_id(db, subject_id)
+    return subject_service.get_published_by_slug(db, department_id, slug)
 
 
 @router.post("/", response_model=SubjectResponse)
@@ -48,26 +48,6 @@ def update(
 ):
     subject = subject_service.get_or_404(db, subject_id, "Subject not found")
     return subject_service.update_subject(db, subject, data)
-
-
-@router.post("/{subject_id}/publish", response_model=SubjectResponse)
-def publish(
-    subject_id: int,
-    db: Session = Depends(get_db),
-    _admin=Depends(get_current_admin),
-):
-    subject = subject_service.get_or_404(db, subject_id, "Subject not found")
-    return subject_service.update_subject(db, subject, SubjectUpdate(status=StatusEnum.PUBLISHED))
-
-
-@router.post("/{subject_id}/archive", response_model=SubjectResponse)
-def archive(
-    subject_id: int,
-    db: Session = Depends(get_db),
-    _admin=Depends(get_current_admin),
-):
-    subject = subject_service.get_or_404(db, subject_id, "Subject not found")
-    return subject_service.update_subject(db, subject, SubjectUpdate(status=StatusEnum.ARCHIVED))
 
 
 @router.delete("/{subject_id}", status_code=204)

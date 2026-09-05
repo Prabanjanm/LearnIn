@@ -1,8 +1,8 @@
-from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.common.repositories.base_repository import BaseRepository
 from app.core.enums import StatusEnum
+
 from .model import Exam
 
 
@@ -11,18 +11,15 @@ class ExamRepository(BaseRepository):
     def __init__(self):
         super().__init__(Exam)
 
-    def get_published_by_slug(
+    def get_published(
         self,
-        db: Session,
-        slug: str
+        db: Session
     ):
         return (
             db.query(Exam)
-            .filter(
-                Exam.slug == slug,
-                Exam.status == StatusEnum.PUBLISHED,
-            )
-            .first()
+            .filter(Exam.status == StatusEnum.PUBLISHED)
+            .order_by(Exam.display_order.asc(), Exam.name.asc())
+            .all()
         )
 
     def get_published_by_id(
@@ -39,25 +36,17 @@ class ExamRepository(BaseRepository):
             .first()
         )
 
-    def get_published(
-        self,
-        db: Session
-    ):
-        return (
-            db.query(Exam)
-            .filter(Exam.status == StatusEnum.PUBLISHED)
-            .order_by(Exam.display_order)
-            .all()
-        )
-
-    def exists_by_code(
+    def get_published_by_slug(
         self,
         db: Session,
-        code: str
+        slug: str
     ):
         return (
             db.query(Exam)
-            .filter(Exam.code == code)
+            .filter(
+                Exam.slug == slug,
+                Exam.status == StatusEnum.PUBLISHED,
+            )
             .first()
         )
 
@@ -72,7 +61,7 @@ class ExamRepository(BaseRepository):
             db.query(Exam)
             .filter(
                 Exam.status == StatusEnum.PUBLISHED,
-                or_(Exam.name.ilike(pattern), Exam.code.ilike(pattern)),
+                Exam.name.ilike(pattern),
             )
             .limit(limit)
             .all()

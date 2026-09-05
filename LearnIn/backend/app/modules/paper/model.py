@@ -13,16 +13,21 @@ from app.core.base import BaseModel
 from app.core.mixins import StatusMixin
 
 if TYPE_CHECKING:
-    from app.modules.subject.model import Subject
-    from app.modules.question.model import Question
     from app.modules.mock_test.model import MockTest
+    from app.modules.question.model import Question
+    from app.modules.subject.model import Subject
 
 
 class Paper(
     BaseModel,
     StatusMixin
 ):
+
     __tablename__ = "papers"
+
+    __table_args__ = (
+        UniqueConstraint("subject_id", "year", name="uq_subject_year"),
+    )
 
     subject_id: Mapped[int] = mapped_column(
         ForeignKey("subjects.id"),
@@ -81,14 +86,15 @@ class Paper(
     )
 
     duration: Mapped[int | None] = mapped_column(
+        Integer,
         nullable=True
     )
 
     total_questions: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
         default=0
     )
-
-    # Relationships
 
     subject: Mapped["Subject"] = relationship(
         back_populates="papers"
@@ -102,12 +108,4 @@ class Paper(
     mock_tests: Mapped[list["MockTest"]] = relationship(
         back_populates="paper",
         cascade="all, delete-orphan"
-    )
-
-    __table_args__ = (
-        UniqueConstraint(
-            "subject_id",
-            "year",
-            name="uq_subject_year"
-        ),
     )

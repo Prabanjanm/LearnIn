@@ -23,6 +23,7 @@ Jinja2==3.1.6
 MarkupSafe==3.0.3
 python-multipart==0.0.32
 Markdown==3.10.2
+nh3==0.3.7
 
 # Auth (password hashing + JWT)
 passlib==1.7.4
@@ -63,3 +64,9 @@ idna==3.18
 pyparsing==3.3.2
 requests==2.34.2
 urllib3==2.7.0
+
+# Testing (dev only - not needed to run the app itself)
+# httpx pinned below 0.28 - starlette==0.35.1's TestClient still passes
+# app= to httpx.Client, which newer httpx versions removed.
+pytest==9.1.1
+httpx==0.27.2

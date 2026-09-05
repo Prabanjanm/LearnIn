@@ -7,6 +7,13 @@ from app.modules.question.model import Question
 from app.modules.option.model import Option
 from app.modules.mock_test.model import MockTest
 from app.modules.mock_test_question.model import MockTestQuestion
+from app.modules.mock_test_attempt.model import (
+    MockTestAttempt,
+    MockTestAttemptAnswer,
+    MockTestSession,
+    MockTestSessionAnswer,
+)
+from app.modules.student.model import Student
 from app.modules.resource.model import Resource
 from app.modules.blog.model import Blog
 from app.modules.search.model import SearchLog

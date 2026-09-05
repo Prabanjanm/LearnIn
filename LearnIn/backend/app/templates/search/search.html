@@ -21,8 +21,10 @@
     </section>
 
     {% if results %}
-    <section>
-        <h2>{{ results.total }} result{{ "s" if results.total != 1 else "" }} for "{{ results.query }}"</h2>
+    <section class="section">
+        <div class="section-head">
+            <h2>{{ results.total }} result{{ "s" if results.total != 1 else "" }} for &ldquo;{{ results.query }}&rdquo;</h2>
+        </div>
 
         <div class="search-results">
             {% for item in results.results %}
@@ -31,7 +33,7 @@
                 <h3>{{ item.title }}</h3>
             </a>
             {% else %}
-            <p>No results found. Try a different search term.</p>
+            <p class="empty-state">No results found. Try a different search term.</p>
             {% endfor %}
         </div>
     </section>

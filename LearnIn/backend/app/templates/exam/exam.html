@@ -15,8 +15,11 @@
         {% if exam.description %}<p>{{ exam.description }}</p>{% endif %}
     </section>
 
-    <section>
-        <h2>Departments</h2>
+    <section class="section">
+        <div class="section-head">
+            <h2>Departments</h2>
+        </div>
+        <p class="section-subtitle">Pick a department to see its subjects, papers, and mock tests.</p>
         {{ render_card_grid(department_cards, "No departments published yet.") }}
     </section>
 

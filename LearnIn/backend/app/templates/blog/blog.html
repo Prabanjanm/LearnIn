@@ -15,12 +15,14 @@
 
     <section class="page-hero">
         <h1>Blog</h1>
-        {% if category %}<p>Category: {{ category }}</p>{% endif %}
+        <p>Exam tips, strategy, and study guidance.{% if category %} Showing: {{ category }}{% endif %}</p>
     </section>
 
-    {{ render_card_grid(blog_cards, "No blog posts published yet.") }}
+    <section class="section">
+        {{ render_card_grid(blog_cards, "No blog posts published yet.") }}
 
-    {{ render_pagination(page, has_previous, has_next, "/blogs", extra_query) }}
+        {{ render_pagination(page, has_previous, has_next, "/blogs", extra_query) }}
+    </section>
 
 </div>
 {% endblock %}

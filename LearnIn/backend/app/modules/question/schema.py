@@ -6,6 +6,13 @@ from app.modules.option.schema import OptionResponse
 
 
 class OptionIn(BaseModel):
+    """
+    One option row as submitted alongside a question create/update - unlike
+    OptionCreate/OptionUpdate (app.modules.option.schema) this carries no
+    question_id, since the question service assigns it while syncing the
+    full option set for the question in one go.
+    """
+
     label: str
     option_text: str
     image_file_id: str | None = None
@@ -18,19 +25,19 @@ class QuestionBase(BaseModel):
     question_number: int
     question_type: QuestionType
     question_text: str
+    correct_answer: str
+    difficulty: DifficultyEnum
     marks: float = 1
     negative_marks: float = 0
-    difficulty: DifficultyEnum
-    image_file_id: str | None = None
-    image_mime_type: str | None = None
-    image_file_size: int | None = None
-    image_filename: str | None = None
+    explanation: str | None = None
 
 
 class QuestionCreate(QuestionBase):
     paper_id: int
-    correct_answer: str
-    explanation: str | None = None
+    image_file_id: str | None = None
+    image_mime_type: str | None = None
+    image_file_size: int | None = None
+    image_filename: str | None = None
     explanation_image_file_id: str | None = None
     explanation_image_mime_type: str | None = None
     explanation_image_file_size: int | None = None
@@ -43,72 +50,37 @@ class QuestionUpdate(BaseModel):
     question_number: int | None = None
     question_type: QuestionType | None = None
     question_text: str | None = None
+    correct_answer: str | None = None
+    difficulty: DifficultyEnum | None = None
     marks: float | None = None
     negative_marks: float | None = None
-    difficulty: DifficultyEnum | None = None
+    explanation: str | None = None
     image_file_id: str | None = None
     image_mime_type: str | None = None
     image_file_size: int | None = None
     image_filename: str | None = None
-    correct_answer: str | None = None
-    explanation: str | None = None
     explanation_image_file_id: str | None = None
     explanation_image_mime_type: str | None = None
     explanation_image_file_size: int | None = None
     explanation_image_filename: str | None = None
-    # None (the default) means "leave options untouched" - an explicit list,
-    # even an empty one, replaces the full option set in one transaction.
     options: list[OptionIn] | None = None
     status: StatusEnum | None = None
 
 
-class PublicOptionResponse(BaseModel):
-    """Options without any hint of which one is correct."""
-
-    id: int
-    label: str
-    option_text: str
-    image_file_id: str | None = None
-    image_filename: str | None = None
-
-    model_config = ConfigDict(
-        from_attributes=True
-    )
-
-    @computed_field
-    @property
-    def image_url(self) -> str | None:
-        return drive_view_url(self.image_file_id)
-
-
-class QuestionPublicResponse(QuestionBase):
-    """Used for the practice/mock-test flow - never exposes the answer."""
-
-    id: int
-    paper_id: int
-    options: list[PublicOptionResponse] = []
-
-    model_config = ConfigDict(
-        from_attributes=True
-    )
-
-    @computed_field
-    @property
-    def image_url(self) -> str | None:
-        return drive_view_url(self.image_file_id)
-
-
 class QuestionResponse(QuestionBase):
-    """Admin-only view - includes the answer and explanation."""
 
     id: int
     paper_id: int
-    correct_answer: str
-    explanation: str | None = None
+    image_file_id: str | None = None
+    image_mime_type: str | None = None
+    image_file_size: int | None = None
+    image_filename: str | None = None
     explanation_image_file_id: str | None = None
+    explanation_image_mime_type: str | None = None
+    explanation_image_file_size: int | None = None
     explanation_image_filename: str | None = None
-    options: list[OptionResponse] = []
     status: StatusEnum
+    options: list[OptionResponse] = []
 
     model_config = ConfigDict(
         from_attributes=True
@@ -125,11 +97,38 @@ class QuestionResponse(QuestionBase):
         return drive_view_url(self.explanation_image_file_id)
 
 
-class AnswerCheck(BaseModel):
+class QuestionCheckRequest(BaseModel):
     answer: str
 
 
-class AnswerCheckResult(BaseModel):
+class QuestionCheckResponse(BaseModel):
     is_correct: bool
     correct_answer: str
     explanation: str | None = None
+
+
+class QuestionPublicResponse(BaseModel):
+    """
+    Student-facing shape for taking a mock test - deliberately omits
+    correct_answer/explanation/explanation_image_* so the answer key isn't
+    shipped to the browser before the test is submitted.
+    """
+
+    id: int
+    question_number: int
+    question_type: QuestionType
+    question_text: str
+    difficulty: DifficultyEnum
+    marks: float
+    negative_marks: float
+    image_file_id: str | None = None
+    options: list[OptionResponse] = []
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
+    @computed_field
+    @property
+    def image_url(self) -> str | None:
+        return drive_view_url(self.image_file_id)

@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.enums import StatusEnum
 from app.modules.admin.dependencies import get_current_admin
 
 from .schema import PaperCreate, PaperResponse, PaperUpdate
@@ -23,11 +22,20 @@ def get_all(
 
 
 @router.get("/{paper_id}", response_model=PaperResponse)
-def get_one(
+def get_by_id(
     paper_id: int,
     db: Session = Depends(get_db)
 ):
     return paper_service.get_published_by_id(db, paper_id)
+
+
+@router.get("/{subject_id}/{year}", response_model=PaperResponse)
+def get_one(
+    subject_id: int,
+    year: int,
+    db: Session = Depends(get_db)
+):
+    return paper_service.get_published_by_year(db, subject_id, year)
 
 
 @router.post("/", response_model=PaperResponse)
@@ -48,26 +56,6 @@ def update(
 ):
     paper = paper_service.get_or_404(db, paper_id, "Paper not found")
     return paper_service.update_paper(db, paper, data)
-
-
-@router.post("/{paper_id}/publish", response_model=PaperResponse)
-def publish(
-    paper_id: int,
-    db: Session = Depends(get_db),
-    _admin=Depends(get_current_admin),
-):
-    paper = paper_service.get_or_404(db, paper_id, "Paper not found")
-    return paper_service.update_paper(db, paper, PaperUpdate(status=StatusEnum.PUBLISHED))
-
-
-@router.post("/{paper_id}/archive", response_model=PaperResponse)
-def archive(
-    paper_id: int,
-    db: Session = Depends(get_db),
-    _admin=Depends(get_current_admin),
-):
-    paper = paper_service.get_or_404(db, paper_id, "Paper not found")
-    return paper_service.update_paper(db, paper, PaperUpdate(status=StatusEnum.ARCHIVED))
 
 
 @router.delete("/{paper_id}", status_code=204)

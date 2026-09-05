@@ -12,5 +12,5 @@
 }
 
 .pagination a:hover {
-    border-bottom-color: var(--color-primary);
+    border-bottom-color: var(--color-accent);
 }

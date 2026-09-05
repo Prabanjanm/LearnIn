@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 
-from app.common.exceptions.exceptions import AlreadyExistsException, NotFoundException
+from app.common.exceptions.exceptions import NotFoundException
 from app.common.services.base_service import BaseService
-from app.common.utils.file_tracking import cleanup_drive_file, collect_subtree_file_ids
+from app.common.utils.file_tracking import cleanup_drive_file, cleanup_drive_files, collect_subtree_file_ids
 from app.common.utils.slug import generate_slug
 
 from .model import Department
@@ -21,47 +21,27 @@ class DepartmentService(BaseService):
         data: DepartmentCreate
     ) -> Department:
 
-        if self.repository.exists_by_code(db, data.exam_id, data.code.upper()):
-            raise AlreadyExistsException("Department already exists for this exam")
-
         department = Department(
-
             exam_id=data.exam_id,
-
             name=data.name,
-
-            code=data.code.upper(),
-
-            slug=generate_slug(data.name),
-
+            code=data.code,
             display_order=data.display_order,
-
             icon_file_id=data.icon_file_id,
-
             icon_mime_type=data.icon_mime_type,
-
             icon_file_size=data.icon_file_size,
-
             icon_filename=data.icon_filename,
-
             status=data.status,
-
+            slug=generate_slug(data.name),
         )
 
-        return self.repository.create(
-            db,
-            department
-        )
+        return self.create(db, department)
 
     def get_published_by_exam(
         self,
         db: Session,
         exam_id: int
     ):
-        return self.repository.get_published_by_exam(
-            db,
-            exam_id
-        )
+        return self.repository.get_published_by_exam(db, exam_id)
 
     def get_published_by_slug(
         self,
@@ -77,19 +57,6 @@ class DepartmentService(BaseService):
 
         return department
 
-    def get_published_by_id(
-        self,
-        db: Session,
-        department_id: int
-    ) -> Department:
-
-        department = self.repository.get_published_by_id(db, department_id)
-
-        if department is None:
-            raise NotFoundException("Department not found")
-
-        return department
-
     def update_department(
         self,
         db: Session,
@@ -99,18 +66,11 @@ class DepartmentService(BaseService):
 
         updates = data.model_dump(exclude_unset=True)
 
-        if "code" in updates and updates["code"] is not None:
-            new_code = updates["code"].upper()
-            existing = self.repository.exists_by_code(db, department.exam_id, new_code)
-            if existing is not None and existing.id != department.id:
-                raise AlreadyExistsException("Department already exists for this exam")
-            updates["code"] = new_code
-
-        if "name" in updates and updates["name"] is not None:
-            updates["slug"] = generate_slug(updates["name"])
-
         old_icon_file_id = department.icon_file_id
         replacing_icon = "icon_file_id" in updates and updates["icon_file_id"] != old_icon_file_id
+
+        if "name" in updates and updates["name"] != department.name:
+            updates.setdefault("slug", generate_slug(updates["name"]))
 
         for field, value in updates.items():
             setattr(department, field, value)
@@ -129,9 +89,7 @@ class DepartmentService(BaseService):
     ) -> None:
         file_ids = collect_subtree_file_ids(department)
         self.repository.delete(db, department)
-
-        for file_id in file_ids:
-            cleanup_drive_file(db, file_id)
+        cleanup_drive_files(db, file_ids)
 
 
 department_service = DepartmentService()

@@ -90,7 +90,7 @@ class SearchService:
                 id=blog.id,
                 title=blog.title,
                 slug=blog.slug,
-                url=f"/blog/{blog.slug}",
+                url=f"/blogs/{blog.slug}",
             ))
 
         for resource in self._resource_repository.search(db, query, limit_per_type):

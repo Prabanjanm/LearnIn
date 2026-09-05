@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import NotFoundException
 from app.common.services.base_service import BaseService
-from app.common.utils.file_tracking import cleanup_drive_file, collect_subtree_file_ids
+from app.common.utils.file_tracking import cleanup_drive_file, cleanup_drive_files, collect_subtree_file_ids
 from app.common.utils.slug import generate_slug
 
 from .model import Subject
@@ -24,16 +24,16 @@ class SubjectService(BaseService):
         subject = Subject(
             department_id=data.department_id,
             name=data.name,
-            slug=generate_slug(data.name),
             display_order=data.display_order,
             icon_file_id=data.icon_file_id,
             icon_mime_type=data.icon_mime_type,
             icon_file_size=data.icon_file_size,
             icon_filename=data.icon_filename,
             status=data.status,
+            slug=generate_slug(data.name),
         )
 
-        return self.repository.create(db, subject)
+        return self.create(db, subject)
 
     def get_published_by_department(
         self,
@@ -56,18 +56,16 @@ class SubjectService(BaseService):
 
         return subject
 
-    def get_published_by_id(
+    def get_filtered(
         self,
         db: Session,
-        subject_id: int
-    ) -> Subject:
-
-        subject = self.repository.get_published_by_id(db, subject_id)
-
-        if subject is None:
-            raise NotFoundException("Subject not found")
-
-        return subject
+        exam_id: int | None = None,
+        department_id: int | None = None,
+        term: str | None = None,
+        page: int = 1,
+        page_size: int = 24,
+    ):
+        return self.repository.get_filtered(db, exam_id, department_id, term, page, page_size)
 
     def update_subject(
         self,
@@ -78,11 +76,11 @@ class SubjectService(BaseService):
 
         updates = data.model_dump(exclude_unset=True)
 
-        if "name" in updates and updates["name"] is not None:
-            updates["slug"] = generate_slug(updates["name"])
-
         old_icon_file_id = subject.icon_file_id
         replacing_icon = "icon_file_id" in updates and updates["icon_file_id"] != old_icon_file_id
+
+        if "name" in updates and updates["name"] != subject.name:
+            updates.setdefault("slug", generate_slug(updates["name"]))
 
         for field, value in updates.items():
             setattr(subject, field, value)
@@ -101,9 +99,7 @@ class SubjectService(BaseService):
     ) -> None:
         file_ids = collect_subtree_file_ids(subject)
         self.repository.delete(db, subject)
-
-        for file_id in file_ids:
-            cleanup_drive_file(db, file_id)
+        cleanup_drive_files(db, file_ids)
 
 
 subject_service = SubjectService()

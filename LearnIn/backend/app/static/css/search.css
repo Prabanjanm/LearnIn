@@ -15,7 +15,7 @@
 
 .search-form input:focus {
     outline: none;
-    border-color: var(--color-primary);
+    border-color: var(--color-accent);
 }
 
 .search-results {
@@ -38,7 +38,7 @@
 }
 
 .search-result:hover {
-    border-color: var(--color-primary);
+    border-color: var(--color-accent);
     box-shadow: var(--shadow-sm);
 }
 
@@ -46,8 +46,13 @@
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
-    background: var(--color-primary-bg);
-    color: var(--color-primary-contrast);
+    background: var(--color-accent-light);
+    color: var(--color-accent);
     padding: 3px 10px;
     border-radius: var(--radius-pill);
+    white-space: nowrap;
+}
+
+.search-result h3 {
+    font-size: 15px;
 }

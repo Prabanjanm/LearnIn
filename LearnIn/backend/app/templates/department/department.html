@@ -12,10 +12,14 @@
 
     <section class="page-hero">
         <h1>{{ department.name }}</h1>
+        <p>{{ exam.name }}</p>
     </section>
 
-    <section>
-        <h2>Subjects</h2>
+    <section class="section">
+        <div class="section-head">
+            <h2>Subjects</h2>
+        </div>
+        <p class="section-subtitle">Practice questions, previous year papers, and study materials by subject.</p>
         {{ render_card_grid(subject_cards, "No subjects published yet.") }}
     </section>
 

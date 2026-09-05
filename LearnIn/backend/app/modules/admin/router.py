@@ -5,6 +5,8 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import GoogleDriveConfigError
+from app.common.rate_limit import rate_limit
+from app.common.utils.file_tracking import is_file_referenced
 from app.core.database import get_db
 from app.core.google_drive import get_drive_client
 
@@ -21,7 +23,7 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=Token, dependencies=[Depends(rate_limit(10, 60))])
 def login(
     data: AdminLogin,
     db: Session = Depends(get_db)
@@ -41,6 +43,7 @@ def download_file(
     file_id: str,
     filename: str | None = None,
     mime_type: str | None = None,
+    db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
 ):
     """
@@ -55,7 +58,16 @@ def download_file(
     serial get_file_metadata round trip to Drive before the actual content
     fetch - the single biggest thing making a "click to download" feel slow.
     A caller that doesn't have them yet still works via the metadata fallback.
+
+    file_id must belong to a row LearnIn actually tracks (is_file_referenced
+    checks every *_file_id column across every entity, the same registry
+    file_tracking.py already uses for cleanup) - otherwise any admin could
+    pull down any file the connected Drive account can see, not just
+    LearnIn's own uploads, just by guessing/enumerating Drive file ids.
     """
+    if not is_file_referenced(db, file_id):
+        raise HTTPException(status_code=404, detail="File not found")
+
     client = get_drive_client()
 
     try:
@@ -71,7 +83,11 @@ def download_file(
         logger.exception("Failed to download Drive file %s", file_id)
         raise HTTPException(status_code=502, detail="Failed to download file from Drive")
 
-    safe_filename = filename.replace('"', "")
+    # Strip quotes (would break out of the quoted filename param) and any
+    # control character including CR/LF (header-injection/response-splitting
+    # attempt via a crafted Drive filename) - not just relying on the ASGI
+    # server rejecting raw control chars in header values.
+    safe_filename = "".join(ch for ch in filename if ch not in '"' and ord(ch) >= 32) or "download"
 
     return Response(
         content=content,

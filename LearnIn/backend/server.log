@@ -1,0 +1,394 @@
+INFO:     Started server process [19688]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:65269 - "GET /admin/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65271 - "GET /admin/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65274 - "GET /admin/login HTTP/1.1" 200 OK
+(trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\passlib\handlers\bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+INFO:     127.0.0.1:65276 - "POST /admin/login HTTP/1.1" 303 See Other
+INFO:     127.0.0.1:63059 - "POST /admin/login HTTP/1.1" 303 See Other
+Google Drive upload failed for category=papers filename=mock.pdf
+Traceback (most recent call last):
+  File "C:\Users\Poovendhiran\learnin\LearnIn\LearnIn\backend\app\modules\admin\pages.py", line 1324, in upload_file
+    result = client.upload_file(
+        content,
+    ...<2 lines>...
+        category=category,
+    )
+  File "C:\Users\Poovendhiran\learnin\LearnIn\LearnIn\backend\app\core\google_drive.py", line 188, in upload_file
+    ).execute()
+      ~~~~~~~^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\googleapiclient\_helpers.py", line 130, in positional_wrapper
+    return wrapped(*args, **kwargs)
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\googleapiclient\http.py", line 923, in execute
+    resp, content = _retry_request(
+                    ~~~~~~~~~~~~~~^
+        http,
+        ^^^^^
+    ...<7 lines>...
+        headers=self.headers,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\googleapiclient\http.py", line 191, in _retry_request
+    resp, content = http.request(uri, method, *args, **kwargs)
+                    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google_auth_httplib2.py", line 205, in request
+    self.credentials.before_request(self._request, method, uri, request_headers)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\auth\credentials.py", line 240, in before_request
+    self._blocking_refresh(request)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\auth\credentials.py", line 203, in _blocking_refresh
+    self.refresh(request)
+    ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\auth\credentials.py", line 517, in refresh
+    self._perform_refresh_token(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\oauth2\credentials.py", line 435, in _perform_refresh_token
+    ) = reauth.refresh_grant(
+        ~~~~~~~~~~~~~~~~~~~~^
+        request,
+        ^^^^^^^^
+    ...<6 lines>...
+        enable_reauth_refresh=self._enable_reauth_refresh,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\oauth2\reauth.py", line 370, in refresh_grant
+    _client._handle_error_response(response_data, retryable_error)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\oauth2\_client.py", line 73, in _handle_error_response
+    raise exceptions.RefreshError(
+        error_details, response_data, retryable=retryable_error
+    )
+google.auth.exceptions.RefreshError: ('invalid_grant: Token has been expired or revoked.', {'error': 'invalid_grant', 'error_description': 'Token has been expired or revoked.'})
+INFO:     127.0.0.1:63059 - "POST /admin/upload HTTP/1.1" 502 Bad Gateway
+INFO:     127.0.0.1:63063 - "POST /admin/login HTTP/1.1" 303 See Other
+INFO:     127.0.0.1:63063 - "POST /admin/manage/exams/new HTTP/1.1" 303 See Other
+INFO:     127.0.0.1:63063 - "POST /admin/manage/exams/new HTTP/1.1" 303 See Other
+INFO:     127.0.0.1:63063 - "GET /admin/manage/exams?page_size=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63063 - "POST /admin/manage/departments/new HTTP/1.1" 303 See Other
+INFO:     127.0.0.1:63063 - "POST /admin/manage/departments/new HTTP/1.1" 303 See Other
+INFO:     127.0.0.1:63063 - "GET /admin/manage/departments?page_size=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63063 - "POST /admin/manage/subjects/new HTTP/1.1" 303 See Other
+INFO:     127.0.0.1:63063 - "POST /admin/manage/subjects/new HTTP/1.1" 303 See Other
+INFO:     127.0.0.1:63063 - "GET /admin/manage/subjects?page_size=100 HTTP/1.1" 200 OK
+Google Drive upload failed for category=papers filename=mock.pdf
+Traceback (most recent call last):
+  File "C:\Users\Poovendhiran\learnin\LearnIn\LearnIn\backend\app\modules\admin\pages.py", line 1324, in upload_file
+    result = client.upload_file(
+        content,
+    ...<2 lines>...
+        category=category,
+    )
+  File "C:\Users\Poovendhiran\learnin\LearnIn\LearnIn\backend\app\core\google_drive.py", line 188, in upload_file
+    ).execute()
+      ~~~~~~~^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\googleapiclient\_helpers.py", line 130, in positional_wrapper
+    return wrapped(*args, **kwargs)
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\googleapiclient\http.py", line 923, in execute
+    resp, content = _retry_request(
+                    ~~~~~~~~~~~~~~^
+        http,
+        ^^^^^
+    ...<7 lines>...
+        headers=self.headers,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\googleapiclient\http.py", line 191, in _retry_request
+    resp, content = http.request(uri, method, *args, **kwargs)
+                    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google_auth_httplib2.py", line 205, in request
+    self.credentials.before_request(self._request, method, uri, request_headers)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\auth\credentials.py", line 240, in before_request
+    self._blocking_refresh(request)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\auth\credentials.py", line 203, in _blocking_refresh
+    self.refresh(request)
+    ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\auth\credentials.py", line 517, in refresh
+    self._perform_refresh_token(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\oauth2\credentials.py", line 435, in _perform_refresh_token
+    ) = reauth.refresh_grant(
+        ~~~~~~~~~~~~~~~~~~~~^
+        request,
+        ^^^^^^^^
+    ...<6 lines>...
+        enable_reauth_refresh=self._enable_reauth_refresh,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\oauth2\reauth.py", line 370, in refresh_grant
+    _client._handle_error_response(response_data, retryable_error)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\oauth2\_client.py", line 73, in _handle_error_response
+    raise exceptions.RefreshError(
+        error_details, response_data, retryable=retryable_error
+    )
+google.auth.exceptions.RefreshError: ('invalid_grant: Token has been expired or revoked.', {'error': 'invalid_grant', 'error_description': 'Token has been expired or revoked.'})
+INFO:     127.0.0.1:63063 - "POST /admin/upload HTTP/1.1" 502 Bad Gateway
+Google Drive upload failed for category=papers filename=Screenshot 2026-07-17 102901.pdf
+Traceback (most recent call last):
+  File "C:\Users\Poovendhiran\learnin\LearnIn\LearnIn\backend\app\modules\admin\pages.py", line 1324, in upload_file
+    result = client.upload_file(
+        content,
+    ...<2 lines>...
+        category=category,
+    )
+  File "C:\Users\Poovendhiran\learnin\LearnIn\LearnIn\backend\app\core\google_drive.py", line 188, in upload_file
+    ).execute()
+      ~~~~~~~^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\googleapiclient\_helpers.py", line 130, in positional_wrapper
+    return wrapped(*args, **kwargs)
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\googleapiclient\http.py", line 923, in execute
+    resp, content = _retry_request(
+                    ~~~~~~~~~~~~~~^
+        http,
+        ^^^^^
+    ...<7 lines>...
+        headers=self.headers,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\googleapiclient\http.py", line 191, in _retry_request
+    resp, content = http.request(uri, method, *args, **kwargs)
+                    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google_auth_httplib2.py", line 205, in request
+    self.credentials.before_request(self._request, method, uri, request_headers)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\auth\credentials.py", line 240, in before_request
+    self._blocking_refresh(request)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\auth\credentials.py", line 203, in _blocking_refresh
+    self.refresh(request)
+    ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\auth\credentials.py", line 517, in refresh
+    self._perform_refresh_token(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\oauth2\credentials.py", line 435, in _perform_refresh_token
+    ) = reauth.refresh_grant(
+        ~~~~~~~~~~~~~~~~~~~~^
+        request,
+        ^^^^^^^^
+    ...<6 lines>...
+        enable_reauth_refresh=self._enable_reauth_refresh,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\oauth2\reauth.py", line 370, in refresh_grant
+    _client._handle_error_response(response_data, retryable_error)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\oauth2\_client.py", line 73, in _handle_error_response
+    raise exceptions.RefreshError(
+        error_details, response_data, retryable=retryable_error
+    )
+google.auth.exceptions.RefreshError: ('invalid_grant: Token has been expired or revoked.', {'error': 'invalid_grant', 'error_description': 'Token has been expired or revoked.'})
+INFO:     127.0.0.1:63068 - "POST /admin/upload HTTP/1.1" 502 Bad Gateway
+INFO:     127.0.0.1:53607 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53607 - "GET /static/css/variables.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:56515 - "GET /static/css/navbar.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:61044 - "GET /static/css/footer.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:56800 - "GET /static/css/base.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:60058 - "GET /static/css/buttons.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:54988 - "GET /static/css/cards.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:60058 - "GET /static/js/app.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:56515 - "GET /static/css/pagination.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:56800 - "GET /static/css/home.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:53607 - "GET /static/css/breadcrumbs.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:61044 - "GET /static/css/mobile.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:64148 - "GET /exams HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60312 - "GET /admin/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60313 - "POST /admin/login HTTP/1.1" 303 See Other
+Google Drive upload failed for category=papers filename=Screenshot 2026-07-17 102901.pdf
+Traceback (most recent call last):
+  File "C:\Users\Poovendhiran\learnin\LearnIn\LearnIn\backend\app\modules\admin\pages.py", line 1324, in upload_file
+    result = client.upload_file(
+        content,
+    ...<2 lines>...
+        category=category,
+    )
+  File "C:\Users\Poovendhiran\learnin\LearnIn\LearnIn\backend\app\core\google_drive.py", line 188, in upload_file
+    ).execute()
+      ~~~~~~~^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\googleapiclient\_helpers.py", line 130, in positional_wrapper
+    return wrapped(*args, **kwargs)
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\googleapiclient\http.py", line 923, in execute
+    resp, content = _retry_request(
+                    ~~~~~~~~~~~~~~^
+        http,
+        ^^^^^
+    ...<7 lines>...
+        headers=self.headers,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\googleapiclient\http.py", line 191, in _retry_request
+    resp, content = http.request(uri, method, *args, **kwargs)
+                    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google_auth_httplib2.py", line 205, in request
+    self.credentials.before_request(self._request, method, uri, request_headers)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\auth\credentials.py", line 240, in before_request
+    self._blocking_refresh(request)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\auth\credentials.py", line 203, in _blocking_refresh
+    self.refresh(request)
+    ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\auth\credentials.py", line 517, in refresh
+    self._perform_refresh_token(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\oauth2\credentials.py", line 435, in _perform_refresh_token
+    ) = reauth.refresh_grant(
+        ~~~~~~~~~~~~~~~~~~~~^
+        request,
+        ^^^^^^^^
+    ...<6 lines>...
+        enable_reauth_refresh=self._enable_reauth_refresh,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\oauth2\reauth.py", line 370, in refresh_grant
+    _client._handle_error_response(response_data, retryable_error)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\oauth2\_client.py", line 73, in _handle_error_response
+    raise exceptions.RefreshError(
+        error_details, response_data, retryable=retryable_error
+    )
+google.auth.exceptions.RefreshError: ('invalid_grant: Token has been expired or revoked.', {'error': 'invalid_grant', 'error_description': 'Token has been expired or revoked.'})
+INFO:     127.0.0.1:60314 - "POST /admin/upload HTTP/1.1" 502 Bad Gateway
+INFO:     127.0.0.1:63696 - "GET /admin HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63696 - "GET /static/css/variables.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:49924 - "GET /static/css/base.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:63696 - "GET /static/css/admin.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:63696 - "GET /static/js/components/upload-widget.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:49924 - "GET /static/js/components/admin-table.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:60578 - "GET /static/js/components/admin-drawer.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:60578 - "GET /static/js/components/markdown-preview.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:60578 - "GET /static/js/admin.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:55447 - "GET /admin/manage/papers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55447 - "GET /admin/manage/papers/new HTTP/1.1" 200 OK
+Google Drive upload failed for category=papers filename=Internship Letter - Siva Priyan.pdf
+Traceback (most recent call last):
+  File "C:\Users\Poovendhiran\learnin\LearnIn\LearnIn\backend\app\modules\admin\pages.py", line 1324, in upload_file
+    result = client.upload_file(
+        content,
+    ...<2 lines>...
+        category=category,
+    )
+  File "C:\Users\Poovendhiran\learnin\LearnIn\LearnIn\backend\app\core\google_drive.py", line 188, in upload_file
+    ).execute()
+      ~~~~~~~^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\googleapiclient\_helpers.py", line 130, in positional_wrapper
+    return wrapped(*args, **kwargs)
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\googleapiclient\http.py", line 923, in execute
+    resp, content = _retry_request(
+                    ~~~~~~~~~~~~~~^
+        http,
+        ^^^^^
+    ...<7 lines>...
+        headers=self.headers,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\googleapiclient\http.py", line 191, in _retry_request
+    resp, content = http.request(uri, method, *args, **kwargs)
+                    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google_auth_httplib2.py", line 205, in request
+    self.credentials.before_request(self._request, method, uri, request_headers)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\auth\credentials.py", line 240, in before_request
+    self._blocking_refresh(request)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\auth\credentials.py", line 203, in _blocking_refresh
+    self.refresh(request)
+    ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\auth\credentials.py", line 517, in refresh
+    self._perform_refresh_token(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\oauth2\credentials.py", line 435, in _perform_refresh_token
+    ) = reauth.refresh_grant(
+        ~~~~~~~~~~~~~~~~~~~~^
+        request,
+        ^^^^^^^^
+    ...<6 lines>...
+        enable_reauth_refresh=self._enable_reauth_refresh,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\oauth2\reauth.py", line 370, in refresh_grant
+    _client._handle_error_response(response_data, retryable_error)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\oauth2\_client.py", line 73, in _handle_error_response
+    raise exceptions.RefreshError(
+        error_details, response_data, retryable=retryable_error
+    )
+google.auth.exceptions.RefreshError: ('invalid_grant: Token has been expired or revoked.', {'error': 'invalid_grant', 'error_description': 'Token has been expired or revoked.'})
+INFO:     127.0.0.1:56301 - "POST /admin/upload HTTP/1.1" 502 Bad Gateway
+INFO:     127.0.0.1:61668 - "GET /admin/manage/papers/new HTTP/1.1" 200 OK
+Google Drive upload failed for category=papers filename=Instagram_Graph_API_Integration_Workflow (3).pdf
+Traceback (most recent call last):
+  File "C:\Users\Poovendhiran\learnin\LearnIn\LearnIn\backend\app\modules\admin\pages.py", line 1324, in upload_file
+    result = client.upload_file(
+        content,
+    ...<2 lines>...
+        category=category,
+    )
+  File "C:\Users\Poovendhiran\learnin\LearnIn\LearnIn\backend\app\core\google_drive.py", line 188, in upload_file
+    ).execute()
+      ~~~~~~~^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\googleapiclient\_helpers.py", line 130, in positional_wrapper
+    return wrapped(*args, **kwargs)
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\googleapiclient\http.py", line 923, in execute
+    resp, content = _retry_request(
+                    ~~~~~~~~~~~~~~^
+        http,
+        ^^^^^
+    ...<7 lines>...
+        headers=self.headers,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\googleapiclient\http.py", line 191, in _retry_request
+    resp, content = http.request(uri, method, *args, **kwargs)
+                    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google_auth_httplib2.py", line 205, in request
+    self.credentials.before_request(self._request, method, uri, request_headers)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\auth\credentials.py", line 240, in before_request
+    self._blocking_refresh(request)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\auth\credentials.py", line 203, in _blocking_refresh
+    self.refresh(request)
+    ~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\auth\credentials.py", line 517, in refresh
+    self._perform_refresh_token(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\oauth2\credentials.py", line 435, in _perform_refresh_token
+    ) = reauth.refresh_grant(
+        ~~~~~~~~~~~~~~~~~~~~^
+        request,
+        ^^^^^^^^
+    ...<6 lines>...
+        enable_reauth_refresh=self._enable_reauth_refresh,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\oauth2\reauth.py", line 370, in refresh_grant
+    _client._handle_error_response(response_data, retryable_error)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Poovendhiran\learnin\.venv\Lib\site-packages\google\oauth2\_client.py", line 73, in _handle_error_response
+    raise exceptions.RefreshError(
+        error_details, response_data, retryable=retryable_error
+    )
+google.auth.exceptions.RefreshError: ('invalid_grant: Token has been expired or revoked.', {'error': 'invalid_grant', 'error_description': 'Token has been expired or revoked.'})
+INFO:     127.0.0.1:57232 - "POST /admin/upload HTTP/1.1" 502 Bad Gateway

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.common.exceptions.exceptions import AlreadyExistsException, NotFoundException
+from app.common.exceptions.exceptions import NotFoundException
 from app.common.services.base_service import BaseService
 from app.common.utils.file_tracking import cleanup_drive_file
 from app.common.utils.slug import generate_slug
@@ -21,35 +21,30 @@ class BlogService(BaseService):
         data: BlogCreate
     ) -> Blog:
 
-        slug = generate_slug(data.title)
-
-        if self.repository.exists_by_slug(db, slug):
-            raise AlreadyExistsException("A blog with this title already exists")
-
         blog = Blog(
             title=data.title,
-            thumbnail_file_id=data.thumbnail_file_id,
-            thumbnail_mime_type=data.thumbnail_mime_type,
-            thumbnail_file_size=data.thumbnail_file_size,
-            thumbnail_filename=data.thumbnail_filename,
             content=data.content,
             category=data.category,
             tags=data.tags,
             published_date=data.published_date,
+            thumbnail_file_id=data.thumbnail_file_id,
+            thumbnail_mime_type=data.thumbnail_mime_type,
+            thumbnail_file_size=data.thumbnail_file_size,
+            thumbnail_filename=data.thumbnail_filename,
             meta_title=data.meta_title,
             meta_description=data.meta_description,
             status=data.status,
-            slug=slug,
+            slug=generate_slug(data.title),
         )
 
-        return self.repository.create(db, blog)
+        return self.create(db, blog)
 
     def get_published(
         self,
         db: Session,
         category: str | None = None,
         page: int = 1,
-        page_size: int = 20
+        page_size: int = 12
     ):
         return self.repository.get_published(db, category, page, page_size)
 
@@ -75,17 +70,13 @@ class BlogService(BaseService):
 
         updates = data.model_dump(exclude_unset=True)
 
-        if "title" in updates and updates["title"] is not None:
-            new_slug = generate_slug(updates["title"])
-            existing = self.repository.get_by_slug(db, new_slug)
-            if existing is not None and existing.id != blog.id:
-                raise AlreadyExistsException("A blog with this title already exists")
-            updates["slug"] = new_slug
-
         old_thumbnail_file_id = blog.thumbnail_file_id
         replacing_thumbnail = (
             "thumbnail_file_id" in updates and updates["thumbnail_file_id"] != old_thumbnail_file_id
         )
+
+        if "title" in updates and updates["title"] != blog.title:
+            updates.setdefault("slug", generate_slug(updates["title"]))
 
         for field, value in updates.items():
             setattr(blog, field, value)

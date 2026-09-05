@@ -1,0 +1,105 @@
+.account-card {
+    max-width: 420px;
+    margin: 48px auto;
+    padding: 32px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+}
+
+.account-card h1 {
+    font-size: 26px;
+    margin-bottom: 6px;
+}
+
+.account-form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 20px;
+}
+
+.account-form label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.account-form input {
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 15px;
+}
+
+.account-form input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+.account-form .btn {
+    margin-top: 18px;
+    justify-content: center;
+}
+
+.account-error {
+    background: var(--color-danger-bg);
+    color: var(--color-danger-text);
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    margin-top: 14px;
+}
+
+.account-switch {
+    margin-top: 18px;
+    font-size: 14px;
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
+.account-switch a {
+    color: var(--color-accent);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.account-switch a:hover {
+    text-decoration: underline;
+}
+
+.dashboard-attempt-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dashboard-attempt-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    color: var(--color-text);
+    transition: border-color .15s ease, transform .15s ease;
+}
+
+.dashboard-attempt-row:hover {
+    border-color: var(--color-accent);
+    transform: translateY(-2px);
+}
+
+.dashboard-attempt-row strong {
+    display: block;
+}
+
+.dashboard-attempt-score {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--color-accent);
+    white-space: nowrap;
+}

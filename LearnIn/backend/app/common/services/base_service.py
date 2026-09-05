@@ -1,4 +1,6 @@
-from app.common.exceptions.exceptions import NotFoundException
+from sqlalchemy.exc import IntegrityError
+
+from app.common.exceptions.exceptions import AlreadyExistsException, NotFoundException
 
 
 class BaseService:
@@ -22,7 +24,20 @@ class BaseService:
         return obj
 
     def create(self, db, obj):
-        return self.repository.create(db, obj)
+        """
+        A raw unique-constraint violation (duplicate code/slug/year, etc.)
+        would otherwise surface as an unhandled sqlalchemy.exc.IntegrityError
+        - a 500 with an internal DB error, or a raw traceback in DEBUG mode -
+        instead of a clean, expected "this already exists" response.
+        Converting it here means every caller that creates through the
+        normal service/repository path gets sane 409 behavior for free,
+        without each entity's create_X method repeating the same try/except.
+        """
+        try:
+            return self.repository.create(db, obj)
+        except IntegrityError:
+            db.rollback()
+            raise AlreadyExistsException("A record with conflicting unique data already exists")
 
     def update(self, db, obj):
         return self.repository.update(db, obj)

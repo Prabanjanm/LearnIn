@@ -6,11 +6,11 @@ from app.core.enums import StatusEnum
 
 class SubjectBase(BaseModel):
     name: str
-    display_order: int = 0
 
 
 class SubjectCreate(SubjectBase):
     department_id: int
+    display_order: int = 0
     icon_file_id: str | None = None
     icon_mime_type: str | None = None
     icon_file_size: int | None = None
@@ -19,6 +19,7 @@ class SubjectCreate(SubjectBase):
 
 
 class SubjectUpdate(BaseModel):
+    department_id: int | None = None
     name: str | None = None
     display_order: int | None = None
     icon_file_id: str | None = None
@@ -33,9 +34,10 @@ class SubjectResponse(SubjectBase):
     id: int
     department_id: int
     slug: str
-    status: StatusEnum
+    display_order: int
     icon_file_id: str | None = None
     icon_filename: str | None = None
+    status: StatusEnum
     meta_title: str | None = None
     meta_description: str | None = None
 
