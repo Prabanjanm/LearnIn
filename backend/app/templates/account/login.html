@@ -1,0 +1,29 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Log In | LearnIn{% endblock %}
+{% block description %}Log in to your LearnIn account to track your mock test results.{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/account.css">{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="account-card">
+        <h1>Welcome back</h1>
+        <p class="section-subtitle">Log in to see your mock test results and progress.</p>
+
+        {% if error %}<p class="account-error">{{ error }}</p>{% endif %}
+
+        <form method="post" action="/login" class="account-form">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required autofocus>
+
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+
+            <button type="submit" class="btn btn-lg">Log In</button>
+        </form>
+
+        <p class="account-switch">New to LearnIn? <a href="/signup">Create an account</a></p>
+    </div>
+</div>
+{% endblock %}

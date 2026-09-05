@@ -1,0 +1,15 @@
+{% macro render_pagination(page, has_previous, has_next, base_url, extra_query="") %}
+{% if has_previous or has_next %}
+<div class="pagination">
+    {% if has_previous %}
+    <a href="{{ base_url }}?page={{ page - 1 }}{{ extra_query }}">&laquo; Previous</a>
+    {% else %}
+    <span></span>
+    {% endif %}
+
+    {% if has_next %}
+    <a href="{{ base_url }}?page={{ page + 1 }}{{ extra_query }}">Next &raquo;</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endmacro %}

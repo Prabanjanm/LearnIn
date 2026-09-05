@@ -1,0 +1,20 @@
+{#
+    Bare (no sidebar/topbar) read-only detail view, loaded inside the
+    slide-over drawer's iframe when the admin clicks the eye/"View" icon.
+#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ label }} details</title>
+    <link rel="stylesheet" href="/static/css/variables.css">
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body class="admin-body admin-drawer-body">
+    <div class="admin-drawer-form-wrap">
+        {% include "admin/_detail_fields.html" %}
+    </div>
+</body>
+</html>

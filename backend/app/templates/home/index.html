@@ -1,0 +1,99 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}LearnIn - GATE Previous Year Papers, Mock Tests & Study Materials{% endblock %}
+{% block description %}Previous Year Question Papers, Notes and Mock Tests for GATE and other government exams.{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="/static/css/home.css">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <section class="hero">
+        <h1>Prepare Smarter.<br>Practice Better.<br>Score Higher.</h1>
+
+        <p>Previous-year question papers, answer keys, free mock tests, and performance-based practice - no paywalls.</p>
+
+        <form action="/search" method="get" class="hero-search">
+            <input type="text" name="q" placeholder="Search exams, papers, blogs..." autofocus>
+            <button type="submit" class="btn">Search</button>
+        </form>
+
+        <div class="hero-actions">
+            <a href="/exams" class="btn btn-lg">Start Practicing</a>
+            <a href="/papers" class="btn btn-secondary btn-lg">Explore Previous Papers</a>
+        </div>
+    </section>
+
+    {% if stats %}
+    <section class="section">
+        <div class="stat-row">
+            {% for stat in stats %}
+            <div class="stat-card">
+                <strong>{{ stat.value }}+</strong>
+                <span>{{ stat.label }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="section">
+        <div class="section-head">
+            <h2>Popular Exams</h2>
+            <a href="/exams" class="section-link">View all exams &rarr;</a>
+        </div>
+        <p class="section-subtitle">Choose an exam to see its departments, subjects, previous year papers, and mock tests.</p>
+
+        <div class="card-grid">
+            {% for exam in exam_cards %}
+            <a class="entity-card" href="{{ exam.url }}">
+                <h3>{{ exam.title }}</h3>
+                {% if exam.meta %}<span class="entity-card-meta">{{ exam.meta }}</span>{% endif %}
+            </a>
+            {% else %}
+            <p class="empty-state">Exams are being added — check back soon.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-head">
+            <h2>Previous Year Question Papers</h2>
+            <a href="/papers" class="section-link">View all papers &rarr;</a>
+        </div>
+        <p class="section-subtitle">Practice with real previous-year papers and download question papers with available answer keys.</p>
+
+        <div class="card-grid">
+            {% for paper in paper_cards %}
+            <a class="entity-card" href="{{ paper.url }}">
+                <h3>{{ paper.title }}</h3>
+                {% if paper.meta %}<span class="entity-card-meta">{{ paper.meta }}</span>{% endif %}
+            </a>
+            {% else %}
+            <p class="empty-state">No previous-year papers available yet.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-head">
+            <h2>Free Mock Tests</h2>
+        </div>
+        <p class="section-subtitle">Take a timed, exam-style mock test and get an instant, detailed breakdown of your performance.</p>
+
+        <div class="card-grid">
+            {% for mock_test in mock_test_cards %}
+            <a class="entity-card" href="{{ mock_test.url }}">
+                <h3>{{ mock_test.title }}</h3>
+                {% if mock_test.meta %}<span class="entity-card-meta">{{ mock_test.meta }}</span>{% endif %}
+            </a>
+            {% else %}
+            <p class="empty-state">No mock tests available yet.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+</div>
+{% endblock %}

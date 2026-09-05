@@ -1,0 +1,19 @@
+{#
+    Generic entity card grid - reused by the exam/department/subject/paper/blog
+    listing pages. Callers pass a list of plain dicts (built server-side) shaped as:
+        {"title": str, "url": str, "meta": str | None, "target_blank": bool | None}
+    instead of looping over ORM objects here, so this macro never needs to know
+    about exams/departments/subjects/papers/blogs individually.
+#}
+{% macro render_card_grid(items, empty_message="Nothing published yet.") %}
+<div class="card-grid">
+    {% for item in items %}
+    <a class="entity-card" href="{{ item.url }}"{% if item.target_blank %} target="_blank" rel="noopener"{% endif %}>
+        <h3>{{ item.title }}</h3>
+        {% if item.meta %}<span class="entity-card-meta">{{ item.meta }}</span>{% endif %}
+    </a>
+    {% else %}
+    <p class="empty-state">{{ empty_message }}</p>
+    {% endfor %}
+</div>
+{% endmacro %}

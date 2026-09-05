@@ -1,0 +1,8 @@
+{% macro render_breadcrumbs(items) %}
+<div class="container breadcrumbs">
+    <a href="/">Home</a>
+    {%- for item in items %}
+        / {% if item.url %}<a href="{{ item.url }}">{{ item.label }}</a>{% else %}<span>{{ item.label }}</span>{% endif %}
+    {%- endfor %}
+</div>
+{% endmacro %}

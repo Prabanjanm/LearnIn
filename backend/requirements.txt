@@ -1,0 +1,72 @@
+# Web framework
+fastapi==0.109.0
+starlette==0.35.1
+uvicorn==0.27.0
+
+# Database
+SQLAlchemy==2.0.51
+alembic==1.18.5
+psycopg2-binary==2.9.12
+greenlet==3.1.1
+Mako==1.3.12
+
+# Validation / config
+pydantic==2.13.4
+pydantic_core==2.46.4
+email-validator==2.3.0
+annotated-types==0.7.0
+python-dotenv==1.2.2
+typing_extensions==4.16.0
+
+# Templates / forms
+Jinja2==3.1.6
+MarkupSafe==3.0.3
+python-multipart==0.0.32
+Markdown==3.10.2
+nh3==0.3.7
+
+# Auth (password hashing + JWT)
+passlib==1.7.4
+bcrypt==4.3.0
+python-jose==3.3.0
+ecdsa==0.19.2
+rsa==4.9.1
+pyasn1==0.6.3
+six==1.17.0
+
+# Google Drive storage (OAuth user credentials, not a service account -
+# see backend/scripts/authorize_google_drive.py)
+google-api-python-client==2.198.0
+google-auth==2.56.0
+google-auth-httplib2==0.4.0
+google-auth-oauthlib==1.4.0
+requests-oauthlib==2.0.0
+oauthlib==3.3.1
+google-api-core==2.32.0
+googleapis-common-protos==1.75.0
+proto-plus==1.28.1
+protobuf==7.35.1
+httplib2==0.32.0
+uritemplate==4.2.0
+pyasn1_modules==0.4.2
+cachetools==7.1.4
+
+# Shared transitive dependencies
+anyio==4.14.1
+certifi==2026.6.17
+cffi==2.1.0
+charset-normalizer==3.4.9
+click==8.4.2
+colorama==0.4.6
+cryptography==41.0.0
+h11==0.16.0
+idna==3.18
+pyparsing==3.3.2
+requests==2.34.2
+urllib3==2.7.0
+
+# Testing (dev only - not needed to run the app itself)
+# httpx pinned below 0.28 - starlette==0.35.1's TestClient still passes
+# app= to httpx.Client, which newer httpx versions removed.
+pytest==9.1.1
+httpx==0.27.2

@@ -1,0 +1,35 @@
+{% extends "layouts/base.html" %}
+{% from "components/breadcrumbs.html" import render_breadcrumbs %}
+{% from "components/card_grid.html" import render_card_grid %}
+
+{% block title %}{{ subject.meta_title or (subject.name ~ " - " ~ department.name) }} | LearnIn{% endblock %}
+{% block description %}{{ subject.meta_description or "" }}{% endblock %}
+
+{% block breadcrumbs %}{{ render_breadcrumbs(breadcrumbs) }}{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <section class="page-hero">
+        <h1>{{ subject.name }}</h1>
+        <p>{{ department.name }} &middot; {{ exam.name }}</p>
+    </section>
+
+    <section class="section">
+        <div class="section-head">
+            <h2>Previous Year Papers</h2>
+        </div>
+        <p class="section-subtitle">Practice each year's paper online, or download the question paper and answer key.</p>
+        {{ render_card_grid(paper_cards, "No papers published yet.") }}
+    </section>
+
+    <section class="section" id="resources">
+        <div class="section-head">
+            <h2>Study Materials</h2>
+        </div>
+        <p class="section-subtitle">Notes, formula sheets, and other resources for this subject.</p>
+        {{ render_card_grid(resource_cards, "No resources published yet.") }}
+    </section>
+
+</div>
+{% endblock %}

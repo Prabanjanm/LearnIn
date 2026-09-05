@@ -1,0 +1,56 @@
+@media (max-width: 900px) {
+    .nav-toggle {
+        display: flex;
+    }
+
+    .nav-links {
+        position: absolute;
+        top: 64px;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 2px;
+        background: var(--color-bg);
+        border-bottom: 1px solid var(--color-border);
+        padding: 8px 5%;
+        box-shadow: var(--shadow-md);
+        display: none;
+    }
+
+    header[data-nav-open] .nav-links {
+        display: flex;
+    }
+
+    .nav-links a {
+        padding: 12px 14px;
+        border-radius: var(--radius-md);
+    }
+}
+
+@media (max-width: 640px) {
+    .page-hero h1 {
+        font-size: 26px;
+    }
+
+    .card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .action-row {
+        flex-direction: column;
+    }
+
+    .action-row .btn,
+    .action-row .btn-secondary {
+        text-align: center;
+    }
+
+    .quiz-result-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .hero-search input {
+        width: 100%;
+    }
+}

@@ -1,0 +1,120 @@
+{% extends "layouts/base.html" %}
+{% from "components/breadcrumbs.html" import render_breadcrumbs %}
+
+{% block title %}Result - {{ mock_test.title }} | LearnIn{% endblock %}
+{% block description %}Your result for the {{ mock_test.title }} mock test.{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/quiz.css">{% endblock %}
+
+{% block breadcrumbs %}{{ render_breadcrumbs(breadcrumbs) }}{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <section class="page-hero">
+        <h1>{{ mock_test.title }}</h1>
+        <p>Test completed{% if attempt.time_taken_seconds %} in {{ (attempt.time_taken_seconds // 60) }} min {{ attempt.time_taken_seconds % 60 }} sec{% endif %}.</p>
+    </section>
+
+    <section class="section">
+        <div class="stat-row">
+            <div class="stat-card">
+                <strong>{{ attempt.scored_marks }} / {{ attempt.total_marks }}</strong>
+                <span>Score</span>
+            </div>
+            <div class="stat-card">
+                <strong>{{ accuracy if accuracy is not none else "—" }}{% if accuracy is not none %}%{% endif %}</strong>
+                <span>Accuracy</span>
+            </div>
+            <div class="stat-card">
+                <strong>{{ attempt.correct_count }}</strong>
+                <span>Correct</span>
+            </div>
+            <div class="stat-card">
+                <strong>{{ attempt.incorrect_count }}</strong>
+                <span>Incorrect</span>
+            </div>
+            <div class="stat-card">
+                <strong>{{ attempt.unanswered_count }}</strong>
+                <span>Unanswered</span>
+            </div>
+        </div>
+
+        <div class="action-row">
+            <a class="btn" href="/{{ exam.slug }}/{{ department.slug }}/{{ subject.slug }}/{{ paper.year }}/mock-test/{{ mock_test.id }}">Retake Test</a>
+            <a class="btn btn-secondary" href="/{{ exam.slug }}/{{ department.slug }}/{{ subject.slug }}">Back to {{ subject.name }}</a>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-head">
+            <h2>Subject Performance</h2>
+        </div>
+        <p class="section-subtitle">This mock test's questions all come from {{ subject.name }}, so that's the subject this result reflects.</p>
+
+        <div class="dashboard-attempt-row" style="cursor:default">
+            <div>
+                <strong>{{ subject.name }}</strong>
+                <span class="entity-card-meta">{{ attempt.correct_count + attempt.incorrect_count + attempt.unanswered_count }} questions &middot; {{ attempt.correct_count }} correct &middot; {{ attempt.incorrect_count }} incorrect &middot; {{ attempt.unanswered_count }} skipped</span>
+            </div>
+            <div class="dashboard-attempt-score">{{ accuracy if accuracy is not none else "—" }}{% if accuracy is not none %}%{% endif %}</div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-head">
+            <h2>What Should You Practice Next?</h2>
+        </div>
+
+        {% if not student %}
+        <p class="empty-state">
+            <a href="/login">Log in</a> to track your performance across tests and get personalized weak-subject recommendations.
+        </p>
+        {% elif weak_subjects %}
+        <div class="dashboard-attempt-list">
+            {% for entry in weak_subjects %}
+            <a class="dashboard-attempt-row" href="{{ entry.url }}">
+                <div>
+                    <strong>{{ entry.subject.name }}</strong>
+                    <span class="entity-card-meta">{{ entry.answered_count }} questions answered</span>
+                </div>
+                <div class="dashboard-attempt-score">{{ entry.accuracy }}% accuracy</div>
+            </a>
+            {% endfor %}
+        </div>
+        <div class="action-row">
+            <a class="btn" href="{{ weak_subjects[0].url }}">Practice This Subject</a>
+            <a class="btn btn-secondary" href="/mock-tests">Try Another Mock Test</a>
+        </div>
+        {% else %}
+        <p class="empty-state">Complete a few more practice questions or mock tests to unlock personalized weak-subject recommendations.</p>
+        <div class="action-row">
+            <a class="btn" href="/practice">Start Practicing</a>
+            <a class="btn btn-secondary" href="/mock-tests">Try Another Mock Test</a>
+        </div>
+        {% endif %}
+    </section>
+
+    <section class="section">
+        <div class="section-head">
+            <h2>Review Answers</h2>
+        </div>
+
+        {% for answer in attempt.answers %}
+        <div class="quiz-question">
+            <div class="quiz-question-header">
+                <span>Q{{ loop.index }}</span>
+                <span>{{ answer.marks_awarded }} marks</span>
+            </div>
+            <p>{{ answer.question.question_text }}</p>
+            <div class="quiz-feedback {% if answer.is_correct is none %}{% elif answer.is_correct %}correct{% else %}incorrect{% endif %}">
+                {% if answer.is_correct is none %}Unanswered{% elif answer.is_correct %}Correct{% else %}Incorrect{% endif %}
+                &mdash; Correct answer: {{ answer.question.correct_answer }}
+                {% if answer.question.explanation %} &mdash; {{ answer.question.explanation }}{% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </section>
+
+</div>
+{% endblock %}

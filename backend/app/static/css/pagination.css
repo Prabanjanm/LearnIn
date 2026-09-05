@@ -1,0 +1,16 @@
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 25px;
+}
+
+.pagination a {
+    color: var(--color-dark);
+    text-decoration: none;
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+}
+
+.pagination a:hover {
+    border-bottom-color: var(--color-accent);
+}

@@ -1,0 +1,23 @@
+{% extends "layouts/base.html" %}
+{% from "components/breadcrumbs.html" import render_breadcrumbs %}
+{% from "components/card_grid.html" import render_card_grid %}
+
+{% block title %}Exams | LearnIn{% endblock %}
+{% block description %}Browse every exam category on LearnIn - previous year papers, mock tests, and practice questions.{% endblock %}
+
+{% block breadcrumbs %}{{ render_breadcrumbs(breadcrumbs) }}{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <section class="page-hero">
+        <h1>Choose Your Exam</h1>
+        <p>Pick an exam to see its departments, subjects, previous year papers, and mock tests.</p>
+    </section>
+
+    <section class="section">
+        {{ render_card_grid(exam_cards, "Exams are being added — check back soon.") }}
+    </section>
+
+</div>
+{% endblock %}

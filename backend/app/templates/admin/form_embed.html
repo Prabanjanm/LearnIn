@@ -1,0 +1,25 @@
+{#
+    Bare (no sidebar/topbar) version of the edit form, loaded inside the
+    slide-over drawer's iframe. Shares field-rendering with the full-page
+    form via _form_fields.html so the two never drift apart.
+#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ "Edit" if is_edit else "New" }} {{ label }}</title>
+    <link rel="stylesheet" href="/static/css/variables.css">
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body class="admin-body admin-drawer-body">
+    <div class="admin-drawer-form-wrap">
+        {% include "admin/_form_fields.html" %}
+    </div>
+
+    <script src="/static/js/components/upload-widget.js"></script>
+    <script src="/static/js/components/markdown-preview.js"></script>
+    <script src="/static/js/admin.js"></script>
+</body>
+</html>

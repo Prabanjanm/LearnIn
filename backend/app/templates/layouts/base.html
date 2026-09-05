@@ -1,0 +1,67 @@
+{% from "components/navbar.html" import render_navbar %}
+{% from "components/footer.html" import render_footer %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}LearnIn{% endblock %}</title>
+
+    <meta name="description"
+          content="{% block description %}LearnIn - Previous Year Question Papers, Mock Tests and Study Materials{% endblock %}">
+
+    <link rel="canonical" href="{% block canonical %}{{ request.url }}{% endblock %}">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="LearnIn">
+    <meta property="og:title" content="{{ self.title() }}">
+    <meta property="og:description" content="{{ self.description() }}">
+    <meta property="og:url" content="{{ self.canonical() }}">
+
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{{ self.title() }}">
+    <meta name="twitter:description" content="{{ self.description() }}">
+
+    {% block structured_data %}{% endblock %}
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/variables.css">
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/navbar.css">
+    <link rel="stylesheet" href="/static/css/footer.css">
+    <link rel="stylesheet" href="/static/css/buttons.css">
+    <link rel="stylesheet" href="/static/css/cards.css">
+    <link rel="stylesheet" href="/static/css/breadcrumbs.css">
+    <link rel="stylesheet" href="/static/css/pagination.css">
+    <link rel="stylesheet" href="/static/css/mobile.css">
+
+    {% block css %}{% endblock %}
+
+</head>
+
+<body>
+
+{{ render_navbar(request) }}
+
+<main>
+
+    {% block breadcrumbs %}{% endblock %}
+
+    {% block content %}{% endblock %}
+
+</main>
+
+{{ render_footer() }}
+
+<script src="/static/js/app.js"></script>
+
+{% block js %}{% endblock %}
+
+</body>
+</html>

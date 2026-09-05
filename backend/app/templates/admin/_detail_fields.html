@@ -1,0 +1,41 @@
+{#
+    Read-only field display used by the "View" drawer - mirrors the same
+    `fields` list used to build the edit form, but renders label/value pairs
+    instead of inputs, and turns FIELD_UPLOAD fields into a Download button
+    (proxied through /api/admin/files/{id}/download) instead of a dropzone.
+#}
+{% from "components/icons.html" import icon %}
+{% from "components/status_badge.html" import status_badge %}
+
+<div class="admin-detail-grid">
+    {% for field in fields %}
+    <div class="admin-detail-item">
+        <span class="admin-detail-label">{{ field.label }}</span>
+
+        {% if field.type == "upload" %}
+            {% set current = upload_values.get(field.name) %}
+            {% if current %}
+            <span class="admin-detail-file">
+                <span class="admin-detail-filename">{{ current.filename or "Uploaded file" }}</span>
+                <a class="admin-btn admin-btn-secondary admin-btn-sm"
+                   href="/api/admin/files/{{ current.file_id }}/download?filename={{ (current.filename or 'download') | urlencode }}&mime_type={{ (current.mime_type or 'application/octet-stream') | urlencode }}"
+                   target="_blank" rel="noopener">
+                    {{ icon('download', 14) }} Download
+                </a>
+            </span>
+            {% else %}
+            <span class="admin-detail-value admin-detail-value--empty">&mdash;</span>
+            {% endif %}
+
+        {% elif field.type == "select" and field.name == "status" %}
+            {{ status_badge(values.get(field.name, "")) }}
+
+        {% else %}
+            {% set value = values.get(field.name) %}
+            <span class="admin-detail-value {% if value is none or value == '' %}admin-detail-value--empty{% endif %}">
+                {{ value if value is not none and value != "" else "—" }}
+            </span>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>

@@ -1,0 +1,24 @@
+{#
+    Write / Preview tabs for a markdown textarea (used by the blog content
+    field). The preview is rendered client-side (components/markdown-
+    preview.js) so it updates live as the admin types, with no server round
+    trip.
+#}
+{% macro render_markdown_field(field, current_value=None) %}
+<div class="admin-field">
+    <label for="{{ field.name }}">{{ field.label }}{% if field.required %} *{% endif %}</label>
+
+    <div class="markdown-editor" data-markdown-editor>
+        <div class="markdown-editor-tabs">
+            <button type="button" class="markdown-editor-tab markdown-editor-tab--active" data-markdown-tab="write">Write</button>
+            <button type="button" class="markdown-editor-tab" data-markdown-tab="preview">Preview</button>
+        </div>
+
+        <textarea id="{{ field.name }}" name="{{ field.name }}" class="markdown-editor-textarea"
+                  data-markdown-pane="write" {% if field.required %}required{% endif %}>{{ current_value or '' }}</textarea>
+
+        <div class="markdown-editor-preview" data-markdown-pane="preview" hidden></div>
+    </div>
+    <p class="admin-field-error" data-field-error hidden></p>
+</div>
+{% endmacro %}
