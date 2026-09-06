@@ -1,0 +1,32 @@
+{#
+    Premium exam card - richer than the generic .entity-card used by other
+    listing pages, since exams are the site's top-level entry point and need
+    to be understood at a glance (name, what it is, what's available).
+    Callers pass plain dicts shaped as:
+        {"title": str, "url": str, "description": str | None,
+         "icon_url": str | None, "paper_count": int, "mock_test_count": int}
+    Counts/description are only ever real backend values - render nothing
+    for a field that's falsy/zero rather than showing a placeholder.
+#}
+{% macro render_exam_card_grid(items, empty_message="Exams are being added — check back soon.", fallback_icon="/static/img/illustrations/exam.webp") %}
+<div class="card-grid exam-card-grid">
+    {% for exam in items %}
+    <a class="exam-card" href="{{ exam.url }}">
+        <span class="exam-card-icon">
+            <img src="{{ exam.icon_url or fallback_icon }}" alt="" aria-hidden="true" data-fallback="{{ fallback_icon }}">
+        </span>
+        <h3 class="exam-card-title">{{ exam.title }}</h3>
+        {% if exam.description %}<p class="exam-card-description">{{ exam.description }}</p>{% endif %}
+        {% if exam.paper_count or exam.mock_test_count %}
+        <div class="exam-card-tags">
+            {% if exam.paper_count %}<span class="exam-card-tag">{{ exam.paper_count }} Paper{{ "s" if exam.paper_count != 1 else "" }}</span>{% endif %}
+            {% if exam.mock_test_count %}<span class="exam-card-tag">{{ exam.mock_test_count }} Mock Test{{ "s" if exam.mock_test_count != 1 else "" }}</span>{% endif %}
+        </div>
+        {% endif %}
+        <span class="exam-card-cta">Explore <span aria-hidden="true">&rarr;</span></span>
+    </a>
+    {% else %}
+    <p class="empty-state">{{ empty_message }}</p>
+    {% endfor %}
+</div>
+{% endmacro %}

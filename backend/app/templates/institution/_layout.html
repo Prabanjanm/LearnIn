@@ -1,0 +1,94 @@
+{% from "components/icons.html" import icon %}
+{% from "components/favicon.html" import render_favicon_links %}
+{% from "components/page_loader.html" import render_page_loader %}
+{% set nav_items = [
+    {"href": "/institution/dashboard", "label": "Overview", "icon": "dashboard", "exact": true},
+] %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{ render_favicon_links() }}
+    <title>{% block title %}Institution Portal - LearnIn{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/variables.css">
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <link rel="stylesheet" href="/static/css/illustrations.css">
+    <link rel="stylesheet" href="/static/css/animations.css">
+    {% block css %}{% endblock %}
+</head>
+<body class="admin-body">
+
+{{ render_page_loader() }}
+
+{% if user %}
+<div class="admin-shell" data-admin-shell>
+
+    <aside class="admin-sidebar" data-admin-sidebar>
+        <div class="admin-sidebar-top">
+            <a href="/institution/dashboard" class="admin-logo">
+                <img class="admin-logo-mark" src="/static/img/brand/logo-mark.webp" alt="" width="32" height="32">
+                <span class="admin-logo-text">LearnIn Institution</span>
+            </a>
+            <button type="button" class="admin-sidebar-toggle" data-sidebar-toggle aria-label="Collapse sidebar">
+                {{ icon('menu') }}
+            </button>
+        </div>
+
+        <nav class="admin-nav" aria-label="Institution sections">
+            {% for item in nav_items %}
+            {% set is_active = (request.url.path == item.href) if item.exact else (request.url.path == item.href or request.url.path.startswith(item.href + "/")) %}
+            <a href="{{ item.href }}" class="admin-nav-link {% if is_active %}admin-nav-link--active{% endif %}" data-nav-label="{{ item.label|lower }}">
+                <span class="admin-nav-icon">{{ icon(item.icon) }}</span>
+                <span class="admin-nav-label">{{ item.label }}</span>
+            </a>
+            {% endfor %}
+            {% if user.institution.conducted_test_enabled %}
+            {% set is_ct_active = request.url.path == "/institution/conducted-tests" or request.url.path.startswith("/institution/conducted-tests/") %}
+            <a href="/institution/conducted-tests" class="admin-nav-link {% if is_ct_active %}admin-nav-link--active{% endif %}" data-nav-label="conducted tests">
+                <span class="admin-nav-icon">{{ icon('mocktest') }}</span>
+                <span class="admin-nav-label">Conducted Tests</span>
+            </a>
+            {% endif %}
+        </nav>
+
+        <div class="admin-sidebar-footer">
+            <div class="admin-user-chip">
+                <span class="admin-user-avatar">{{ (user.full_name or user.email)[0]|upper }}</span>
+                <span class="admin-user-name">{{ user.full_name or user.email }}</span>
+            </div>
+            <a href="/institution/logout" class="admin-logout-link">{{ icon('logout') }}<span class="admin-nav-label">Logout</span></a>
+        </div>
+    </aside>
+
+    <div class="admin-content">
+        <header class="admin-topbar">
+            <div class="admin-breadcrumb">
+                <a href="/institution/dashboard">Home</a>
+                {% block breadcrumb %}{% endblock %}
+            </div>
+            <div class="admin-topbar-actions">
+                <span class="admin-page-subtitle">{{ user.institution.name }}</span>
+            </div>
+        </header>
+
+        <div class="admin-toast-stack" data-toast-stack aria-live="polite"></div>
+
+        <main class="admin-main">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+</div>
+{% else %}
+    {% block guest_content %}{% endblock %}
+{% endif %}
+
+<script src="/static/js/admin.js"></script>
+{% block js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,45 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}My Test Results | LearnIn{% endblock %}
+{% block description %}Your institute-conducted test history on LearnIn.{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/account.css">{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <section class="page-hero">
+        <div class="page-hero-text">
+            <h1>My Test Results</h1>
+            <p>Results from institute-conducted tests you've taken. Only you can see this list.</p>
+        </div>
+    </section>
+
+    {% if attempts %}
+    <div class="dashboard-attempt-list">
+        {% for attempt in attempts %}
+        <a class="dashboard-attempt-row" href="/conducted-tests/results/{{ attempt.result_code }}">
+            <div>
+                <strong>{{ attempt.conducted_test.title }}</strong>
+                <span class="entity-card-meta">
+                    {{ attempt.started_at.strftime("%d %b %Y") }} &middot;
+                    {{ attempt.status.value.replace("_", " ").title() }} &middot;
+                    Result ID: {{ attempt.result_code }}
+                </span>
+            </div>
+            <div class="dashboard-attempt-score">
+                {% if attempt.scored_marks is not none %}
+                {{ attempt.scored_marks }} / {{ attempt.total_marks }}
+                {% else %}
+                In Progress
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-state">You haven't taken any conducted tests yet. <a href="/join-test">Join a test with a code</a>.</p>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -24,15 +24,10 @@ header {
 }
 
 .logo-mark {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: block;
     width: 32px;
     height: 32px;
-    border-radius: var(--radius-md);
-    background: var(--color-accent);
-    color: var(--color-accent-contrast);
-    font-family: var(--font-heading);
+    flex-shrink: 0;
 }
 
 .nav-links {
@@ -59,6 +54,28 @@ header {
 .nav-links a.nav-link--active {
     background: var(--color-accent-light);
     color: var(--color-accent);
+}
+
+/* The "Sign Up" nav link doubles as a solid-blue .btn. The real root
+   cause of its invisible text: `.nav-links a` above (a class + element
+   selector, specificity 0-1-1) is MORE specific than `.btn` alone
+   (0-1-0), so it always wins regardless of file order and regardless
+   of whether .nav-link--active is also present - a plain visit to
+   /login already showed grey/blue-on-blue text, not just on /signup.
+   `.nav-links a.btn` (0-2-1) beats both `.nav-links a` (0-1-1) and
+   `.nav-links a.nav-link--active` (0-2-1, same specificity - this rule
+   winning on ties because it's declared after it), so this one rule
+   covers every state (default, hover, and active) without !important. */
+.nav-links a.btn {
+    color: var(--color-accent-contrast);
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+}
+
+.nav-links a.btn:hover {
+    color: var(--color-accent-contrast);
+    background: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
 }
 
 .nav-toggle {
@@ -93,4 +110,211 @@ header[data-nav-open] .nav-toggle span:nth-child(2) {
 
 header[data-nav-open] .nav-toggle span:nth-child(3) {
     transform: translateY(-7px) rotate(-45deg);
+}
+
+/* Account dropdown - a native <details>/<summary> disclosure, so it's
+   keyboard/screen-reader accessible and needs no JS to open/close. */
+.nav-account {
+    position: relative;
+    margin-left: 4px;
+}
+
+.nav-account summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px 6px 6px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    list-style: none;
+    color: var(--color-text);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.nav-account summary::-webkit-details-marker {
+    display: none;
+}
+
+.nav-account summary:hover {
+    background: var(--color-bg-muted);
+}
+
+.nav-account-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.nav-account-avatar--initial {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-accent);
+    color: var(--color-accent-contrast);
+    font-family: var(--font-heading);
+}
+
+.nav-account-name {
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nav-account-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    padding: 6px;
+    z-index: 60;
+}
+
+.nav-account-menu a {
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.nav-account-menu a:hover {
+    background: var(--color-bg-muted);
+}
+
+/* Header search toggle + overlay panel */
+.nav-search-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    margin-left: 4px;
+}
+
+.nav-search-toggle svg {
+    width: 19px;
+    height: 19px;
+}
+
+.nav-search-toggle:hover,
+.nav-search-toggle[aria-expanded="true"] {
+    background: var(--color-bg-muted);
+    color: var(--color-accent);
+}
+
+.nav-search-panel {
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg);
+    box-shadow: var(--shadow-md);
+}
+
+.nav-search-panel .container {
+    padding-top: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
+}
+
+.nav-search-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-muted);
+}
+
+.nav-search-form svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.nav-search-form input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    font-family: inherit;
+    background: none;
+    color: var(--color-text);
+}
+
+.nav-search-close {
+    border: none;
+    background: none;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 0 4px;
+}
+
+.nav-search-results {
+    margin-top: 10px;
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+.nav-search-result {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: var(--color-text);
+}
+
+.nav-search-result:hover {
+    background: var(--color-bg-muted);
+}
+
+.nav-search-result-type {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--color-accent);
+    background: var(--color-accent-light);
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    flex-shrink: 0;
+}
+
+.nav-search-result-title {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.nav-search-view-all {
+    display: block;
+    text-align: center;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-accent);
+    text-decoration: none;
+}
+
+.nav-search-empty {
+    padding: 12px;
+    font-size: 14px;
+    color: var(--color-text-muted);
+    margin: 0;
 }

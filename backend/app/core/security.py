@@ -18,8 +18,19 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def create_access_token(
     subject: str,
+    token_type: str,
+    token_version: int = 0,
     expires_delta: timedelta | None = None
 ) -> str:
+    """
+    `subject` is always a stable numeric id (as a string) - never email -
+    so changing a user's email can't invalidate their session and a client
+    can never influence what ends up in the token. `token_type` ("student"
+    or "admin") and `token_version` are checked by the resolving dependency
+    so a token can't be replayed against the wrong user table and a
+    password change (which bumps token_version) invalidates every
+    previously-issued token immediately, not just at its natural expiry.
+    """
 
     expire = datetime.now(timezone.utc) + (
         expires_delta
@@ -28,6 +39,8 @@ def create_access_token(
 
     payload = {
         "sub": subject,
+        "type": token_type,
+        "tv": token_version,
         "exp": expire,
     }
 

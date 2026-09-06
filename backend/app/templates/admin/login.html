@@ -3,8 +3,9 @@
 {% block title %}Admin Login - LearnIn{% endblock %}
 
 {% block guest_content %}
-<div class="admin-auth-wrapper">
+<div class="admin-auth-wrapper admin-auth-wrapper--split">
     <form method="post" action="/admin/login" class="admin-auth-form">
+        <img class="admin-auth-logo" src="/static/img/brand/logo-mark.webp" alt="" width="44" height="44">
         <h1>LearnIn Admin</h1>
 
         {% if error %}
@@ -19,5 +20,8 @@
 
         <button type="submit">Sign in</button>
     </form>
+    <div class="admin-auth-illustration">
+        <img src="/static/img/illustrations/login.webp" alt="" aria-hidden="true">
+    </div>
 </div>
 {% endblock %}

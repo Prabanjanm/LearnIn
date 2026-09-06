@@ -85,7 +85,14 @@
                 </td>
             </tr>
             {% else %}
-            <tr><td colspan="{{ columns|length + 2 }}" class="admin-table-empty">No records yet.</td></tr>
+            <tr>
+                <td colspan="{{ columns|length + 2 }}">
+                    <div class="admin-empty-illustrated">
+                        <img src="/static/img/illustrations/empty-search.svg" alt="" aria-hidden="true">
+                        <p class="admin-table-empty">No records yet.</p>
+                    </div>
+                </td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>

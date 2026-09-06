@@ -1,0 +1,295 @@
+/*
+    Reusable illustration components layered on top of the existing design
+    tokens (variables.css) - a light split-hero (home/login/signup) and a
+    lighter "accent illustration next to a page-hero" pattern reused
+    everywhere else. See app/static/img/illustrations/ for the SVGs.
+    Responsive stacking rules live in mobile.css, next to every other
+    breakpoint override in the app.
+*/
+
+.split-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 0;
+    margin: 0 calc(50% - 50vw);
+}
+
+.split-hero-eyebrow {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-accent);
+    background: var(--color-accent-light);
+    padding: 5px 14px;
+    border-radius: var(--radius-pill);
+    margin-bottom: 4px;
+}
+
+.split-hero-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--spacing-md);
+    /* Top padding trimmed (was 64px) now that main--flush-top removes
+       main's own 40px top padding on this page - keeps a deliberate ~40px
+       breathing room under the header instead of the two stacking to
+       ~104px. Bottom padding stays at 64px for spacing before the next
+       section. */
+    padding: 40px max(24px, calc((100vw - 1200px) / 2 + 40px)) 64px 24px;
+}
+
+@media (min-width: 901px) {
+    .split-hero-content {
+        padding-left: max(24px, calc((100vw - 1200px) / 2 + 40px));
+    }
+}
+
+.split-hero-content h1 {
+    font-size: 42px;
+    line-height: 1.15;
+    margin: 0;
+}
+
+.split-hero-content h1 .accent-text {
+    color: var(--color-accent);
+}
+
+/* Small "what's inside" chips under the hero CTAs - real platform
+   capabilities, not statistics, so no backend data is needed for these. */
+.hero-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+    margin-top: 8px;
+}
+
+.hero-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.hero-chip-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--color-accent-light);
+    color: var(--color-accent);
+    flex-shrink: 0;
+}
+
+.hero-chip-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* The home page reuses the existing centered .hero styling for its
+   type/search/actions - override just the alignment for the split layout,
+   the rest (font sizes, input styling, button spacing) stays shared. */
+.split-hero.hero {
+    text-align: left;
+    padding: 0;
+}
+
+.split-hero-content .hero-search,
+.split-hero-content .hero-actions {
+    justify-content: flex-start;
+    margin-left: 0;
+}
+
+.split-hero-content .hero-search {
+    max-width: 460px;
+}
+
+.split-hero-content p {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* Login/signup cards reuse account.css's .account-card, just without the
+   page's own centering margin since the split layout already centers it. */
+.account-card--split {
+    margin: 0;
+    max-width: 460px;
+    width: 100%;
+}
+
+.not-found-illustration {
+    display: block;
+    width: 260px;
+    height: auto;
+    margin: 0 auto var(--spacing-md);
+}
+
+/* The illustration fills this panel edge-to-edge (object-fit: cover on the
+   img below) rather than floating as a padded, centered card - the panel's
+   own gradient is only a same-tone fallback that shows for a beat while the
+   image loads, and behind the object-position crop's transparent corners
+   (WEBP has no alpha here, but keeping the gradient means a slow/failed
+   image load still reads as "hero panel", not a blank box). */
+.split-hero-panel {
+    position: relative;
+    background: linear-gradient(160deg, var(--color-accent-light) 0%, #ffffff 65%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    min-height: 380px;
+    overflow: hidden;
+}
+
+.split-hero-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 70% 20%, rgba(37, 99, 235, .10), transparent 55%);
+    pointer-events: none;
+}
+
+.split-hero-illustration {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    height: auto;
+}
+
+/* Small reused-illustration accent sitting beside an existing .page-hero */
+.page-hero--illustrated {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-lg);
+}
+
+.page-hero--illustrated .page-hero-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.page-hero-illustration {
+    flex: 0 0 auto;
+    width: 190px;
+    height: auto;
+}
+
+.empty-state--illustrated {
+    text-align: center;
+    padding: var(--spacing-xl) var(--spacing-md);
+}
+
+.empty-state--illustrated img {
+    width: 160px;
+    height: auto;
+    margin: 0 auto var(--spacing-sm);
+}
+
+.empty-state--illustrated p {
+    margin: 0;
+}
+
+/* Admin's own smaller, less decorative version of the same empty-state pattern */
+.admin-empty-illustrated {
+    text-align: center;
+    padding: var(--spacing-lg) var(--spacing-md);
+}
+
+.admin-empty-illustrated img {
+    width: 100px;
+    height: auto;
+    margin: 0 auto var(--spacing-xs);
+}
+
+/* Admin login: same split-panel grammar as the public auth pages, but
+   built on the admin's own navy/amber tokens instead of the public accent. */
+.admin-auth-wrapper--split {
+    display: grid;
+    grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+    align-items: stretch;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 0;
+}
+
+.admin-auth-wrapper--split .admin-auth-form {
+    align-self: center;
+    justify-self: end;
+    margin-right: -40px;
+    z-index: 1;
+}
+
+.admin-auth-illustration {
+    background: var(--color-dark);
+    clip-path: polygon(12% 0, 100% 0, 100% 100%, 0 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px;
+}
+
+.admin-auth-illustration img {
+    width: 100%;
+    max-width: 340px;
+    height: auto;
+}
+
+@media (max-width: 900px) {
+    .admin-auth-wrapper--split {
+        grid-template-columns: 1fr;
+        min-height: auto;
+        padding: 32px 0;
+    }
+
+    .admin-auth-wrapper--split .admin-auth-form {
+        justify-self: center;
+        margin-right: 0;
+        order: 1;
+    }
+
+    .admin-auth-illustration {
+        clip-path: none;
+        order: 0;
+        padding: 24px;
+    }
+
+    .admin-auth-illustration img {
+        max-width: 220px;
+    }
+}
+
+/* Decorative sticker accents (app/static/img/stickers/) - small supporting
+   flourishes next to a section heading/panel, never the main content.
+   Each placement sets its own position (top/right/bottom/left) and
+   --sticker-rotate inline; the float keyframe lives in animations.css.
+   Parent sections opt in via .section--stickered (position: relative). */
+.section--stickered {
+    position: relative;
+}
+
+.sticker {
+    position: absolute;
+    pointer-events: none;
+    filter: drop-shadow(0 6px 14px rgba(30, 58, 95, .14));
+    z-index: 2;
+}
+
+.sticker--sm {
+    width: 56px;
+    height: auto;
+}
+
+.sticker--md {
+    width: 80px;
+    height: auto;
+}
+
+.sticker--lg {
+    width: 104px;
+    height: auto;
+}

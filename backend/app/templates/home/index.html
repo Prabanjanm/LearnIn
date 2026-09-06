@@ -3,62 +3,120 @@
 {% block title %}LearnIn - GATE Previous Year Papers, Mock Tests & Study Materials{% endblock %}
 {% block description %}Previous Year Question Papers, Notes and Mock Tests for GATE and other government exams.{% endblock %}
 
+{% from "components/exam_card.html" import render_exam_card_grid %}
+{% from "components/blog_card.html" import render_blog_card_grid %}
+
 {% block css %}
 <link rel="stylesheet" href="/static/css/home.css">
 {% endblock %}
 
-{% block content %}
-<div class="container">
+{% block main_class %}main--flush-top{% endblock %}
 
-    <section class="hero">
-        <h1>Prepare Smarter.<br>Practice Better.<br>Score Higher.</h1>
+{% block content %}
+
+<section class="hero split-hero">
+    <div class="split-hero-content">
+        <span class="split-hero-eyebrow">Your Learning Journey Starts Here</span>
+
+        <h1>Learn Today<br>Build Your <span class="accent-text">Tomorrow</span></h1>
 
         <p>Previous-year question papers, answer keys, free mock tests, and performance-based practice - no paywalls.</p>
+
+        <div class="hero-actions">
+            <a href="/exams" class="btn btn-lg">Get Started &rarr;</a>
+            <a href="/exams" class="btn btn-secondary btn-lg">Explore Exams</a>
+        </div>
 
         <form action="/search" method="get" class="hero-search">
             <input type="text" name="q" placeholder="Search exams, papers, blogs..." autofocus>
             <button type="submit" class="btn">Search</button>
         </form>
 
-        <div class="hero-actions">
-            <a href="/exams" class="btn btn-lg">Start Practicing</a>
-            <a href="/papers" class="btn btn-secondary btn-lg">Explore Previous Papers</a>
+        <div class="hero-chip-row">
+            <span class="hero-chip">
+                <span class="hero-chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 13h6M9 17h6"/></svg></span>
+                Previous Year Papers
+            </span>
+            <span class="hero-chip">
+                <span class="hero-chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 11l2 2 4-4"/></svg></span>
+                Mock Tests
+            </span>
+            <span class="hero-chip">
+                <span class="hero-chip-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+                Study Resources
+            </span>
         </div>
-    </section>
+    </div>
+    <div class="split-hero-panel">
+        <img class="split-hero-illustration" src="/static/img/illustrations/hero-learning.webp" alt="Student studying at a laptop, surrounded by books">
+        <img class="sticker sticker--sm" src="/static/img/stickers/books-stack.webp" alt="" aria-hidden="true" style="bottom: 20px; left: 20px; --sticker-rotate: -8deg;">
+    </div>
+</section>
 
-    {% if stats %}
-    <section class="section">
-        <div class="stat-row">
-            {% for stat in stats %}
-            <div class="stat-card">
-                <strong>{{ stat.value }}+</strong>
-                <span>{{ stat.label }}</span>
-            </div>
-            {% endfor %}
-        </div>
-    </section>
-    {% endif %}
+<div class="container">
 
-    <section class="section">
+    <section class="section reveal section--stickered">
+        <img class="sticker sticker--md" src="/static/img/stickers/notebook.webp" alt="" aria-hidden="true" style="top: -10px; right: 4%; --sticker-rotate: 6deg;">
+        <span class="section-eyebrow">Explore</span>
         <div class="section-head">
             <h2>Popular Exams</h2>
             <a href="/exams" class="section-link">View all exams &rarr;</a>
         </div>
-        <p class="section-subtitle">Choose an exam to see its departments, subjects, previous year papers, and mock tests.</p>
+        <p class="section-subtitle">Choose your exam and start preparing with previous year papers, practice questions and mock tests.</p>
 
-        <div class="card-grid">
-            {% for exam in exam_cards %}
-            <a class="entity-card" href="{{ exam.url }}">
-                <h3>{{ exam.title }}</h3>
-                {% if exam.meta %}<span class="entity-card-meta">{{ exam.meta }}</span>{% endif %}
-            </a>
-            {% else %}
-            <p class="empty-state">Exams are being added — check back soon.</p>
-            {% endfor %}
+        {{ render_exam_card_grid(exam_cards) }}
+    </section>
+
+    <section class="section reveal section--stickered">
+        <img class="sticker sticker--lg" src="/static/img/stickers/studying.webp" alt="" aria-hidden="true" style="top: -24px; right: 0; --sticker-rotate: -5deg;">
+        <span class="section-eyebrow">Why LearnIn</span>
+        <div class="section-head">
+            <h2>Everything You Need to Succeed</h2>
+        </div>
+        <p class="section-subtitle">One platform for previous-year papers, timed mock tests, curated study resources, and progress tracking.</p>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <span class="feature-icon"><img src="/static/img/illustrations/paper.webp" alt="" aria-hidden="true"></span>
+                <h3>Previous Year Papers</h3>
+                <p>Access a wide collection of real previous-year question papers with answer keys.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon"><img src="/static/img/illustrations/mock-test.webp" alt="" aria-hidden="true"></span>
+                <h3>Mock Tests</h3>
+                <p>Practice with timed, exam-pattern mock tests and get instant, detailed results.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon"><img src="/static/img/illustrations/resources.webp" alt="" aria-hidden="true"></span>
+                <h3>Study Resources</h3>
+                <p>Notes, formula sheets and curated materials for every subject.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon"><img src="/static/img/illustrations/progress.webp" alt="" aria-hidden="true"></span>
+                <h3>Track Progress</h3>
+                <p>See your accuracy and weak areas after every mock test you take.</p>
+            </div>
         </div>
     </section>
 
-    <section class="section">
+    {% if stats %}
+    <section class="section reveal">
+        <div class="stats-band">
+            <img class="sticker sticker--sm" src="/static/img/stickers/sticky-note.webp" alt="" aria-hidden="true" style="top: 14px; right: 14px; --sticker-rotate: 10deg;">
+            <img class="stats-band-illustration" src="/static/img/illustrations/progress.webp" alt="" aria-hidden="true">
+            <div class="stat-row">
+                {% for stat in stats %}
+                <div class="stat-card">
+                    <strong class="stat-count" data-count-to="{{ stat.value }}" data-count-suffix="+">{{ stat.value }}+</strong>
+                    <span>{{ stat.label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="section reveal">
         <div class="section-head">
             <h2>Previous Year Question Papers</h2>
             <a href="/papers" class="section-link">View all papers &rarr;</a>
@@ -77,7 +135,7 @@
         </div>
     </section>
 
-    <section class="section">
+    <section class="section reveal">
         <div class="section-head">
             <h2>Free Mock Tests</h2>
         </div>
@@ -95,5 +153,35 @@
         </div>
     </section>
 
+    {% if blog_cards %}
+    <section class="section reveal section--stickered">
+        <img class="sticker sticker--sm" src="/static/img/stickers/reading-book.webp" alt="" aria-hidden="true" style="top: -6px; right: 6%; --sticker-rotate: -8deg;">
+        <span class="section-eyebrow">Our Blogs</span>
+        <div class="section-head">
+            <h2>Latest Articles</h2>
+            <a href="/blogs" class="section-link">View all blogs &rarr;</a>
+        </div>
+        <p class="section-subtitle">Tips, strategy and study guidance to help you prepare.</p>
+
+        {{ render_blog_card_grid(blog_cards) }}
+    </section>
+    {% endif %}
+
 </div>
+
+{% if not request.state.student %}
+<section class="final-cta reveal">
+    <img class="sticker sticker--sm" src="/static/img/stickers/pencil-idea.webp" alt="" aria-hidden="true" style="top: 10px; left: 6%; --sticker-rotate: -10deg; filter: drop-shadow(0 6px 14px rgba(0,0,0,.25));">
+    <div class="container final-cta-inner">
+        <div>
+            <h2>Ready to Start Your Learning Journey?</h2>
+            <p>Join LearnIn and start preparing smarter.</p>
+        </div>
+        <span class="final-cta-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg>
+        </span>
+        <a class="btn btn-lg final-cta-btn" href="/signup">Create Your Account &rarr;</a>
+    </div>
+</section>
+{% endif %}
 {% endblock %}

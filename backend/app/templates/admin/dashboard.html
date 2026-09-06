@@ -38,7 +38,10 @@
             {% endfor %}
         </ul>
         {% else %}
-        <p class="admin-empty-note">Nothing created yet - new exams, papers, resources and blogs will show up here.</p>
+        <div class="admin-empty-illustrated">
+            <img src="/static/img/illustrations/empty-search.svg" alt="" aria-hidden="true">
+            <p class="admin-empty-note">Nothing created yet - new exams, papers, resources and blogs will show up here.</p>
+        </div>
         {% endif %}
     </section>
 

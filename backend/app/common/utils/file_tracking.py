@@ -48,6 +48,7 @@ def _file_id_columns():
         from app.modules.paper_processing.model import ExtractedQuestionImage, PaperProcessingJob
         from app.modules.question.model import Question
         from app.modules.resource.model import Resource
+        from app.modules.student.model import Student
         from app.modules.subject.model import Subject
 
         _FILE_ID_COLUMNS = [
@@ -66,6 +67,7 @@ def _file_id_columns():
             (PaperProcessingJob, "generated_file_id"),
             (PaperProcessingJob, "answer_file_id"),
             (ExtractedQuestionImage, "file_id"),
+            (Student, "avatar_file_id"),
         ]
     return _FILE_ID_COLUMNS
 

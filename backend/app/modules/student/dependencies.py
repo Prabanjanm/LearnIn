@@ -22,12 +22,20 @@ def _resolve_student(db: Session, token: str | None) -> Student | None:
 
     payload = decode_access_token(token)
 
-    if payload is None or "sub" not in payload:
+    if payload is None or "sub" not in payload or payload.get("type") != "student":
         return None
 
-    student = _repository.get_by_email(db, payload["sub"])
+    try:
+        student_id = int(payload["sub"])
+    except (TypeError, ValueError):
+        return None
+
+    student = _repository.get_by_id(db, student_id)
 
     if student is None or not student.is_active:
+        return None
+
+    if payload.get("tv") != student.token_version:
         return None
 
     return student

@@ -1,0 +1,37 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Join a Conducted Test | LearnIn{% endblock %}
+{% block description %}Enter your test code to join an institute-conducted LearnIn test.{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/account.css"><link rel="stylesheet" href="/static/css/conducted_test.css">{% endblock %}
+
+{% block content %}
+<div class="container container--narrow">
+
+    <section class="account-card">
+        <h1>Join a Conducted Test</h1>
+        <p class="section-subtitle">Enter the test code shared by your institute to view the test instructions.</p>
+
+        <form id="join-test-form" class="account-form" data-account-form>
+            <label for="test_code">Test Code</label>
+            <input
+                type="text"
+                id="test_code"
+                name="test_code"
+                placeholder="LIN-G8K42"
+                autocomplete="off"
+                autocapitalize="characters"
+                spellcheck="false"
+                required
+            >
+            <p id="join-test-error" class="admin-error" hidden></p>
+            <button type="submit" class="btn" data-submit-label="1">Join Test</button>
+        </form>
+    </section>
+
+</div>
+{% endblock %}
+
+{% block js %}
+<script src="/static/js/conducted_test_join.js"></script>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Your Profile | LearnIn{% endblock %}
+{% block description %}View your LearnIn account details.{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/account.css?v=2">{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="account-card account-card--profile">
+        <div class="page-hero--illustrated">
+            <div class="page-hero-text profile-header">
+                {% if student.avatar_url %}
+                <img class="profile-avatar" src="{{ student.avatar_url }}" alt="" data-fallback="/static/img/illustrations/graduation.svg">
+                {% else %}
+                <span class="profile-avatar profile-avatar--initial">{{ (student.full_name or student.email)[0] | upper }}</span>
+                {% endif %}
+                <div>
+                    <h1>{{ student.full_name or "Your Profile" }}</h1>
+                    <p class="section-subtitle">{{ student.email }}</p>
+                </div>
+            </div>
+            <img class="page-hero-illustration" src="/static/img/illustrations/graduation.svg" alt="" aria-hidden="true">
+        </div>
+
+        <dl class="profile-details">
+            <div>
+                <dt>Full name</dt>
+                <dd>{{ student.full_name or "Not set" }}</dd>
+            </div>
+            <div>
+                <dt>Email</dt>
+                <dd>{{ student.email }}</dd>
+            </div>
+            <div>
+                <dt>Member since</dt>
+                <dd>{{ student.created_at.strftime("%d %b %Y") }}</dd>
+            </div>
+        </dl>
+
+        <div class="action-row">
+            <a class="btn" href="/profile/edit">Edit Profile</a>
+            <a class="btn btn-secondary" href="/change-password">Change Password</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

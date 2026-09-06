@@ -1,0 +1,122 @@
+/*
+    Site-wide micro-interactions: scroll reveal, hero float, button press.
+    Kept subtle/fast and fully disabled under prefers-reduced-motion, per
+    the accessibility requirement - nothing here is essential to using the
+    site, so turning it off must never hide or break content.
+*/
+
+/* .reveal starts fully visible - JS only adds .reveal--pending (hidden) once
+   it has successfully set up the scroll observer, so content never stays
+   invisible if JS fails to load or run. */
+.reveal.reveal--pending {
+    opacity: 0;
+    transform: translateY(16px);
+}
+
+.reveal {
+    transition: opacity .5s ease, transform .5s ease;
+}
+
+@keyframes hero-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.split-hero-illustration {
+    animation: hero-float 6s ease-in-out infinite;
+}
+
+/* Decorative sticker accents (see .sticker in illustrations.css) - a
+   gentle bob combined with each instance's own static tilt, set via the
+   --sticker-rotate custom property so one keyframe covers every placement. */
+@keyframes sticker-float {
+    0%, 100% { transform: translateY(0) rotate(var(--sticker-rotate, 0deg)); }
+    50% { transform: translateY(-8px) rotate(var(--sticker-rotate, 0deg)); }
+}
+
+.sticker {
+    animation: sticker-float 5s ease-in-out infinite;
+}
+
+/* Branded loading screen (see components/page_loader.html) - a gentle
+   scale/fade of the logo, then the whole overlay fades away on its own via
+   CSS (animation-fill-mode: forwards), so it disappears even if JS never
+   runs. pointer-events is off from the start (not animated) so it can
+   never block a click while it's still visible. app.js removes the
+   element from the DOM afterwards purely for tidiness - not required for
+   it to visually go away. */
+@keyframes page-loader-logo-in {
+    0% { opacity: 0; transform: scale(.82); }
+    45% { opacity: 1; transform: scale(1); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes page-loader-fade-out {
+    0%, 60% { opacity: 1; visibility: visible; }
+    100% { opacity: 0; visibility: hidden; }
+}
+
+.page-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg);
+    pointer-events: none;
+    animation: page-loader-fade-out 1.5s ease forwards;
+}
+
+.page-loader-logo {
+    width: 64px;
+    height: 64px;
+    animation: page-loader-logo-in .7s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+
+.btn,
+.btn-secondary {
+    transition: transform .08s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
+}
+
+.btn:active,
+.btn-secondary:active {
+    transform: translateY(0) scale(.97);
+}
+
+.nav-links a,
+.nav-account summary,
+.exam-card,
+.entity-card,
+.feature-card {
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .15s ease, color .15s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+
+    .split-hero-illustration {
+        animation: none;
+    }
+
+    .sticker {
+        animation: none;
+    }
+
+    .page-loader {
+        display: none;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}

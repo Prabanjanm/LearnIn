@@ -10,9 +10,12 @@
 {% block content %}
 <div class="container">
 
-    <section class="page-hero">
-        <h1>{{ subject.name }}</h1>
-        <p>{{ department.name }} &middot; {{ exam.name }}</p>
+    <section class="page-hero page-hero--illustrated">
+        <div class="page-hero-text">
+            <h1>{{ subject.name }}</h1>
+            <p>{{ department.name }} &middot; {{ exam.name }}</p>
+        </div>
+        <img class="page-hero-illustration" src="/static/img/illustrations/study.webp" alt="" aria-hidden="true">
     </section>
 
     <section class="section">
@@ -20,7 +23,7 @@
             <h2>Previous Year Papers</h2>
         </div>
         <p class="section-subtitle">Practice each year's paper online, or download the question paper and answer key.</p>
-        {{ render_card_grid(paper_cards, "No papers published yet.") }}
+        {{ render_card_grid(paper_cards, "No questions available yet. Content will be added soon.") }}
     </section>
 
     <section class="section" id="resources">

@@ -5,6 +5,7 @@
 
 {% block content %}
 <div class="container static-page not-found">
+    <img class="not-found-illustration" src="/static/img/illustrations/error-500.webp" alt="" aria-hidden="true">
     <h1>{{ status_code }}</h1>
     <p>{{ message or "Something went wrong. We couldn't complete that request." }}</p>
     <div class="action-row">

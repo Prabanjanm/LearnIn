@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from app.common.repositories.base_repository import BaseRepository
@@ -128,6 +129,22 @@ class PaperRepository(BaseRepository):
         total = query.count()
         items = query.offset((page - 1) * page_size).limit(page_size).all()
         return items, total
+
+    def count_published_by_exam(
+        self,
+        db: Session
+    ) -> dict[int, int]:
+        """One grouped query for the homepage exam cards' real paper counts -
+        never N+1'd per exam."""
+        rows = (
+            db.query(Department.exam_id, func.count(Paper.id))
+            .join(Subject, Paper.subject_id == Subject.id)
+            .join(Department, Subject.department_id == Department.id)
+            .filter(Paper.status == StatusEnum.PUBLISHED)
+            .group_by(Department.exam_id)
+            .all()
+        )
+        return {exam_id: count for exam_id, count in rows}
 
     def get_distinct_years(
         self,

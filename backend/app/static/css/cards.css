@@ -41,3 +41,243 @@
     font-size: 13px;
     color: var(--color-text-muted);
 }
+
+.entity-card--media {
+    padding: 0 0 20px;
+    overflow: hidden;
+}
+
+.entity-card-media {
+    display: block;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--color-bg-muted);
+}
+
+.entity-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .25s ease;
+}
+
+.entity-card--media:hover .entity-card-media img {
+    transform: scale(1.05);
+}
+
+.entity-card--media h3,
+.entity-card--media .entity-card-meta {
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.entity-card--media h3 {
+    margin-top: 16px;
+}
+
+/* Premium exam card - home page + /exams listing. See components/exam_card.html. */
+.exam-card-grid {
+    gap: 22px;
+}
+
+.exam-card {
+    display: flex;
+    flex-direction: column;
+    padding: 26px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    color: var(--color-text);
+    background: var(--color-card);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.exam-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-accent);
+}
+
+.exam-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-md);
+    background: var(--color-accent-light);
+    margin-bottom: var(--spacing-md);
+    transition: transform .18s ease;
+}
+
+/* Slight badge-color rotation so a grid of exam cards without individual
+   admin-uploaded icons still reads as visually distinct at a glance -
+   brand blue/navy shades only, no new colors. */
+.exam-card:nth-child(3n+2) .exam-card-icon {
+    background: #DCE7FB;
+}
+
+.exam-card:nth-child(3n+3) .exam-card-icon {
+    background: #E8EDF5;
+}
+
+.exam-card:hover .exam-card-icon {
+    transform: scale(1.06);
+}
+
+.exam-card-icon img {
+    width: 34px;
+    height: 34px;
+}
+
+.exam-card-title {
+    font-size: 19px;
+    font-weight: 700;
+    margin: 0 0 6px;
+}
+
+.exam-card:hover .exam-card-title {
+    color: var(--color-accent);
+}
+
+.exam-card-description {
+    margin: 0 0 var(--spacing-sm);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.exam-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: var(--spacing-md);
+}
+
+.exam-card-tag {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-accent);
+    background: var(--color-accent-light);
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+}
+
+.exam-card-cta {
+    margin-top: auto;
+    padding-top: var(--spacing-sm);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.exam-card-cta span {
+    transition: transform .18s ease;
+    display: inline-block;
+}
+
+.exam-card:hover .exam-card-cta span {
+    transform: translateX(3px);
+}
+
+/* Blog card - see components/blog_card.html */
+.blog-card-grid {
+    gap: 22px;
+}
+
+.blog-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--color-text);
+    background: var(--color-card);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.blog-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-accent);
+}
+
+.blog-card-media {
+    display: block;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: var(--color-bg-muted);
+}
+
+.blog-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .25s ease;
+}
+
+.blog-card:hover .blog-card-media img {
+    transform: scale(1.05);
+}
+
+.blog-card-body {
+    padding: 20px;
+}
+
+.blog-card-category {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-accent);
+    background: var(--color-accent-light);
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    margin-bottom: 10px;
+}
+
+.blog-card-title {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    line-height: 1.35;
+}
+
+.blog-card:hover .blog-card-title {
+    color: var(--color-accent);
+}
+
+.blog-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+}
+
+.blog-card-date {
+    color: var(--color-text-muted);
+}
+
+.blog-card-cta {
+    font-weight: 700;
+    color: var(--color-accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.blog-card-cta span {
+    transition: transform .18s ease;
+    display: inline-block;
+}
+
+.blog-card:hover .blog-card-cta span {
+    transform: translateX(3px);
+}

@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -11,6 +12,7 @@ import app.models
 
 from app.common.exceptions.exceptions import (
     AlreadyExistsException,
+    ForbiddenException,
     GoogleDriveConfigError,
     InvalidCredentialsException,
     InvalidStateException,
@@ -29,9 +31,18 @@ from app.modules.paper.router import router as paper_router
 from app.modules.question.router import router as question_router
 from app.modules.option.router import router as option_router
 from app.modules.resource.router import router as resource_router
+from app.modules.media.router import router as media_router
 from app.modules.mock_test.router import router as mock_test_router
 from app.modules.mock_test_question.router import router as mock_test_question_router
 from app.modules.blog.router import router as blog_router
+from app.modules.institution.router import router as institution_router
+from app.modules.institution.pages import router as institution_pages_router
+from app.modules.institution.admin_router import router as institution_admin_router
+from app.modules.institution.admin_pages import router as institution_admin_pages_router
+from app.modules.conducted_test.router import router as conducted_test_router
+from app.modules.conducted_test.pages import router as conducted_test_pages_router
+from app.modules.conducted_test_attempt.router import router as conducted_test_attempt_router
+from app.modules.conducted_test_attempt.pages import router as conducted_test_attempt_pages_router
 from app.modules.search.router import router as search_router
 from app.modules.paper_processing.router import router as paper_processing_router
 from app.modules.paper_processing.pages import router as paper_processing_pages_router
@@ -77,6 +88,15 @@ app.include_router(search_router)
 app.include_router(paper_processing_router)
 app.include_router(paper_processing_pages_router)
 app.include_router(student_router)
+app.include_router(media_router)
+app.include_router(institution_router)
+app.include_router(institution_pages_router)
+app.include_router(institution_admin_router)
+app.include_router(institution_admin_pages_router)
+app.include_router(conducted_test_router)
+app.include_router(conducted_test_pages_router)
+app.include_router(conducted_test_attempt_router)
+app.include_router(conducted_test_attempt_pages_router)
 
 # Must be last: /{exam_slug} etc. are dynamic single/multi-segment catch-alls
 # that would shadow every route above if registered earlier.
@@ -87,6 +107,7 @@ EXCEPTION_STATUS_CODES = {
     NotFoundException: 404,
     AlreadyExistsException: 409,
     InvalidCredentialsException: 401,
+    ForbiddenException: 403,
     GoogleDriveConfigError: 503,
     InvalidStateException: 400,
 }
@@ -149,7 +170,11 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     if _is_api_request(request):
-        return JSONResponse(status_code=422, content={"detail": exc.errors()})
+        # exc.errors() can embed the raw exception instance in ctx.error for
+        # a `raise ValueError(...)` inside a field_validator - jsonable_encoder
+        # (same one FastAPI's own default handler uses) stringifies that
+        # instead of letting json.dumps blow up on a non-serializable object.
+        return JSONResponse(status_code=422, content={"detail": jsonable_encoder(exc.errors())})
 
     return _render_error_page(request, 422)
 

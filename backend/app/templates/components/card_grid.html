@@ -1,14 +1,20 @@
 {#
-    Generic entity card grid - reused by the exam/department/subject/paper/blog
+    Generic entity card grid - reused by the department/subject/paper/blog
     listing pages. Callers pass a list of plain dicts (built server-side) shaped as:
-        {"title": str, "url": str, "meta": str | None, "target_blank": bool | None}
+        {"title": str, "url": str, "meta": str | None, "image_url": str | None,
+         "target_blank": bool | None}
     instead of looping over ORM objects here, so this macro never needs to know
-    about exams/departments/subjects/papers/blogs individually.
+    about departments/subjects/papers/blogs individually. image_url is only
+    ever a real uploaded/derived asset URL - omitted entirely (no placeholder
+    image) when a caller doesn't have one.
 #}
 {% macro render_card_grid(items, empty_message="Nothing published yet.") %}
 <div class="card-grid">
     {% for item in items %}
-    <a class="entity-card" href="{{ item.url }}"{% if item.target_blank %} target="_blank" rel="noopener"{% endif %}>
+    <a class="entity-card{% if item.image_url %} entity-card--media{% endif %}" href="{{ item.url }}"{% if item.target_blank %} target="_blank" rel="noopener"{% endif %}>
+        {% if item.image_url %}
+        <span class="entity-card-media"><img src="{{ item.image_url }}" alt="" loading="lazy"></span>
+        {% endif %}
         <h3>{{ item.title }}</h3>
         {% if item.meta %}<span class="entity-card-meta">{{ item.meta }}</span>{% endif %}
     </a>

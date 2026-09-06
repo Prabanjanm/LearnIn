@@ -49,7 +49,11 @@ def admin_auth_headers(_tables):
         session.add(admin)
         session.commit()
         session.refresh(admin)
-        token = create_access_token(subject=admin.email)
+        token = create_access_token(
+            subject=str(admin.id),
+            token_type="admin",
+            token_version=admin.token_version,
+        )
     finally:
         session.close()
 

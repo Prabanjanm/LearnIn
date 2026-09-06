@@ -1,0 +1,41 @@
+{% extends "admin/_layout.html" %}
+
+{% block title %}New Institution - LearnIn Admin{% endblock %}
+
+{% block breadcrumb %}
+<span class="admin-breadcrumb-sep">/</span>
+<a href="/admin/institutions">Institutions</a>
+<span class="admin-breadcrumb-sep">/</span>
+<span>New</span>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <div>
+        <h1>New Institution</h1>
+        <p class="admin-page-subtitle">Creates the tenant organization. Add its login accounts and enable features afterward.</p>
+    </div>
+</div>
+
+<form id="institution-form" class="admin-form">
+    <div class="admin-field">
+        <label for="name">Institution Name</label>
+        <input type="text" id="name" name="name" required maxlength="255">
+    </div>
+
+    <div class="admin-field admin-field--checkbox">
+        <label>
+            <input type="checkbox" id="conducted_test_enabled" name="conducted_test_enabled">
+            Enable Conducted Tests for this institution
+        </label>
+    </div>
+
+    <p id="institution-form-error" class="admin-field-error" hidden></p>
+
+    <button type="submit" class="admin-btn admin-btn-primary">Create Institution</button>
+</form>
+{% endblock %}
+
+{% block js %}
+<script src="/static/js/admin/institution_admin_form.js"></script>
+{% endblock %}

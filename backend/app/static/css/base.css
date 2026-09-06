@@ -27,6 +27,14 @@ main {
     padding: 40px 0;
 }
 
+/* Pages with a full-bleed split-hero (e.g. home) set this via
+   {% block main_class %} - the hero has its own internal padding
+   (.split-hero-content), so main's usual 40px top padding would just stack
+   another gap on top of it between the header and the hero text. */
+.main--flush-top {
+    padding-top: 0;
+}
+
 .page-hero {
     padding: 30px 0 10px;
 }

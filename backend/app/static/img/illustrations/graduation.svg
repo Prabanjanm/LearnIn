@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 360" role="img" aria-hidden="true">
+  <!-- Original LearnIn scene: a student beside a "Your Profile" account card
+       - account/profile pages. -->
+  <defs>
+    <filter id="gr-shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+  </defs>
+
+  <circle cx="210" cy="170" r="160" fill="#EFF4FF"/>
+  <ellipse cx="180" cy="320" rx="130" ry="14" fill="#1E3A5F" opacity="0.14" filter="url(#gr-shadow)"/>
+
+  <!-- standing student -->
+  <g transform="translate(70,110)">
+    <path d="M18 232c-8-44 1-82 16-108l30-4 28 6c14 26 21 62 14 106z" fill="#2563eb"/>
+    <path d="M18 232c-8-44 1-82 16-108l14-2c-2 40 2 76 10 108z" fill="#1d4ed8"/>
+    <path d="M30 130c-14 12-22 30-18 54l16 4c0-18 4-32 12-42z" fill="#e8ac74"/>
+    <path d="M86 130c14 12 22 30 18 54l-16 4c0-18-4-32-12-42z" fill="#e8ac74"/>
+    <circle cx="56" cy="42" r="34" fill="#e8ac74"/>
+    <path d="M20 46c-2-24 14-44 34-44s36 20 34 44c-6-14-10-30-34-30-16 0-20 8-24 18-2-4-8-2-10 12z" fill="#1E3A5F"/>
+  </g>
+
+  <!-- floating "Your Profile" card -->
+  <g transform="translate(226,50)">
+    <rect width="150" height="234" rx="16" fill="#FFFFFF" stroke="#EAEAEA"/>
+    <circle cx="75" cy="46" r="26" fill="#EFF4FF"/>
+    <circle cx="75" cy="38" r="10" fill="#93c5fd"/>
+    <path d="M55 62a20 20 0 0 1 40 0z" fill="#93c5fd"/>
+    <rect x="35" y="82" width="80" height="12" rx="6" fill="#1E3A5F" opacity="0.85"/>
+    <g>
+      <rect x="24" y="112" width="34" height="8" rx="4" fill="#EAEAEA"/>
+      <rect x="24" y="124" width="102" height="10" rx="5" fill="#F3F6FC"/>
+
+      <rect x="24" y="146" width="34" height="8" rx="4" fill="#EAEAEA"/>
+      <rect x="24" y="158" width="102" height="10" rx="5" fill="#F3F6FC"/>
+
+      <rect x="24" y="180" width="34" height="8" rx="4" fill="#EAEAEA"/>
+      <rect x="24" y="192" width="70" height="10" rx="5" fill="#F3F6FC"/>
+    </g>
+    <rect x="24" y="212" width="102" height="14" rx="7" fill="#2563eb"/>
+  </g>
+</svg>

@@ -2,12 +2,8 @@ from starlette.requests import Request
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.core.database import SessionLocal
-from app.core.security import decode_access_token
 
-from .dependencies import STUDENT_ACCESS_TOKEN_COOKIE_NAME
-from .repository import StudentRepository
-
-_repository = StudentRepository()
+from .dependencies import STUDENT_ACCESS_TOKEN_COOKIE_NAME, _resolve_student
 
 
 class StudentIdentityMiddleware:
@@ -35,14 +31,14 @@ class StudentIdentityMiddleware:
 
         token = request.cookies.get(STUDENT_ACCESS_TOKEN_COOKIE_NAME)
         if token:
-            payload = decode_access_token(token)
-            if payload and "sub" in payload:
-                db = SessionLocal()
-                try:
-                    student = _repository.get_by_email(db, payload["sub"])
-                    if student is not None and student.is_active:
-                        request.state.student = student
-                finally:
-                    db.close()
+            db = SessionLocal()
+            try:
+                # Reuses the exact same resolution rules (type/tv claim
+                # checks, id-based lookup) as get_current_student/
+                # get_optional_student, instead of a second hand-rolled
+                # copy that could silently drift out of sync with them.
+                request.state.student = _resolve_student(db, token)
+            finally:
+                db.close()
 
         await self.app(scope, receive, send)

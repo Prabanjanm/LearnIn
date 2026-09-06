@@ -1,0 +1,53 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ conducted_test.title }} | LearnIn{% endblock %}
+{% block description %}Take the {{ conducted_test.title }} institute-conducted test on LearnIn.{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/quiz.css?v=2"><link rel="stylesheet" href="/static/css/conducted_test.css">{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <div
+        id="conducted-test-container"
+        class="quiz-container"
+        data-conducted-test-id="{{ conducted_test.id }}"
+        data-title="{{ conducted_test.title }}"
+    >
+        <section class="page-hero page-hero--illustrated">
+            <div class="page-hero-text">
+                <h1>{{ conducted_test.title }}</h1>
+                <p>{{ conducted_test.duration_minutes }} minutes</p>
+
+                <div class="cbt-security-notice">
+                    <strong>Before you begin:</strong>
+                    <ul>
+                        <li>This test runs in fullscreen mode for the full duration.</li>
+                        <li>Switching tabs/windows or exiting fullscreen will automatically submit and lock your attempt.</li>
+                        <li>You get only <strong>one attempt</strong> - it cannot be retaken once submitted.</li>
+                        <li>The timer is controlled by the server, not your browser - closing this tab does not pause it.</li>
+                    </ul>
+                </div>
+
+                {% if conducted_test.instructions %}
+                <div class="cbt-instructions">{{ conducted_test.instructions }}</div>
+                {% endif %}
+
+                <label class="cbt-accept-row">
+                    <input type="checkbox" id="accept-rules">
+                    I have read the instructions and agree to the test rules above.
+                </label>
+
+                <button id="start-conducted-test" class="btn" disabled>Start Test</button>
+                <p id="start-test-error" class="admin-error" hidden></p>
+            </div>
+            <img class="page-hero-illustration" src="/static/img/illustrations/mock-test.webp" alt="" aria-hidden="true">
+        </section>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block js %}
+<script type="module" src="/static/js/conducted_test.js"></script>
+{% endblock %}

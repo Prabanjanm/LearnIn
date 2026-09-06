@@ -377,13 +377,36 @@ body.test-in-progress main {
 
 .cbt-modal-actions {
     display: flex;
-    gap: 10px;
+    gap: 12px;
 }
 
 .cbt-modal-actions .btn,
 .cbt-modal-actions .btn-secondary {
     flex: 1;
     justify-content: center;
+}
+
+/* "Continue Test" reuses .btn-secondary's shape/sizing but with LearnIn's
+   accent blue (not the site-wide neutral gray secondary style, which would
+   read as too similar to plain body text right next to a filled primary
+   button) - scoped to this modal only, so every other secondary button on
+   the site is unaffected. */
+.cbt-modal-actions .btn-secondary {
+    background: var(--color-bg);
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+}
+
+.cbt-modal-actions .btn-secondary:hover {
+    background: var(--color-accent-light);
+    border-color: var(--color-accent-hover);
+    color: var(--color-accent-hover);
+}
+
+@media (max-width: 400px) {
+    .cbt-modal-actions {
+        flex-direction: column-reverse;
+    }
 }
 
 @media (max-width: 900px) {

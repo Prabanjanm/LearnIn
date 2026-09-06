@@ -1,32 +1,45 @@
 {% extends "layouts/base.html" %}
+{% from "components/icons.html" import icon %}
 
 {% block title %}Create Account | LearnIn{% endblock %}
 {% block description %}Create a free LearnIn account to track your mock test results and progress.{% endblock %}
 
-{% block css %}<link rel="stylesheet" href="/static/css/account.css">{% endblock %}
+{% block css %}<link rel="stylesheet" href="/static/css/account.css?v=2">{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="account-card">
-        <h1>Create your account</h1>
-        <p class="section-subtitle">Free, always. Track your mock test results and progress over time.</p>
+<section class="split-hero">
+    <div class="split-hero-content">
+        <div class="account-card account-card--split">
+            <h1>Create your account</h1>
+            <p class="section-subtitle">Free, always. Track your mock test results and progress over time.</p>
 
-        {% if error %}<p class="account-error">{{ error }}</p>{% endif %}
+            {% if error %}<p class="account-error">{{ error }}</p>{% endif %}
 
-        <form method="post" action="/signup" class="account-form">
-            <label for="full_name">Name</label>
-            <input type="text" id="full_name" name="full_name" autofocus>
+            <form method="post" action="/signup" class="account-form" data-account-form>
+                <label for="full_name">Name</label>
+                <input type="text" id="full_name" name="full_name" autofocus>
 
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" required>
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
 
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required minlength="8">
+                <label for="password">Password</label>
+                <div class="password-input-wrapper">
+                    <input type="password" id="password" name="password" required minlength="8">
+                    <button type="button" class="password-toggle" data-password-toggle aria-pressed="false" aria-label="Show password">
+                        <span class="password-toggle-icon password-toggle-icon--show">{{ icon('eye', 18) }}</span>
+                        <span class="password-toggle-icon password-toggle-icon--hide">{{ icon('eye-off', 18) }}</span>
+                    </button>
+                </div>
+                <span class="account-hint">At least 8 characters, with a mix of letters and numbers.</span>
 
-            <button type="submit" class="btn btn-lg">Create Account</button>
-        </form>
+                <button type="submit" class="btn btn-lg" data-submit-label="Create Account">Create Account</button>
+            </form>
 
-        <p class="account-switch">Already have an account? <a href="/login">Log in</a></p>
+            <p class="account-switch">Already have an account? <a href="/login">Log in</a></p>
+        </div>
     </div>
-</div>
+    <div class="split-hero-panel">
+        <img class="split-hero-illustration" src="/static/img/illustrations/signup.webp" alt="Student filling out a signup form">
+    </div>
+</section>
 {% endblock %}
