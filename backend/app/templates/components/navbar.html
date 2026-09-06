@@ -6,14 +6,13 @@
     {"href": "/mock-tests", "label": "Mock Tests"},
     {"href": "/practice", "label": "Practice"},
     {"href": "/blogs", "label": "Blogs"},
-    {"href": "/search", "label": "Search"},
     {"href": "/about", "label": "About"},
 ] %}
 <header data-navbar>
     <div class="container navbar-inner">
 
         <a href="/" class="logo">
-            <span class="logo-mark">L</span>
+            <img class="logo-mark" src="/static/img/brand/logo-mark.webp" alt="" width="32" height="32">
             <span>LearnIn</span>
         </a>
 
@@ -23,11 +22,30 @@
             <a href="{{ item.href }}" class="{% if is_active %}nav-link--active{% endif %}"{% if is_active %} aria-current="page"{% endif %}>{{ item.label }}</a>
             {% endfor %}
 
+            <button type="button" class="nav-search-toggle" data-search-toggle aria-expanded="false" aria-controls="nav-search-panel" aria-label="Search LearnIn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            </button>
+
             {% if request.state.student %}
-            <a href="/dashboard" class="{% if request.url.path == '/dashboard' %}nav-link--active{% endif %}">Dashboard</a>
-            <a href="/logout">Log Out</a>
+            {% set student = request.state.student %}
+            <details class="nav-account">
+                <summary>
+                    {% if student.avatar_url %}
+                    <img class="nav-account-avatar" src="{{ student.avatar_url }}" alt="" data-fallback="/static/img/illustrations/graduation.svg">
+                    {% else %}
+                    <span class="nav-account-avatar nav-account-avatar--initial">{{ (student.full_name or student.email)[0] | upper }}</span>
+                    {% endif %}
+                    <span class="nav-account-name">{{ student.full_name or student.email }}</span>
+                </summary>
+                <div class="nav-account-menu">
+                    <a href="/dashboard">Dashboard</a>
+                    <a href="/profile">Profile</a>
+                    <a href="/logout">Log Out</a>
+                </div>
+            </details>
             {% else %}
             <a href="/login" class="{% if request.url.path == '/login' %}nav-link--active{% endif %}">Log In</a>
+            <a href="/signup" class="btn btn-sm {% if request.url.path == '/signup' %}nav-link--active{% endif %}">Sign Up</a>
             {% endif %}
         </nav>
 
@@ -35,6 +53,17 @@
             <span></span><span></span><span></span>
         </button>
 
+    </div>
+
+    <div class="nav-search-panel" id="nav-search-panel" data-search-panel hidden>
+        <div class="container">
+            <form class="nav-search-form" action="/search" method="get" data-search-form>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                <input type="text" name="q" placeholder="Search exams, papers, mock tests, blogs…" autocomplete="off" data-search-input>
+                <button type="button" class="nav-search-close" data-search-close aria-label="Close search">&times;</button>
+            </form>
+            <div class="nav-search-results" data-search-results hidden></div>
+        </div>
     </div>
 </header>
 {% endmacro %}

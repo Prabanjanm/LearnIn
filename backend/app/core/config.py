@@ -11,7 +11,13 @@ class Settings:
 
     APP_NAME = os.getenv("APP_NAME", "LearnIn")
 
-    DEBUG = os.getenv("DEBUG", "True") == "True"
+    # Defaults to False (production-safe) rather than True: DEBUG also
+    # gates traceback leakage (main.py), HSTS (SecurityHeadersMiddleware),
+    # and the auth cookies' Secure flag (pages/router.py, admin/pages.py) -
+    # a missing env var in a real deployment must fail toward "secure",
+    # not toward "debug". Local development sets DEBUG=True explicitly
+    # in .env.
+    DEBUG = os.getenv("DEBUG", "False") == "True"
 
     DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -49,3 +55,9 @@ class Settings:
 
 
 settings = Settings()
+
+if not settings.SECRET_KEY:
+    raise RuntimeError(
+        "SECRET_KEY environment variable must be set - the app cannot sign "
+        "or verify auth tokens without it."
+    )

@@ -1,0 +1,27 @@
+{% extends "institution/_layout.html" %}
+
+{% block title %}Institution Login - LearnIn{% endblock %}
+
+{% block guest_content %}
+<div class="admin-auth-wrapper admin-auth-wrapper--split">
+    <form method="post" action="/institution/login" class="admin-auth-form">
+        <img class="admin-auth-logo" src="/static/img/brand/logo-mark.webp" alt="" width="44" height="44">
+        <h1>LearnIn Institution Portal</h1>
+
+        {% if error %}
+        <p class="admin-error">{{ error }}</p>
+        {% endif %}
+
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autofocus>
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+
+        <button type="submit">Sign in</button>
+    </form>
+    <div class="admin-auth-illustration">
+        <img src="/static/img/illustrations/login.webp" alt="" aria-hidden="true">
+    </div>
+</div>
+{% endblock %}

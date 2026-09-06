@@ -26,9 +26,12 @@
 {% block content %}
 <div class="container">
 
-    <section class="page-hero">
-        <h1>{{ paper.title }} ({{ paper.year }})</h1>
-        <p>{{ paper.total_questions }} questions{% if paper.duration %} &middot; {{ paper.duration }} minutes{% endif %}</p>
+    <section class="page-hero page-hero--illustrated">
+        <div class="page-hero-text">
+            <h1>{{ paper.title }} ({{ paper.year }})</h1>
+            <p>{{ paper.total_questions }} questions{% if paper.duration %} &middot; {{ paper.duration }} minutes{% endif %}</p>
+        </div>
+        <img class="page-hero-illustration" src="/static/img/illustrations/paper.webp" alt="" aria-hidden="true">
     </section>
 
     <section class="action-row">

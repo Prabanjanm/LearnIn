@@ -24,12 +24,20 @@ def _resolve_admin(db: Session, token: str | None) -> Admin | None:
 
     payload = decode_access_token(token)
 
-    if payload is None or "sub" not in payload:
+    if payload is None or "sub" not in payload or payload.get("type") != "admin":
         return None
 
-    admin = _repository.get_by_email(db, payload["sub"])
+    try:
+        admin_id = int(payload["sub"])
+    except (TypeError, ValueError):
+        return None
+
+    admin = _repository.get_by_id(db, admin_id)
 
     if admin is None or not admin.is_active:
+        return None
+
+    if payload.get("tv") != admin.token_version:
         return None
 
     return admin

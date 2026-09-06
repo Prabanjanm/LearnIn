@@ -398,6 +398,32 @@ def test_bulk_action_unexpected_error_is_caught_not_500(admin_auth_headers, monk
     assert "bulk_failed=1" in response.headers["location"]
 
 
+def test_bulk_delete_on_exam_archives_instead_of_hard_deleting(admin_auth_headers, db_session):
+    """
+    Exam/Department/Subject are the academic hierarchy - a real DELETE would
+    cascade away every child Paper/Question/Option beneath them. The admin
+    bulk "delete" action must archive these three entities instead of
+    removing the row, so the data survives and can be restored via the
+    ARCHIVED -> DRAFT/PUBLISHED bulk action.
+    """
+    from app.modules.exam.model import Exam
+
+    exam = _make_exam(admin_auth_headers, code="SOFTDEL")
+
+    response = client.post(
+        "/admin/manage/exams/bulk",
+        data={"action": "delete", "ids": [str(exam["id"])]},
+        headers=admin_auth_headers,
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert "bulk_failed" not in response.headers["location"]
+
+    row = db_session.query(Exam).filter(Exam.id == exam["id"]).first()
+    assert row is not None, "row must still exist - only archived, never hard-deleted"
+    assert row.status.value == "ARCHIVED"
+
+
 def test_resource_update_replaces_file_and_cleans_up_old(admin_auth_headers, monkeypatch):
     deleted_ids = []
     monkeypatch.setattr(

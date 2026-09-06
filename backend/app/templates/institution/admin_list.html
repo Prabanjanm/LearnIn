@@ -1,0 +1,39 @@
+{% extends "admin/_layout.html" %}
+{% from "components/icons.html" import icon %}
+
+{% block title %}Institutions - LearnIn Admin{% endblock %}
+
+{% block breadcrumb %}
+<span class="admin-breadcrumb-sep">/</span>
+<span>Institutions</span>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <div>
+        <h1>Institutions</h1>
+        <p class="admin-page-subtitle">Tenant organizations that can run their own Conducted Tests.</p>
+    </div>
+    <a class="admin-btn admin-btn-primary" href="/admin/institutions/new">{{ icon('plus', 16) }} New Institution</a>
+</div>
+
+<div class="admin-table-wrapper">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Conducted Tests</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="institution-rows">
+            <tr><td colspan="4" class="admin-table-empty">Loading...</td></tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block js %}
+<script src="/static/js/admin/institution_admin.js"></script>
+{% endblock %}

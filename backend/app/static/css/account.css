@@ -42,6 +42,72 @@
     justify-content: center;
 }
 
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    width: 100%;
+}
+
+/* Same base look/height/border as every other .account-form input
+   (inherited as-is - this rule only adds room on the right so typed
+   text never runs under the eye icon). flex + min-width: 0 is what
+   actually makes the input fill the wrapper: without it, a flex child
+   sizes to its own content/attribute width (an <input> defaults to
+   ~20 characters), leaving it visibly narrower than the Login button
+   and pushing the toggle out past its right edge instead of over it. */
+.account-form .password-input-wrapper input {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding-right: 44px;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background .12s ease, color .12s ease;
+}
+
+.password-toggle:hover {
+    background: var(--color-bg-muted);
+    color: var(--color-text);
+}
+
+.password-toggle:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+}
+
+.password-toggle-icon {
+    display: flex;
+}
+
+.password-toggle-icon--hide {
+    display: none;
+}
+
+.password-toggle[aria-pressed="true"] .password-toggle-icon--show {
+    display: none;
+}
+
+.password-toggle[aria-pressed="true"] .password-toggle-icon--hide {
+    display: flex;
+}
+
 .account-error {
     background: var(--color-danger-bg);
     color: var(--color-danger-text);
@@ -66,6 +132,64 @@
 
 .account-switch a:hover {
     text-decoration: underline;
+}
+
+.account-hint {
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.account-card--profile {
+    max-width: 520px;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.profile-header h1 {
+    margin-bottom: 2px;
+}
+
+.profile-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.profile-avatar--initial {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-accent);
+    color: var(--color-accent-contrast);
+    font-family: var(--font-heading);
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.profile-details {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 24px 0 0;
+}
+
+.profile-details dt {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+
+.profile-details dd {
+    margin: 2px 0 0;
+    font-size: 15px;
 }
 
 .dashboard-attempt-list {

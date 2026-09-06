@@ -47,6 +47,7 @@ def _file_id_columns():
         from app.modules.paper.model import Paper
         from app.modules.question.model import Question
         from app.modules.resource.model import Resource
+        from app.modules.student.model import Student
         from app.modules.subject.model import Subject
 
         _FILE_ID_COLUMNS = [
@@ -60,6 +61,7 @@ def _file_id_columns():
             (Option, "image_file_id"),
             (Resource, "google_drive_file_id"),
             (Blog, "thumbnail_file_id"),
+            (Student, "avatar_file_id"),
         ]
     return _FILE_ID_COLUMNS
 

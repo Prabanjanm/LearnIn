@@ -1,0 +1,57 @@
+{% extends "institution/_layout.html" %}
+
+{% block title %}New Conducted Test - LearnIn Institution Portal{% endblock %}
+
+{% block breadcrumb %}
+<span class="admin-breadcrumb-sep">/</span>
+<a href="/institution/conducted-tests">Conducted Tests</a>
+<span class="admin-breadcrumb-sep">/</span>
+<span>New</span>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <div>
+        <h1>New Conducted Test</h1>
+        <p class="admin-page-subtitle">Select an existing published mock test and schedule a fixed test window for it.</p>
+    </div>
+</div>
+
+<form id="conducted-test-form" class="admin-form">
+    <div class="admin-field">
+        <label for="mock_test_id">Mock Test</label>
+        <select id="mock_test_id" name="mock_test_id" required>
+            <option value="">Loading mock tests...</option>
+        </select>
+        <p class="admin-page-subtitle">Need a new paper? Ask LearnIn to add it via the existing Paper &rarr; Questions &rarr; Mock Test workflow, then return here to select it.</p>
+    </div>
+
+    <div class="admin-field">
+        <label for="title">Test Title</label>
+        <input type="text" id="title" name="title" required maxlength="255">
+    </div>
+
+    <div class="admin-field">
+        <label for="instructions">Instructions</label>
+        <textarea id="instructions" name="instructions" rows="4" placeholder="Shown to students before they start the test."></textarea>
+    </div>
+
+    <div class="admin-field">
+        <label for="duration_minutes">Duration (minutes)</label>
+        <input type="number" id="duration_minutes" name="duration_minutes" min="1" max="600" required>
+    </div>
+
+    <div class="admin-field">
+        <label for="scheduled_start_at">Scheduled Start (your local time)</label>
+        <input type="datetime-local" id="scheduled_start_at" name="scheduled_start_at" required>
+    </div>
+
+    <p id="conducted-test-form-error" class="admin-field-error" hidden></p>
+
+    <button type="submit" class="admin-btn admin-btn-primary">Create Test</button>
+</form>
+{% endblock %}
+
+{% block js %}
+<script src="/static/js/institution/conducted_test_institution_form.js"></script>
+{% endblock %}

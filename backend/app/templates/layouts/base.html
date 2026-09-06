@@ -1,5 +1,7 @@
 {% from "components/navbar.html" import render_navbar %}
 {% from "components/footer.html" import render_footer %}
+{% from "components/favicon.html" import render_favicon_links %}
+{% from "components/page_loader.html" import render_page_loader %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +10,8 @@
 
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
+
+    {{ render_favicon_links() }}
 
     <title>{% block title %}LearnIn{% endblock %}</title>
 
@@ -33,12 +37,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/variables.css">
     <link rel="stylesheet" href="/static/css/base.css">
-    <link rel="stylesheet" href="/static/css/navbar.css">
+    <link rel="stylesheet" href="/static/css/navbar.css?v=2">
     <link rel="stylesheet" href="/static/css/footer.css">
     <link rel="stylesheet" href="/static/css/buttons.css">
     <link rel="stylesheet" href="/static/css/cards.css">
     <link rel="stylesheet" href="/static/css/breadcrumbs.css">
     <link rel="stylesheet" href="/static/css/pagination.css">
+    <link rel="stylesheet" href="/static/css/illustrations.css">
+    <link rel="stylesheet" href="/static/css/animations.css">
     <link rel="stylesheet" href="/static/css/mobile.css">
 
     {% block css %}{% endblock %}
@@ -47,9 +53,11 @@
 
 <body>
 
+{{ render_page_loader() }}
+
 {{ render_navbar(request) }}
 
-<main>
+<main class="{% block main_class %}{% endblock %}">
 
     {% block breadcrumbs %}{% endblock %}
 
@@ -59,7 +67,7 @@
 
 {{ render_footer() }}
 
-<script src="/static/js/app.js"></script>
+<script src="/static/js/app.js?v=2"></script>
 
 {% block js %}{% endblock %}
 

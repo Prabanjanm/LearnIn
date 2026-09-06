@@ -71,7 +71,25 @@ CATEGORY_POLICIES: dict[str, CategoryPolicy] = {
         settings.MAX_PDF_UPLOAD_BYTES,
     ),
     "blogs": CategoryPolicy(frozenset(IMAGE_MIME_TYPES), frozenset(IMAGE_EXTENSIONS), settings.MAX_IMAGE_UPLOAD_BYTES),
+    "avatars": CategoryPolicy(frozenset(IMAGE_MIME_TYPES), frozenset(IMAGE_EXTENSIONS), settings.MAX_IMAGE_UPLOAD_BYTES),
 }
+
+# Header/control characters and path separators stripped from every uploaded
+# filename before it's handed to Drive - Drive itself has no filesystem path
+# concept, but the raw name is echoed back in JSON responses, stored in DB
+# columns, and used as a Content-Disposition filename on download, so it
+# still needs to be safe as plain text (no CR/LF header-injection, no
+# unbounded length).
+MAX_FILENAME_LENGTH = 200
+
+
+def sanitize_filename(filename: str) -> str:
+    cleaned = "".join(
+        ch for ch in filename
+        if ord(ch) >= 32 and ch not in '"/\\'
+    ).strip()
+
+    return (cleaned or "upload")[:MAX_FILENAME_LENGTH]
 
 
 class UploadValidationError(ValueError):

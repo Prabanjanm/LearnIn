@@ -73,6 +73,12 @@ class PaperService(BaseService):
     ):
         return self.repository.get_recent_published(db, limit)
 
+    def count_published_by_exam(
+        self,
+        db: Session
+    ) -> dict[int, int]:
+        return self.repository.count_published_by_exam(db)
+
     def get_filtered(
         self,
         db: Session,

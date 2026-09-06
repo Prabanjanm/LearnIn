@@ -13,6 +13,9 @@ from app.modules.mock_test_attempt.model import (
     MockTestSession,
     MockTestSessionAnswer,
 )
+from app.modules.institution.model import Institution, InstitutionUser
+from app.modules.conducted_test.model import ConductedTest
+from app.modules.conducted_test_attempt.model import ConductedTestAttempt, ConductedTestAttemptAnswer
 from app.modules.student.model import Student
 from app.modules.resource.model import Resource
 from app.modules.blog.model import Blog

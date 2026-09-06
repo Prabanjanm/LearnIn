@@ -1,0 +1,82 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Test Report - {{ report.test_title }} | LearnIn{% endblock %}
+{% block description %}Your LearnIn conducted-test result report.{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/conducted_test.css">{% endblock %}
+
+{% block content %}
+<div class="container container--report cbt-report-guard" data-cbt-report>
+
+    <div class="cbt-report">
+        <header class="cbt-report-header">
+            <img class="cbt-report-logo" src="/static/img/brand/logo-mark.webp" alt="LearnIn" width="40" height="40">
+            <div>
+                <h1>LearnIn Test Report</h1>
+                <p class="cbt-report-code">Result ID: {{ report.result_code }}</p>
+            </div>
+        </header>
+
+        <section class="cbt-report-summary">
+            <div><span>Test</span><strong>{{ report.test_title }}</strong></div>
+            <div><span>Student</span><strong>{{ report.student_name or report.student_email }}</strong></div>
+            <div><span>Status</span><strong>{{ report.status.replace("_", " ").title() }}</strong></div>
+            {% if report.termination_reason %}
+            <div><span>Reason</span><strong>{{ report.termination_reason.replace("_", " ").title() }}</strong></div>
+            {% endif %}
+            <div><span>Started</span><strong>{{ report.started_at.strftime("%d %b %Y, %I:%M %p") }}</strong></div>
+            <div><span>Submitted</span><strong>{{ report.submitted_at.strftime("%d %b %Y, %I:%M %p") if report.submitted_at else "—" }}</strong></div>
+            <div><span>Duration</span><strong>{{ report.duration_minutes }} min</strong></div>
+            <div><span>Time Used</span><strong>{{ (report.time_taken_seconds // 60) if report.time_taken_seconds is not none else "—" }} min</strong></div>
+        </section>
+
+        <section class="cbt-report-score">
+            <div class="cbt-report-score-main">
+                <strong>{{ report.scored_marks }}</strong>
+                <span>/ {{ report.total_marks }} marks</span>
+            </div>
+            <div class="cbt-report-score-percentage">
+                {{ report.percentage if report.percentage is not none else "—" }}{% if report.percentage is not none %}%{% endif %}
+            </div>
+        </section>
+
+        <section class="cbt-report-stats">
+            <div><strong>{{ report.total_questions }}</strong><span>Total Questions</span></div>
+            <div><strong>{{ report.attempted }}</strong><span>Attempted</span></div>
+            <div><strong>{{ report.correct_count }}</strong><span>Correct</span></div>
+            <div><strong>{{ report.incorrect_count }}</strong><span>Incorrect</span></div>
+            <div><strong>{{ report.unanswered_count }}</strong><span>Unanswered</span></div>
+        </section>
+
+        {% if report.subject_breakdown %}
+        <section class="cbt-report-subjects">
+            <h2>Subject-wise Analysis</h2>
+            <div class="cbt-report-table-wrapper">
+                <table class="cbt-report-table">
+                    <thead>
+                        <tr><th>Subject</th><th>Questions</th><th>Correct</th><th>Incorrect</th><th>Accuracy</th><th>Score</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for row in report.subject_breakdown %}
+                        <tr>
+                            <td>{{ row.subject }}</td>
+                            <td>{{ row.questions }}</td>
+                            <td>{{ row.correct }}</td>
+                            <td>{{ row.incorrect }}</td>
+                            <td>{{ row.accuracy if row.accuracy is not none else "—" }}{% if row.accuracy is not none %}%{% endif %}</td>
+                            <td>{{ row.score }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block js %}
+<script src="/static/js/conducted_test_report.js"></script>
+{% endblock %}

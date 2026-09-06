@@ -1,0 +1,38 @@
+{% extends "institution/_layout.html" %}
+
+{% block title %}Overview - LearnIn Institution Portal{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <div>
+        <h1>{{ user.institution.name }}</h1>
+        <p class="admin-page-subtitle">Institution overview</p>
+    </div>
+</div>
+
+{% if user.institution.conducted_test_enabled %}
+<div class="admin-stat-grid">
+    <div class="admin-stat-card">
+        <span class="admin-stat-value">{{ stats.total }}</span>
+        <span class="admin-stat-label">Conducted Tests</span>
+    </div>
+    <div class="admin-stat-card">
+        <span class="admin-stat-value">{{ stats.active }}</span>
+        <span class="admin-stat-label">Active</span>
+    </div>
+    <div class="admin-stat-card">
+        <span class="admin-stat-value">{{ stats.draft }}</span>
+        <span class="admin-stat-label">Draft / Not Yet Shared</span>
+    </div>
+</div>
+
+<div class="action-row">
+    <a class="admin-btn admin-btn-primary" href="/institution/conducted-tests/new">Create a Conducted Test</a>
+    <a class="admin-btn admin-btn-secondary" href="/institution/conducted-tests">View All Conducted Tests</a>
+</div>
+{% else %}
+<p class="admin-empty-note">
+    Conducted Tests are not enabled for your institution yet. Contact LearnIn to have this feature enabled for your account.
+</p>
+{% endif %}
+{% endblock %}

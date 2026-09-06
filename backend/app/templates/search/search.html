@@ -33,7 +33,10 @@
                 <h3>{{ item.title }}</h3>
             </a>
             {% else %}
-            <p class="empty-state">No results found. Try a different search term.</p>
+            <div class="empty-state--illustrated">
+                <img src="/static/img/illustrations/empty-search.svg" alt="" aria-hidden="true">
+                <p class="empty-state">No results found. Try a different search term.</p>
+            </div>
             {% endfor %}
         </div>
     </section>

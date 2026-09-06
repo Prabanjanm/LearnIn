@@ -3,14 +3,24 @@
 {% block title %}Dashboard | LearnIn{% endblock %}
 {% block description %}Your LearnIn dashboard - mock test results and progress.{% endblock %}
 
-{% block css %}<link rel="stylesheet" href="/static/css/account.css">{% endblock %}
+{% block css %}<link rel="stylesheet" href="/static/css/account.css?v=2">{% endblock %}
 
 {% block content %}
 <div class="container">
 
-    <section class="page-hero">
-        <h1>Welcome back{% if student.full_name %}, {{ student.full_name }}{% endif %}</h1>
-        <p>Here's your mock test activity.</p>
+    <section class="page-hero page-hero--illustrated">
+        <div class="page-hero-text profile-header">
+            {% if student.avatar_url %}
+            <img class="profile-avatar" src="{{ student.avatar_url }}" alt="" data-fallback="/static/img/illustrations/graduation.svg">
+            {% else %}
+            <span class="profile-avatar profile-avatar--initial">{{ (student.full_name or student.email)[0] | upper }}</span>
+            {% endif %}
+            <div>
+                <h1>Welcome back{% if student.full_name %}, {{ student.full_name }}{% endif %}</h1>
+                <p>{{ student.email }} &middot; Member since {{ student.created_at.strftime("%b %Y") }} &middot; <a href="/profile">View profile</a></p>
+            </div>
+        </div>
+        <img class="page-hero-illustration" src="/static/img/illustrations/progress.webp" alt="" aria-hidden="true">
     </section>
 
     <section class="section">
@@ -23,6 +33,10 @@
                 <strong>{{ average_accuracy if average_accuracy is not none else "—" }}{% if average_accuracy is not none %}%{% endif %}</strong>
                 <span>Average Accuracy</span>
             </div>
+        </div>
+        <div class="action-row">
+            <a class="btn" href="/join-test">Join a Conducted Test</a>
+            <a class="btn btn-secondary" href="/profile/test-results">My Test Results</a>
         </div>
     </section>
 
@@ -46,9 +60,12 @@
             {% endfor %}
         </div>
         {% else %}
-        <p class="empty-state">
-            Complete a few practice questions or a mock test to unlock personalized recommendations.
-        </p>
+        <div class="empty-state--illustrated">
+            <img src="/static/img/illustrations/empty-search.svg" alt="" aria-hidden="true">
+            <p class="empty-state">
+                Complete a few practice questions or a mock test to unlock personalized recommendations.
+            </p>
+        </div>
         <div class="action-row">
             <a class="btn" href="/practice">Start Practicing</a>
         </div>

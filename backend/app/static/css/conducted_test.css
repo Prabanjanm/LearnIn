@@ -1,0 +1,328 @@
+/*
+    Institute-conducted test: join/instructions screen, report/receipt,
+    and the couple of small chrome bits (logo in the CBT header, test-code
+    badge) that quiz.css doesn't already provide. Question/timer/navigator
+    styling for the active test itself is intentionally left to quiz.css -
+    the conducted-test CBT reuses those classes as-is (see conducted_test.js)
+    so both test-taking experiences look and behave identically.
+*/
+
+.container--narrow {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 0 5%;
+}
+
+/* The report is a document, not a short form - it needs real room for a
+   6-column table, not the 560px cap .container--narrow uses for the
+   join-code input. Overrides only max-width (still 90%-wide up to that
+   cap via the base .container rule), same pattern as .container--narrow. */
+.container--report {
+    max-width: 1000px;
+}
+
+.cbt-header-logo {
+    border-radius: var(--radius-sm);
+}
+
+.cbt-security-notice {
+    background: var(--color-warning-bg);
+    border: 1px solid var(--color-warning-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin: var(--spacing-md) 0;
+}
+
+.cbt-security-notice ul {
+    margin: var(--spacing-xs) 0 0;
+    padding-left: 1.2em;
+}
+
+.cbt-instructions {
+    background: var(--color-bg-muted);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    white-space: pre-wrap;
+}
+
+.cbt-accept-row {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    margin: var(--spacing-md) 0;
+    font-size: 0.95rem;
+}
+
+.cbt-code-badge {
+    display: inline-block;
+    font-family: monospace;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    background: var(--color-accent-light);
+    color: var(--color-accent);
+    border-radius: var(--radius-sm);
+    padding: 2px 8px;
+}
+
+/* ---- Report / receipt ---- */
+
+.cbt-report-guard {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.cbt-report {
+    /* max-width + auto margin here (not just on the outer .container)
+       means this looks right both on the student page (already inside
+       .container--report) and the institution admin page (rendered
+       directly inside the wide .admin-main, with no .container wrapper
+       at all) - one rule covers both instead of duplicating it per page. */
+    width: 100%;
+    max-width: 1000px;
+    box-sizing: border-box;
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: var(--spacing-xl);
+    margin: var(--spacing-xl) auto;
+}
+
+/* Temporary best-effort screenshot deterrence (see conducted_test_report.js):
+   blanks the report the instant a detectable capture shortcut fires
+   (PrintScreen, Windows Snip Ctrl+Shift+S), then restores it shortly
+   after. visibility (not display) is used deliberately - the card's
+   layout space/position never shifts, so nothing reflows on either
+   side of the brief hide. There is no visible label of any kind here;
+   the report just looks momentarily blank, the same as it would if the
+   browser were simply slow to paint it. */
+.cbt-report-guard[data-report-protected="true"] .cbt-report {
+    visibility: hidden;
+}
+
+.cbt-report-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.cbt-report-logo {
+    flex-shrink: 0;
+}
+
+.cbt-report-header h1 {
+    margin: 0;
+    font-size: 1.3rem;
+}
+
+.cbt-report-code {
+    margin: 2px 0 0;
+    color: var(--color-text-muted);
+    font-family: monospace;
+    /* A result code is a single unbroken token - this is the one place
+       in the report an aggressive wrap rule is actually appropriate,
+       not on ordinary words like subject names (see .cbt-report-table). */
+    overflow-wrap: break-word;
+}
+
+.cbt-report-summary {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm) var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.cbt-report-summary div {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dashed var(--color-border);
+    padding-bottom: 4px;
+    font-size: 0.92rem;
+}
+
+.cbt-report-summary span {
+    color: var(--color-text-muted);
+}
+
+.cbt-report-score {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    background: var(--color-accent-light);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md) var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.cbt-report-score-main strong {
+    font-size: 1.8rem;
+    color: var(--color-accent);
+}
+
+.cbt-report-score-percentage {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--color-accent);
+}
+
+.cbt-report-stats {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--spacing-sm);
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.cbt-report-stats div {
+    background: var(--color-bg-muted);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm);
+}
+
+.cbt-report-stats strong {
+    display: block;
+    font-size: 1.1rem;
+}
+
+.cbt-report-stats span {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+}
+
+/* Only the table scrolls horizontally on a genuinely too-narrow screen -
+   never the page itself. Above the table's own min-width (set below)
+   this wrapper does nothing at all; it only kicks in once the viewport
+   can't fit six columns without cramming, which is what was previously
+   forcing "Mock Subject 5" to wrap one word per line - the table wasn't
+   given room to lay its columns out, not a text-wrapping bug. */
+.cbt-report-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+}
+
+.cbt-report-table {
+    width: 100%;
+    min-width: 560px;
+    border-collapse: collapse;
+    /* fixed, not auto: with auto layout the browser resizes columns to
+       fit each header's own content, which stole width away from the
+       Subject column whenever a header like "Incorrect" was forced
+       nowrap - shrinking Subject well below what its own 30% said and
+       causing it to wrap one word per line. Fixed layout makes the
+       percentages below authoritative regardless of header/cell content. */
+    table-layout: fixed;
+}
+
+.cbt-report-table th,
+.cbt-report-table td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.9rem;
+    /* Ordinary word wrapping between words only - never inside a word -
+       so a name like "Mock Subject 5" can wrap after "Mock" or "Subject"
+       if it must, but never splits a single word across lines. */
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: normal;
+}
+
+.cbt-report-table th:first-child,
+.cbt-report-table td:first-child {
+    /* Subject is the one free-text column - give it real room relative
+       to the five short numeric/percentage columns instead of letting
+       the browser split it evenly six ways. */
+    width: 34%;
+}
+
+.cbt-report-table th:not(:first-child),
+.cbt-report-table td:not(:first-child) {
+    width: 13.2%;
+}
+
+.cbt-report-table td:not(:first-child) {
+    /* Only the numeric/percentage *values* are guaranteed short enough
+       to never need wrapping - column headers are left free to wrap to
+       a second line under table-layout: fixed, which is normal for a
+       dense table and doesn't affect column proportions either way. */
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .cbt-report {
+        padding: var(--spacing-lg);
+    }
+}
+
+@media (max-width: 640px) {
+    .cbt-report-summary,
+    .cbt-report-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* "Test" / "Report Layout Test" side-by-side has no room left in a
+       ~half-width grid cell at this size - stack label above value
+       instead of squeezing both onto one row. */
+    .cbt-report-summary div {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cbt-report {
+        padding: var(--spacing-md);
+    }
+
+    .cbt-report-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .cbt-report-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .cbt-report-score {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .cbt-report-table {
+        min-width: 480px;
+    }
+}
+
+/* Printing/exporting the report is not offered as a feature - if a
+   visitor triggers the browser's own print dialog anyway (its menu, not
+   just the Ctrl/Cmd+P shortcut conducted_test_report.js intercepts),
+   show nothing printable rather than letting the report be exported as
+   a PDF. Scoped to [data-cbt-report] only - this must never affect
+   printing on any other LearnIn page. */
+@media print {
+    .cbt-report-guard,
+    [data-cbt-report] {
+        display: none !important;
+    }
+
+    /* Progressive enhancement in browsers that support :has() - also
+       blanks the navbar/footer chrome around the report rather than
+       just the report card, so a determined "print anyway" produces a
+       genuinely blank page, not a mostly-blank one. Browsers without
+       :has() support still get the (already sufficient) rule above. */
+    body:has([data-cbt-report]) {
+        display: none !important;
+    }
+}

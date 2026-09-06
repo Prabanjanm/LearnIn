@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, String
+from sqlalchemy import Boolean, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.base import BaseModel
@@ -27,5 +27,14 @@ class Admin(BaseModel):
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
+        nullable=False
+    )
+
+    # See Student.token_version - same "reject tokens signed against a
+    # since-changed version" mechanism, kept independent per table so a
+    # student password change never affects admin sessions or vice versa.
+    token_version: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
         nullable=False
     )

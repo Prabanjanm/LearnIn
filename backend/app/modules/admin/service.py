@@ -42,7 +42,11 @@ class AdminService(BaseService):
 
         admin = self.authenticate(db, data.email, data.password)
 
-        access_token = create_access_token(subject=admin.email)
+        access_token = create_access_token(
+            subject=str(admin.id),
+            token_type="admin",
+            token_version=admin.token_version,
+        )
 
         return Token(access_token=access_token)
 

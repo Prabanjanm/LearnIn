@@ -1,4 +1,6 @@
 {% from "components/icons.html" import icon %}
+{% from "components/favicon.html" import render_favicon_links %}
+{% from "components/page_loader.html" import render_page_loader %}
 {% set nav_items = [
     {"href": "/admin", "label": "Dashboard", "icon": "dashboard", "exact": true},
     {"href": "/admin/manage/exams", "label": "Exams", "icon": "exam"},
@@ -10,12 +12,14 @@
     {"href": "/admin/manage/resources", "label": "Resources", "icon": "resource"},
     {"href": "/admin/manage/mock_tests", "label": "Mock Tests", "icon": "mocktest"},
     {"href": "/admin/manage/blogs", "label": "Blogs", "icon": "blog"},
+    {"href": "/admin/institutions", "label": "Institutions", "icon": "institution"},
 ] %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{ render_favicon_links() }}
     <title>{% block title %}Admin - LearnIn{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,9 +27,13 @@
     <link rel="stylesheet" href="/static/css/variables.css">
     <link rel="stylesheet" href="/static/css/base.css">
     <link rel="stylesheet" href="/static/css/admin.css">
+    <link rel="stylesheet" href="/static/css/illustrations.css">
+    <link rel="stylesheet" href="/static/css/animations.css">
     {% block css %}{% endblock %}
 </head>
 <body class="admin-body">
+
+{{ render_page_loader() }}
 
 {% if admin %}
 <div class="admin-shell" data-admin-shell>
@@ -33,7 +41,7 @@
     <aside class="admin-sidebar" data-admin-sidebar>
         <div class="admin-sidebar-top">
             <a href="/admin" class="admin-logo">
-                <span class="admin-logo-mark">L</span>
+                <img class="admin-logo-mark" src="/static/img/brand/logo-mark.webp" alt="" width="32" height="32">
                 <span class="admin-logo-text">LearnIn</span>
             </a>
             <button type="button" class="admin-sidebar-toggle" data-sidebar-toggle aria-label="Collapse sidebar">

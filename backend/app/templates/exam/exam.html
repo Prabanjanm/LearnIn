@@ -10,9 +10,12 @@
 {% block content %}
 <div class="container">
 
-    <section class="page-hero">
-        <h1>{{ exam.name }}</h1>
-        {% if exam.description %}<p>{{ exam.description }}</p>{% endif %}
+    <section class="page-hero page-hero--illustrated">
+        <div class="page-hero-text">
+            <h1>{{ exam.name }}</h1>
+            {% if exam.description %}<p>{{ exam.description }}</p>{% endif %}
+        </div>
+        <img class="page-hero-illustration" src="/static/img/illustrations/exam.webp" alt="" aria-hidden="true">
     </section>
 
     <section class="section">

@@ -1,0 +1,28 @@
+{#
+    Blog card - richer than the generic .entity-card, with a real thumbnail
+    (only when the admin uploaded one), a category badge, and a real
+    published date. Callers pass plain dicts shaped as:
+        {"title": str, "url": str, "category": str | None,
+         "date": str | None, "image_url": str | None}
+#}
+{% macro render_blog_card_grid(items, empty_message="No blog posts published yet.") %}
+<div class="card-grid blog-card-grid">
+    {% for blog in items %}
+    <a class="blog-card" href="{{ blog.url }}">
+        {% if blog.image_url %}
+        <span class="blog-card-media"><img src="{{ blog.image_url }}" alt="" loading="lazy" data-fallback="/static/img/illustrations/blog.webp"></span>
+        {% endif %}
+        <div class="blog-card-body">
+            {% if blog.category %}<span class="blog-card-category">{{ blog.category }}</span>{% endif %}
+            <h3 class="blog-card-title">{{ blog.title }}</h3>
+            <div class="blog-card-footer">
+                {% if blog.date %}<span class="blog-card-date">{{ blog.date }}</span>{% endif %}
+                <span class="blog-card-cta">Read More <span aria-hidden="true">&rarr;</span></span>
+            </div>
+        </div>
+    </a>
+    {% else %}
+    <p class="empty-state">{{ empty_message }}</p>
+    {% endfor %}
+</div>
+{% endmacro %}

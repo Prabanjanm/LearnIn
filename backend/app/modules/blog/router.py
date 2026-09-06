@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -16,8 +16,8 @@ router = APIRouter(
 @router.get("/", response_model=BlogListResponse)
 def get_all(
     category: str | None = None,
-    page: int = 1,
-    page_size: int = 12,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(12, ge=1, le=50),
     db: Session = Depends(get_db)
 ):
     items, total = blog_service.get_published(db, category, page, page_size)

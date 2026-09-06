@@ -1,18 +1,23 @@
-from fastapi import APIRouter, Depends, Form, Query, Request
+from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import (
     AlreadyExistsException,
+    GoogleDriveConfigError,
     InvalidCredentialsException,
     NotFoundException,
 )
 from app.core.config import settings
 from app.core.database import get_db
 from app.common.rate_limit import rate_limit
+from app.common.utils.drive_urls import drive_thumbnail_url
 from app.common.utils.markdown_render import render_markdown
+from app.core.google_drive import get_drive_client
 from app.core.security import create_access_token
+from app.core.upload_policy import UploadValidationError, sanitize_filename, validate_upload
 from app.modules.blog.service import blog_service
 from app.modules.department.service import department_service
 from app.modules.exam.service import exam_service
@@ -24,6 +29,7 @@ from app.modules.resource.service import resource_service
 from app.modules.search.service import search_service
 from app.modules.student.dependencies import STUDENT_ACCESS_TOKEN_COOKIE_NAME, get_optional_student
 from app.modules.student.model import Student
+from app.modules.student.schema import ChangePasswordRequest, StudentProfileUpdate
 from app.modules.student.service import student_service
 from app.modules.subject.service import subject_service
 
@@ -103,7 +109,11 @@ def login_submit(
 
 
 def _login_response(student: Student, redirect_to: str) -> RedirectResponse:
-    token = create_access_token(subject=student.email)
+    token = create_access_token(
+        subject=str(student.id),
+        token_type="student",
+        token_version=student.token_version,
+    )
     response = RedirectResponse(redirect_to, status_code=303)
     response.set_cookie(
         key=STUDENT_ACCESS_TOKEN_COOKIE_NAME,
@@ -111,7 +121,7 @@ def _login_response(student: Student, redirect_to: str) -> RedirectResponse:
         httponly=True,
         samesite="lax",
         secure=not settings.DEBUG,
-        max_age=60 * 60 * 24 * 30,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
     return response
 
@@ -155,6 +165,156 @@ def dashboard_page(request: Request, student: Student | None = Depends(get_optio
     )
 
 
+@router.get("/profile", response_class=HTMLResponse)
+def profile_page(request: Request, student: Student | None = Depends(get_optional_student)):
+    if student is None:
+        return RedirectResponse("/login", status_code=303)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="account/profile.html",
+        context={"student": student},
+    )
+
+
+@router.get("/profile/edit", response_class=HTMLResponse)
+def profile_edit_page(request: Request, student: Student | None = Depends(get_optional_student)):
+    if student is None:
+        return RedirectResponse("/login", status_code=303)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="account/profile_edit.html",
+        context={"student": student, "error": None},
+    )
+
+
+@router.post("/profile/edit", response_class=HTMLResponse, dependencies=[Depends(rate_limit(20, 60))])
+async def profile_edit_submit(
+    request: Request,
+    full_name: str = Form(""),
+    avatar: UploadFile | None = File(None),
+    student: Student | None = Depends(get_optional_student),
+    db: Session = Depends(get_db),
+):
+    if student is None:
+        return RedirectResponse("/login", status_code=303)
+
+    try:
+        data = StudentProfileUpdate(full_name=full_name or None)
+    except ValidationError as exc:
+        return templates.TemplateResponse(
+            request=request,
+            name="account/profile_edit.html",
+            context={"student": student, "error": exc.errors()[0]["msg"]},
+            status_code=422,
+        )
+
+    if avatar is not None and avatar.filename:
+        content = await avatar.read()
+        filename = sanitize_filename(avatar.filename)
+        mime_type = avatar.content_type or "application/octet-stream"
+
+        try:
+            validate_upload("avatars", filename, mime_type, len(content), content)
+        except UploadValidationError as exc:
+            return templates.TemplateResponse(
+                request=request,
+                name="account/profile_edit.html",
+                context={"student": student, "error": str(exc)},
+                status_code=400,
+            )
+
+        try:
+            result = get_drive_client().upload_file(
+                content, filename=filename, mime_type=mime_type, category="avatars", public=False
+            )
+        except GoogleDriveConfigError as exc:
+            return templates.TemplateResponse(
+                request=request,
+                name="account/profile_edit.html",
+                context={"student": student, "error": str(exc)},
+                status_code=503,
+            )
+        except Exception:
+            return templates.TemplateResponse(
+                request=request,
+                name="account/profile_edit.html",
+                context={"student": student, "error": "Avatar upload failed. Please try again."},
+                status_code=502,
+            )
+
+        student_service.set_avatar(db, student, result.file_id)
+
+    student_service.update_profile(db, student, data)
+
+    return RedirectResponse("/profile", status_code=303)
+
+
+@router.get("/change-password", response_class=HTMLResponse)
+def change_password_page(request: Request, student: Student | None = Depends(get_optional_student)):
+    if student is None:
+        return RedirectResponse("/login", status_code=303)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="account/change_password.html",
+        context={"error": None},
+    )
+
+
+@router.post(
+    "/change-password",
+    response_class=HTMLResponse,
+    dependencies=[Depends(rate_limit(10, 60))],
+)
+def change_password_submit(
+    request: Request,
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+    student: Student | None = Depends(get_optional_student),
+    db: Session = Depends(get_db),
+):
+    if student is None:
+        return RedirectResponse("/login", status_code=303)
+
+    if new_password != confirm_password:
+        return templates.TemplateResponse(
+            request=request,
+            name="account/change_password.html",
+            context={"error": "New password and confirmation do not match."},
+            status_code=422,
+        )
+
+    try:
+        data = ChangePasswordRequest(current_password=current_password, new_password=new_password)
+    except ValidationError as exc:
+        return templates.TemplateResponse(
+            request=request,
+            name="account/change_password.html",
+            context={"error": exc.errors()[0]["msg"]},
+            status_code=422,
+        )
+
+    try:
+        updated_student = student_service.change_password(
+            db, student, data.current_password, data.new_password
+        )
+    except InvalidCredentialsException as exc:
+        return templates.TemplateResponse(
+            request=request,
+            name="account/change_password.html",
+            context={"error": str(exc)},
+            status_code=401,
+        )
+
+    # token_version was just bumped - the browser's current cookie is now
+    # invalid, so a fresh one has to be issued in the same response or the
+    # user would be logged out by their own successful password change.
+    return _login_response(updated_student, "/profile")
+
+
 # ------------------------------------------------------------ static -----
 
 @router.get("/about", response_class=HTMLResponse)
@@ -193,6 +353,8 @@ def robots_txt(request: Request):
         "Disallow: /admin/\n"
         "Disallow: /api/\n"
         "Disallow: /dashboard\n"
+        "Disallow: /profile\n"
+        "Disallow: /change-password\n"
         "Disallow: /login\n"
         "Disallow: /signup\n"
         "Disallow: /logout\n"
@@ -259,7 +421,9 @@ def blog_list_page(
         {
             "title": blog.title,
             "url": f"/blogs/{blog.slug}",
-            "meta": blog.category,
+            "category": blog.category,
+            "date": blog.published_date.strftime("%b %d, %Y") if blog.published_date else None,
+            "image_url": drive_thumbnail_url(blog.thumbnail_file_id),
         }
         for blog in items
     ]
@@ -313,12 +477,17 @@ def search_page(request: Request, q: str = "", db: Session = Depends(get_db)):
 @router.get("/exams", response_class=HTMLResponse)
 def exam_list_page(request: Request, db: Session = Depends(get_db)):
     exams = exam_service.get_published(db)
+    paper_counts = paper_service.count_published_by_exam(db)
+    mock_test_counts = mock_test_service.count_published_by_exam(db)
 
     exam_cards = [
         {
             "title": exam.name,
             "url": f"/{exam.slug}",
-            "meta": f"{len(department_service.get_published_by_exam(db, exam.id))} departments",
+            "description": exam.description,
+            "icon_url": drive_thumbnail_url(exam.icon_file_id),
+            "paper_count": paper_counts.get(exam.id, 0),
+            "mock_test_count": mock_test_counts.get(exam.id, 0),
         }
         for exam in exams
     ]

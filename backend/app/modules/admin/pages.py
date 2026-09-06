@@ -21,7 +21,7 @@ from app.core.database import get_db
 from app.core.enums import StatusEnum
 from app.core.google_drive import get_drive_client
 from app.core.security import create_access_token
-from app.core.upload_policy import UploadValidationError, validate_upload
+from app.core.upload_policy import UploadValidationError, sanitize_filename, validate_upload
 from app.modules.blog.model import Blog
 from app.modules.department.model import Department
 from app.modules.exam.model import Exam
@@ -46,6 +46,11 @@ router = APIRouter(tags=["Admin Pages"])
 templates = Jinja2Templates(directory="app/templates")
 
 logger = logging.getLogger(__name__)
+
+# The academic hierarchy - never hard-deleted via the generic admin bulk
+# action, only archived (see entity_bulk_action). Everything else (Paper,
+# Question, Option, MockTest, Resource, Blog, ...) keeps real hard-delete.
+_SOFT_DELETE_ONLY_ENTITIES = {"exams", "departments", "subjects"}
 
 
 def _collect_uploaded_file_ids(fields: list[dict], payload: dict) -> list[str]:
@@ -171,7 +176,11 @@ def login_submit(
             status_code=401,
         )
 
-    token = create_access_token(subject=admin.email)
+    token = create_access_token(
+        subject=str(admin.id),
+        token_type="admin",
+        token_version=admin.token_version,
+    )
 
     response = RedirectResponse("/admin", status_code=303)
     response.set_cookie(
@@ -180,7 +189,7 @@ def login_submit(
         httponly=True,
         samesite="lax",
         secure=not settings.DEBUG,
-        max_age=60 * 60 * 24,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
     return response
 
@@ -1280,7 +1289,18 @@ async def entity_bulk_action(
             if obj is None:
                 continue
 
-            if action == "delete":
+            if action == "delete" and entity_key in _SOFT_DELETE_ONLY_ENTITIES:
+                # Exam/Department/Subject are the academic hierarchy - never
+                # hard-delete them from the generic admin UI (a real DELETE
+                # cascades away every child Paper/Question/Option beneath
+                # them). "Delete" here archives instead, reusing the same
+                # status lifecycle every other bulk action already uses -
+                # an admin can bring a row back via the ARCHIVED -> DRAFT/
+                # PUBLISHED bulk action below, i.e. a real restore.
+                if hasattr(obj, "status"):
+                    obj.status = StatusEnum.ARCHIVED
+                    config["service"].update(db, obj)
+            elif action == "delete":
                 delete_method = getattr(config["service"], f"delete_{entity_key.rstrip('s')}", None)
                 if delete_method is not None:
                     # Use the entity's own delete_<entity> when it exists -
@@ -1313,7 +1333,7 @@ async def upload_file(
     _admin: Admin = Depends(get_current_admin),
 ):
     content = await file.read()
-    filename = file.filename or "upload"
+    filename = sanitize_filename(file.filename or "upload")
     mime_type = file.content_type or "application/octet-stream"
 
     try:

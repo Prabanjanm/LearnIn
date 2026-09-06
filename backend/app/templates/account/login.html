@@ -1,29 +1,41 @@
 {% extends "layouts/base.html" %}
+{% from "components/icons.html" import icon %}
 
 {% block title %}Log In | LearnIn{% endblock %}
 {% block description %}Log in to your LearnIn account to track your mock test results.{% endblock %}
 
-{% block css %}<link rel="stylesheet" href="/static/css/account.css">{% endblock %}
+{% block css %}<link rel="stylesheet" href="/static/css/account.css?v=2">{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="account-card">
-        <h1>Welcome back</h1>
-        <p class="section-subtitle">Log in to see your mock test results and progress.</p>
+<section class="split-hero">
+    <div class="split-hero-content">
+        <div class="account-card account-card--split">
+            <h1>Welcome back</h1>
+            <p class="section-subtitle">Log in to see your mock test results and progress.</p>
 
-        {% if error %}<p class="account-error">{{ error }}</p>{% endif %}
+            {% if error %}<p class="account-error">{{ error }}</p>{% endif %}
 
-        <form method="post" action="/login" class="account-form">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" required autofocus>
+            <form method="post" action="/login" class="account-form" data-account-form>
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required autofocus>
 
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required>
+                <label for="password">Password</label>
+                <div class="password-input-wrapper">
+                    <input type="password" id="password" name="password" required>
+                    <button type="button" class="password-toggle" data-password-toggle aria-pressed="false" aria-label="Show password">
+                        <span class="password-toggle-icon password-toggle-icon--show">{{ icon('eye', 18) }}</span>
+                        <span class="password-toggle-icon password-toggle-icon--hide">{{ icon('eye-off', 18) }}</span>
+                    </button>
+                </div>
 
-            <button type="submit" class="btn btn-lg">Log In</button>
-        </form>
+                <button type="submit" class="btn btn-lg" data-submit-label="Log In">Log In</button>
+            </form>
 
-        <p class="account-switch">New to LearnIn? <a href="/signup">Create an account</a></p>
+            <p class="account-switch">New to LearnIn? <a href="/signup">Create an account</a></p>
+        </div>
     </div>
-</div>
+    <div class="split-hero-panel">
+        <img class="split-hero-illustration" src="/static/img/illustrations/login.webp" alt="Student walking back to their study desk">
+    </div>
+</section>
 {% endblock %}

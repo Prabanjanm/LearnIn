@@ -1,0 +1,83 @@
+{% extends "admin/_layout.html" %}
+
+{% block title %}{{ institution.name }} - LearnIn Admin{% endblock %}
+
+{% block breadcrumb %}
+<span class="admin-breadcrumb-sep">/</span>
+<a href="/admin/institutions">Institutions</a>
+<span class="admin-breadcrumb-sep">/</span>
+<span>{{ institution.name }}</span>
+{% endblock %}
+
+{% block content %}
+<div
+    id="institution-detail"
+    data-institution-id="{{ institution.id }}"
+    data-status="{{ institution.status.value }}"
+    data-conducted-test-enabled="{{ institution.conducted_test_enabled|lower }}"
+>
+    <div class="admin-page-header">
+        <div>
+            <h1>{{ institution.name }}</h1>
+            <p class="admin-page-subtitle">
+                Status: <span class="admin-badge admin-badge--{{ institution.status.value|lower }}">{{ institution.status.value }}</span>
+            </p>
+        </div>
+        <div class="admin-table-actions">
+            {% if institution.status.value == "ARCHIVED" %}
+            <button type="button" class="admin-btn admin-btn-primary" data-action="activate">Reactivate</button>
+            {% else %}
+            <button type="button" class="admin-btn admin-btn-danger" data-action="archive" data-confirm="Archive this institution? Its users will no longer be able to log in.">Archive</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <h2>Conducted Test Feature</h2>
+    <p class="admin-page-subtitle">Controls whether this institution's portal can create/manage Conducted Tests. Enforced server-side, not just a UI toggle.</p>
+    <label class="admin-field--checkbox" style="display:inline-flex;align-items:center;gap:8px;margin-bottom:24px;">
+        <input type="checkbox" id="conducted-test-toggle" {% if institution.conducted_test_enabled %}checked{% endif %}>
+        Conducted Tests Enabled
+    </label>
+
+    <h2>Institution Users</h2>
+    <p class="admin-page-subtitle">Login accounts for this institution's own portal (<code>/institution/login</code>).</p>
+
+    <div class="admin-table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="institution-user-rows">
+                <tr><td colspan="4" class="admin-table-empty">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>Add a User</h3>
+    <form id="institution-user-form" class="admin-form">
+        <div class="admin-field">
+            <label for="user_email">Email</label>
+            <input type="email" id="user_email" name="email" required>
+        </div>
+        <div class="admin-field">
+            <label for="user_full_name">Full name</label>
+            <input type="text" id="user_full_name" name="full_name">
+        </div>
+        <div class="admin-field">
+            <label for="user_password">Temporary password</label>
+            <input type="password" id="user_password" name="password" required minlength="8">
+        </div>
+        <p id="institution-user-form-error" class="admin-field-error" hidden></p>
+        <button type="submit" class="admin-btn admin-btn-primary">Add User</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block js %}
+<script src="/static/js/admin/institution_admin_detail.js"></script>
+{% endblock %}

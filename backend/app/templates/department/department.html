@@ -10,9 +10,12 @@
 {% block content %}
 <div class="container">
 
-    <section class="page-hero">
-        <h1>{{ department.name }}</h1>
-        <p>{{ exam.name }}</p>
+    <section class="page-hero page-hero--illustrated">
+        <div class="page-hero-text">
+            <h1>{{ department.name }}</h1>
+            <p>{{ exam.name }}</p>
+        </div>
+        <img class="page-hero-illustration" src="/static/img/illustrations/department.webp" alt="" aria-hidden="true">
     </section>
 
     <section class="section">

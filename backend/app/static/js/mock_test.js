@@ -431,7 +431,7 @@ function confirmAndSubmit(container) {
                 <span>Marked for review <strong>${markedCount}</strong></span>
             </div>
             <div class="cbt-modal-actions">
-                <button type="button" class="btn-secondary" id="cbt-modal-cancel">Continue Test</button>
+                <button type="button" class="btn btn-secondary" id="cbt-modal-cancel">Continue Test</button>
                 <button type="button" class="btn" id="cbt-modal-submit">Submit Test</button>
             </div>
         </div>

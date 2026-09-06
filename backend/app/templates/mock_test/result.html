@@ -4,16 +4,19 @@
 {% block title %}Result - {{ mock_test.title }} | LearnIn{% endblock %}
 {% block description %}Your result for the {{ mock_test.title }} mock test.{% endblock %}
 
-{% block css %}<link rel="stylesheet" href="/static/css/quiz.css">{% endblock %}
+{% block css %}<link rel="stylesheet" href="/static/css/quiz.css?v=2">{% endblock %}
 
 {% block breadcrumbs %}{{ render_breadcrumbs(breadcrumbs) }}{% endblock %}
 
 {% block content %}
 <div class="container">
 
-    <section class="page-hero">
-        <h1>{{ mock_test.title }}</h1>
-        <p>Test completed{% if attempt.time_taken_seconds %} in {{ (attempt.time_taken_seconds // 60) }} min {{ attempt.time_taken_seconds % 60 }} sec{% endif %}.</p>
+    <section class="page-hero page-hero--illustrated">
+        <div class="page-hero-text">
+            <h1>{{ mock_test.title }}</h1>
+            <p>Test completed{% if attempt.time_taken_seconds %} in {{ (attempt.time_taken_seconds // 60) }} min {{ attempt.time_taken_seconds % 60 }} sec{% endif %}.</p>
+        </div>
+        <img class="page-hero-illustration" src="/static/img/illustrations/progress.webp" alt="" aria-hidden="true">
     </section>
 
     <section class="section">

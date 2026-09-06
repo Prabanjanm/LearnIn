@@ -25,16 +25,19 @@ def test_hash_password_roundtrip():
 
 
 def test_access_token_roundtrip():
-    token = create_access_token(subject="admin@learnin.app")
+    token = create_access_token(subject="1", token_type="admin")
     payload = decode_access_token(token)
 
     assert payload is not None
-    assert payload["sub"] == "admin@learnin.app"
+    assert payload["sub"] == "1"
+    assert payload["type"] == "admin"
+    assert payload["tv"] == 0
 
 
 def test_expired_token_is_rejected():
     token = create_access_token(
-        subject="admin@learnin.app",
+        subject="1",
+        token_type="admin",
         expires_delta=timedelta(seconds=-1),
     )
 
@@ -42,7 +45,7 @@ def test_expired_token_is_rejected():
 
 
 def test_tampered_token_is_rejected():
-    token = create_access_token(subject="admin@learnin.app")
+    token = create_access_token(subject="1", token_type="admin")
 
     assert decode_access_token(token + "tampered") is None
 
@@ -99,6 +102,52 @@ def test_login_rate_limit_blocks_after_threshold():
         for i in range(15)
     ]
     assert any(r.status_code == 429 for r in responses)
+
+
+def test_json_student_login_rate_limit_blocks_after_threshold():
+    # /api/students/login previously had no rate limit at all, unlike its
+    # HTML-form equivalent above - regression test for that gap.
+    responses = [
+        client.post(
+            "/api/students/login",
+            json={"email": f"json-ratelimit-{i}@example.com", "password": "wrong"},
+        )
+        for i in range(15)
+    ]
+    assert any(r.status_code == 429 for r in responses)
+
+
+def test_json_student_signup_rate_limit_blocks_after_threshold():
+    responses = [
+        client.post(
+            "/api/students/signup",
+            json={"email": f"json-signup-ratelimit-{i}@example.com", "password": "GoodPass123"},
+        )
+        for i in range(15)
+    ]
+    assert any(r.status_code == 429 for r in responses)
+
+
+# ------------------------------------------------------- JWT claims -----
+
+def test_token_missing_type_claim_is_rejected_by_student_dependency():
+    # Simulates a pre-hardening token (bare "sub"/"exp", no "type"/"tv") -
+    # must never resolve as a valid student session.
+    from jose import jwt as jose_jwt
+
+    from app.core.config import settings
+
+    legacy_shaped_token = jose_jwt.encode(
+        {"sub": "1", "exp": __import__("time").time() + 3600},
+        settings.SECRET_KEY,
+        algorithm=settings.JWT_ALGORITHM,
+    )
+
+    response = client.get(
+        "/api/students/me",
+        headers={"Authorization": f"Bearer {legacy_shaped_token}"},
+    )
+    assert response.status_code == 401
 
 
 # -------------------------------------------------- markdown / XSS -----
