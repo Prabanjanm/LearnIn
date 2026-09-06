@@ -1142,14 +1142,56 @@ body.admin-drawer-open {
 .admin-field input[type="email"],
 .admin-field input[type="password"],
 .admin-field input[type="file"],
+.admin-field input[type="datetime-local"],
+.admin-field input[type="date"],
+.admin-field input[type="time"],
 .admin-field select,
 .admin-field textarea {
+    width: 100%;
+    box-sizing: border-box;
     padding: 11px 14px;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     font-size: 14px;
     font-family: inherit;
+    color: var(--color-text);
+    background: var(--color-bg);
     transition: border-color .12s;
+}
+
+/* A native datetime-local/date/time control's internal shadow-DOM
+   segments render a couple of pixels taller than a plain text input
+   even with byte-identical padding/border/font - the two otherwise
+   match exactly (confirmed via computed styles) but this was the one
+   real, visible leftover difference. An explicit shared height forces
+   every single-line field (never textarea/select, which size to their
+   own rows/content) to the same box regardless of that native quirk. */
+.admin-field input[type="text"],
+.admin-field input[type="number"],
+.admin-field input[type="email"],
+.admin-field input[type="password"],
+.admin-field input[type="file"],
+.admin-field input[type="datetime-local"],
+.admin-field input[type="date"],
+.admin-field input[type="time"] {
+    height: 44px;
+}
+
+/* Chrome/Edge/Safari render the native calendar/clock icon as an inset
+   pseudo-element that ignores the input's own text color by default -
+   without this it stays dark-on-dark or otherwise clashes once the
+   field has real border/background styling instead of the UA default. */
+.admin-field input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+.admin-field input[type="date"]::-webkit-calendar-picker-indicator,
+.admin-field input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+.admin-field input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
+.admin-field input[type="date"]::-webkit-calendar-picker-indicator:hover,
+.admin-field input[type="time"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
 }
 
 .admin-field input:focus,
