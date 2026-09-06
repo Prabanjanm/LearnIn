@@ -129,7 +129,7 @@ ENTITY_REGISTRY = {
         "schema": PaperCreate,
         "update_schema": PaperUpdate,
         "update_method": "update_paper",
-        "list_columns": ["id", "subject_id", "title", "year", "status", "total_questions"],
+        "list_columns": ["id", "subject_id", "title", "year", "status", "total_questions", "public_url"],
         "form_fields": [
             {"name": "subject_id", "label": "Subject ID", "type": FIELD_NUMBER, "required": True},
             {"name": "title", "label": "Title", "type": FIELD_TEXT, "required": True},
