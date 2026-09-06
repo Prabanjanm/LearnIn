@@ -1,0 +1,86 @@
+{% extends "admin/_layout.html" %}
+{% from "components/upload_field.html" import render_upload_field %}
+
+{% block title %}New Processing Job - LearnIn Admin{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/paper-processing.css">{% endblock %}
+
+{% block breadcrumb %}
+<span class="admin-breadcrumb-sep">/</span>
+<a href="{{ base_path }}">Paper Processing</a>
+<span class="admin-breadcrumb-sep">/</span>
+<span>New</span>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <div>
+        <h1>Step 1 - Upload the source paper</h1>
+        <p class="admin-page-subtitle">
+            Nothing is saved to the live question bank at this step. The PDF is
+            validated, cleaned and read, then you review every question by hand
+            before anything is published.
+        </p>
+    </div>
+    <a class="admin-btn admin-btn-secondary" href="{{ base_path }}">Back to list</a>
+</div>
+
+{% if error %}
+<p class="admin-error">{{ error }}</p>
+{% endif %}
+
+<form method="post" action="{{ base_path }}/new" class="admin-form" enctype="multipart/form-data">
+
+    <div class="admin-field">
+        <label for="subject_id">Subject *</label>
+        <select id="subject_id" name="subject_id" required>
+            <option value="">Select a subject...</option>
+            {% for subject in subjects %}
+            <option value="{{ subject.id }}">
+                {{ subject.name }}
+                {%- if subject.department %} - {{ subject.department.name }}{% endif %}
+                (#{{ subject.id }})
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="admin-field">
+        <label for="title">Paper title *</label>
+        <input type="text" id="title" name="title" required maxlength="255">
+    </div>
+
+    <div class="admin-field">
+        <label for="year">Year *</label>
+        <input type="number" id="year" name="year" required min="1900" max="2200">
+    </div>
+
+    {{ render_upload_field({
+        "name": "original_file_id",
+        "label": "Source question paper PDF",
+        "category": "paper_processing_sources",
+        "accept": ".pdf",
+        "required": True,
+    }) }}
+
+    {{ render_upload_field({
+        "name": "answer_file_id",
+        "label": "Answer key PDF (optional - stored as-is, never parsed)",
+        "category": "paper_processing_sources",
+        "accept": ".pdf",
+        "required": False,
+    }) }}
+
+    <div class="admin-field">
+        <label for="source_url">Source URL (where this PDF was collected from)</label>
+        <input type="text" id="source_url" name="source_url" maxlength="1000">
+    </div>
+
+    <div class="admin-field">
+        <label for="source_notes">Source notes</label>
+        <textarea id="source_notes" name="source_notes"></textarea>
+    </div>
+
+    <button type="submit" class="admin-btn admin-btn-primary">Upload and start processing</button>
+</form>
+{% endblock %}

@@ -65,6 +65,7 @@ CATEGORY_POLICIES: dict[str, CategoryPolicy] = {
     "images": CategoryPolicy(frozenset(IMAGE_MIME_TYPES), frozenset(IMAGE_EXTENSIONS), settings.MAX_IMAGE_UPLOAD_BYTES),
     "question_images": CategoryPolicy(frozenset(IMAGE_MIME_TYPES), frozenset(IMAGE_EXTENSIONS), settings.MAX_IMAGE_UPLOAD_BYTES),
     "papers": CategoryPolicy(frozenset(PDF_MIME_TYPES), frozenset(PDF_EXTENSIONS), settings.MAX_PDF_UPLOAD_BYTES),
+    "paper_processing_sources": CategoryPolicy(frozenset(PDF_MIME_TYPES), frozenset(PDF_EXTENSIONS), settings.MAX_PDF_UPLOAD_BYTES),
     "resources": CategoryPolicy(
         frozenset(PDF_MIME_TYPES | IMAGE_MIME_TYPES),
         frozenset(PDF_EXTENSIONS | IMAGE_EXTENSIONS),

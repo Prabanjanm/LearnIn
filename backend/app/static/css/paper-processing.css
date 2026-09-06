@@ -1,0 +1,255 @@
+/*
+    Question Paper Processing admin screens.
+
+    Plain CSS, one file for this concern, reusing the existing admin design
+    tokens from variables.css / admin.css rather than restyling anything.
+*/
+
+.pp-panel {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.pp-status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.pp-status {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #eef2ff;
+    color: #3730a3;
+    white-space: nowrap;
+}
+
+.pp-status--ready_for_review,
+.pp-status--ready_to_publish { background: #ecfdf5; color: #065f46; }
+
+.pp-status--published { background: #dcfce7; color: #14532d; }
+
+.pp-status--failed,
+.pp-status--validation_failed { background: #fef2f2; color: #991b1b; }
+
+.pp-status--watermark_needs_review { background: #fffbeb; color: #92400e; }
+
+.pp-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #c7d2fe;
+    border-top-color: #4338ca;
+    border-radius: 50%;
+    animation: pp-spin 0.8s linear infinite;
+}
+
+@keyframes pp-spin {
+    to { transform: rotate(360deg); }
+}
+
+.pp-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px 20px;
+    margin: 0 0 16px;
+}
+
+.pp-meta div { display: flex; flex-direction: column; gap: 2px; }
+
+.pp-meta dt {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6b7280;
+}
+
+.pp-meta dd { margin: 0; font-size: 14px; font-weight: 600; color: #111827; }
+
+.pp-note {
+    border-left: 3px solid #cbd5e1;
+    background: #f8fafc;
+    padding: 10px 14px;
+    border-radius: 0 6px 6px 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #334155;
+    margin: 0 0 16px;
+}
+
+.pp-note--warn { border-left-color: #f59e0b; background: #fffbeb; color: #78350f; }
+
+.pp-note--error { border-left-color: #dc2626; background: #fef2f2; color: #7f1d1d; }
+
+.pp-note ul { margin: 6px 0 0 18px; padding: 0; }
+
+.pp-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.pp-actions form { margin: 0; }
+
+.pp-subheading { margin: 28px 0 12px; font-size: 16px; }
+
+/* ------------------------------------------------------------- review -- */
+
+.pp-review { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
+
+.pp-question {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 16px 18px;
+}
+
+.pp-question--flagged {
+    border-color: #f59e0b;
+    box-shadow: inset 3px 0 0 #f59e0b;
+}
+
+.pp-question-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.pp-question-index { font-weight: 700; font-size: 14px; }
+
+.pp-question-actions { margin-left: auto; display: flex; flex-wrap: wrap; gap: 6px; }
+
+.pp-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #4b5563;
+}
+
+.pp-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+
+.pp-badge--high { background: #dcfce7; color: #14532d; }
+.pp-badge--medium { background: #fef9c3; color: #713f12; }
+
+/* LOW confidence is visually loud on purpose: these are the items a human
+   must look at before anything is published. */
+.pp-badge--low {
+    background: #fee2e2;
+    color: #7f1d1d;
+    border: 1px solid #fca5a5;
+}
+
+.pp-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 8px 16px;
+}
+
+.pp-option label,
+.pp-answer label { font-size: 12px; }
+
+.pp-raw { margin: 10px 0; font-size: 12px; color: #4b5563; }
+
+.pp-raw summary { cursor: pointer; }
+
+.pp-raw pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 6px;
+    padding: 10px;
+    margin: 8px 0 0;
+    font-size: 12px;
+}
+
+.pp-images { margin: 12px 0; }
+
+.pp-images > label { font-size: 12px; font-weight: 600; }
+
+.pp-image-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 8px 0;
+}
+
+.pp-image-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 160px;
+    padding: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.pp-image-thumb {
+    width: 100%;
+    height: 100px;
+    object-fit: contain;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+}
+
+.pp-image-meta { font-size: 11px; color: #64748b; text-transform: capitalize; }
+
+.pp-image-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.pp-image-file-btn {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.pp-question-foot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.pp-inline-status { font-size: 12px; }
+.pp-inline-status--ok { color: #047857; }
+.pp-inline-status--error { color: #b91c1c; }
+
+/* -------------------------------------------------------- final preview -- */
+
+.pp-final { display: flex; flex-direction: column; gap: 14px; }
+
+.pp-final-question {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px 18px;
+}
+
+.pp-final-text { margin: 0 0 8px; line-height: 1.5; }
+
+.pp-final-options { margin: 0 0 8px 18px; padding: 0; font-size: 14px; line-height: 1.6; }
+
+.pp-final-answer { margin: 0; font-size: 12px; color: #6b7280; font-style: italic; }

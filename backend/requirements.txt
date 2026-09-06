@@ -34,6 +34,14 @@ rsa==4.9.1
 pyasn1==0.6.3
 six==1.17.0
 
+# Question paper processing (PDF validation/cleaning, OCR, PDF generation)
+# pytesseract needs the `tesseract` system binary installed separately; the
+# app degrades to a clear "OCR unavailable" error when it is missing.
+PyMuPDF==1.28.2
+pytesseract==0.3.13
+Pillow==12.3.0
+reportlab==5.0.1
+
 # Google Drive storage (OAuth user credentials, not a service account -
 # see backend/scripts/authorize_google_drive.py)
 google-api-python-client==2.198.0

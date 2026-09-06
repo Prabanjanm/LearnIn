@@ -26,6 +26,11 @@ CATEGORY_FOLDER_SETTINGS = {
     "images": "GOOGLE_DRIVE_IMAGES_FOLDER_ID",
     "question_images": "GOOGLE_DRIVE_QUESTION_IMAGES_FOLDER_ID",
     "thumbnails": "GOOGLE_DRIVE_THUMBNAILS_FOLDER_ID",
+    # Untouched source PDFs (and optional answer keys) collected from
+    # external sites for the Question Paper Processing workflow. The
+    # *generated* standardized PDF goes to "papers" instead, since it ends
+    # up serving the same role as Paper.question_file_id.
+    "paper_processing_sources": "GOOGLE_DRIVE_PAPER_PROCESSING_FOLDER_ID",
 }
 
 

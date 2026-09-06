@@ -17,3 +17,9 @@ from app.modules.student.model import Student
 from app.modules.resource.model import Resource
 from app.modules.blog.model import Blog
 from app.modules.search.model import SearchLog
+from app.modules.paper_processing.model import (
+    PaperProcessingJob,
+    ExtractedQuestion,
+    ExtractedOption,
+    ExtractedQuestionImage,
+)

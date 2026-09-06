@@ -13,6 +13,7 @@ from app.common.exceptions.exceptions import (
     AlreadyExistsException,
     GoogleDriveConfigError,
     InvalidCredentialsException,
+    InvalidStateException,
     LearnInException,
     NotFoundException,
 )
@@ -32,6 +33,8 @@ from app.modules.mock_test.router import router as mock_test_router
 from app.modules.mock_test_question.router import router as mock_test_question_router
 from app.modules.blog.router import router as blog_router
 from app.modules.search.router import router as search_router
+from app.modules.paper_processing.router import router as paper_processing_router
+from app.modules.paper_processing.pages import router as paper_processing_pages_router
 from app.modules.pages.router import router as pages_router
 from app.modules.student.middleware import StudentIdentityMiddleware
 from app.modules.student.router import router as student_router
@@ -71,6 +74,8 @@ app.include_router(mock_test_router)
 app.include_router(mock_test_question_router)
 app.include_router(blog_router)
 app.include_router(search_router)
+app.include_router(paper_processing_router)
+app.include_router(paper_processing_pages_router)
 app.include_router(student_router)
 
 # Must be last: /{exam_slug} etc. are dynamic single/multi-segment catch-alls
@@ -83,6 +88,7 @@ EXCEPTION_STATUS_CODES = {
     AlreadyExistsException: 409,
     InvalidCredentialsException: 401,
     GoogleDriveConfigError: 503,
+    InvalidStateException: 400,
 }
 
 _ERROR_MESSAGES = {
