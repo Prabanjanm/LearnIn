@@ -3,24 +3,37 @@
     listing pages, since exams are the site's top-level entry point and need
     to be understood at a glance (name, what it is, what's available).
     Callers pass plain dicts shaped as:
-        {"title": str, "url": str, "description": str | None,
-         "icon_url": str | None, "paper_count": int, "mock_test_count": int}
+        {"title": str, "code": str, "url": str, "description": str | None,
+         "paper_count": int, "mock_test_count": int}
     Counts/description are only ever real backend values - render nothing
-    for a field that's falsy/zero rather than showing a placeholder.
+    for a field that's falsy/zero rather than showing a placeholder. The
+    top color block cycles through a fixed palette by position (see
+    .exam-card:nth-child in cards.css) and the badge shows the exam's own
+    code - always real, always available, never a generic reused image.
 #}
-{% macro render_exam_card_grid(items, empty_message="Exams are being added — check back soon.", fallback_icon="/static/img/illustrations/exam.webp") %}
+{% macro render_exam_card_grid(items, empty_message="Exams are being added — check back soon.") %}
 <div class="card-grid exam-card-grid">
     {% for exam in items %}
     <a class="exam-card" href="{{ exam.url }}">
-        <span class="exam-card-icon">
-            <img src="{{ exam.icon_url or fallback_icon }}" alt="" aria-hidden="true" data-fallback="{{ fallback_icon }}">
+        <span class="exam-card-color">
+            <span class="exam-card-badge">{{ (exam.code or exam.title[:2]) | upper }}</span>
         </span>
         <h3 class="exam-card-title">{{ exam.title }}</h3>
         {% if exam.description %}<p class="exam-card-description">{{ exam.description }}</p>{% endif %}
         {% if exam.paper_count or exam.mock_test_count %}
         <div class="exam-card-tags">
-            {% if exam.paper_count %}<span class="exam-card-tag">{{ exam.paper_count }} Paper{{ "s" if exam.paper_count != 1 else "" }}</span>{% endif %}
-            {% if exam.mock_test_count %}<span class="exam-card-tag">{{ exam.mock_test_count }} Mock Test{{ "s" if exam.mock_test_count != 1 else "" }}</span>{% endif %}
+            {% if exam.paper_count %}
+            <span class="exam-card-tag">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 13h6M9 17h6"/></svg>
+                {{ exam.paper_count }} Paper{{ "s" if exam.paper_count != 1 else "" }}
+            </span>
+            {% endif %}
+            {% if exam.mock_test_count %}
+            <span class="exam-card-tag">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 11l2 2 4-4"/></svg>
+                {{ exam.mock_test_count }} Mock Test{{ "s" if exam.mock_test_count != 1 else "" }}
+            </span>
+            {% endif %}
         </div>
         {% endif %}
         <span class="exam-card-cta">Explore <span aria-hidden="true">&rarr;</span></span>

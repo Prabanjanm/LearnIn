@@ -27,6 +27,19 @@
         border-radius: var(--radius-md);
     }
 
+    .nav-dropdown summary {
+        padding: 12px 14px;
+        border-radius: var(--radius-md);
+    }
+
+    .nav-dropdown-menu {
+        position: static;
+        box-shadow: none;
+        border: none;
+        max-height: none;
+        padding: 0 0 4px 10px;
+    }
+
     .nav-search-toggle {
         align-self: flex-start;
         margin: 4px 0 4px 14px;

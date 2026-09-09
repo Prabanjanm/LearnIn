@@ -59,6 +59,13 @@ main {
     margin-top: 10px;
 }
 
+/* A <button>/<a class="btn"> has no margin of its own, so one placed
+   right after the paragraph above (e.g. mock_test.html's "Start Test")
+   would otherwise sit flush against it with no breathing room. */
+.page-hero-text .btn {
+    margin-top: 18px;
+}
+
 /* Shared section rhythm - used by home + the exam/department/subject/paper
    hierarchy pages so every listing page reads consistently. */
 .section {

@@ -12,13 +12,37 @@
 
     <section class="page-hero page-hero--illustrated">
         <div class="page-hero-text">
-            <h1>{{ exam.name }}</h1>
+            <span class="section-eyebrow">Exam</span>
+            <h1>Learn {{ exam.name }} Systematically</h1>
             {% if exam.description %}<p>{{ exam.description }}</p>{% endif %}
+            <div class="hero-actions">
+                <a href="#departments" class="btn btn-lg">Start Learning &rarr;</a>
+                <a href="/practice?exam_id={{ exam.id }}" class="btn btn-secondary btn-lg">Explore Practice</a>
+            </div>
         </div>
-        <img class="page-hero-illustration" src="/static/img/illustrations/exam.webp" alt="" aria-hidden="true">
+        <span class="glow-visual">
+            <img class="page-hero-illustration" src="{{ exam_hero_image }}" alt="" aria-hidden="true">
+        </span>
     </section>
 
-    <section class="section">
+    <section class="section reveal">
+        <div class="stat-row">
+            <div class="stat-card">
+                <strong>{{ department_cards|length }}</strong>
+                <span>Departments</span>
+            </div>
+            <div class="stat-card">
+                <strong>{{ papers_count }}</strong>
+                <span>Previous Year Papers</span>
+            </div>
+            <div class="stat-card">
+                <strong>{{ mock_tests_count }}</strong>
+                <span>Mock Tests</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="departments">
         <div class="section-head">
             <h2>Departments</h2>
         </div>

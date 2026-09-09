@@ -26,7 +26,7 @@ class QuestionBase(BaseModel):
     question_type: QuestionType
     question_text: str
     correct_answer: str
-    difficulty: DifficultyEnum
+    difficulty: DifficultyEnum | None = None
     marks: float = 1
     negative_marks: float = 0
     explanation: str | None = None
@@ -118,7 +118,7 @@ class QuestionPublicResponse(BaseModel):
     question_number: int
     question_type: QuestionType
     question_text: str
-    difficulty: DifficultyEnum
+    difficulty: DifficultyEnum | None = None
     marks: float
     negative_marks: float
     image_file_id: str | None = None

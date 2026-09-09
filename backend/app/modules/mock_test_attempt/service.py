@@ -226,7 +226,13 @@ class MockTestSessionService(BaseService):
         if session.submitted_at is not None:
             raise InvalidStateException("This attempt has already been submitted")
 
-        deadline = session.started_at + timedelta(seconds=mock_test.duration * 60)
+        started_at = session.started_at
+        if started_at.tzinfo is None:
+            # SQLite (dev/tests only) drops tzinfo on round-trip - see the
+            # matching fix in mock_test/service.py::start_session.
+            started_at = started_at.replace(tzinfo=timezone.utc)
+
+        deadline = started_at + timedelta(seconds=mock_test.duration * 60)
         if datetime.now(timezone.utc) >= deadline:
             raise InvalidStateException("This attempt has expired")
 

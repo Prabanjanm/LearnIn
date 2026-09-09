@@ -135,54 +135,308 @@
     color: var(--color-text-muted);
 }
 
+.how-it-works-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 18px;
+    margin-top: 20px;
+}
+
+.how-step {
+    position: relative;
+    padding: 24px 20px 20px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-card);
+}
+
+.how-step:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-accent);
+}
+
+.how-step-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent);
+    color: var(--color-text-on-dark, #fff);
+    font-weight: 700;
+    font-family: var(--font-heading);
+    margin-bottom: var(--spacing-md);
+}
+
+.how-step h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 6px;
+}
+
+.how-step p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+}
+
+/* "Why LearnIn" section - a soft-panel layout with intro copy + hand
+   sticker on one side and a loosely scattered (slightly rotated,
+   straightens on hover) set of real feature cards on the other. */
+.features-scatter-section {
+    background: var(--color-accent-light);
+    border-radius: var(--radius-xl);
+    padding: 48px;
+}
+
+.features-scatter-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 40px;
+    align-items: center;
+}
+
+.features-scatter-intro {
+    position: relative;
+    padding-bottom: 90px;
+}
+
+.features-scatter-intro h2 {
+    margin: 6px 0 12px;
+}
+
+.features-scatter-intro p {
+    color: var(--color-text-muted);
+    margin: 0 0 20px;
+    max-width: 420px;
+}
+
+.features-scatter-hand {
+    position: absolute;
+    bottom: -16px;
+    left: 180px;
+    width: 84px;
+    height: auto;
+    filter: drop-shadow(0 10px 18px rgba(30, 58, 95, .18));
+}
+
+.features-scatter-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+}
+
+.scatter-card {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: 20px;
+    transform: rotate(var(--rotate, 0deg));
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.scatter-card:hover {
+    transform: rotate(0deg) translateY(-4px);
+    box-shadow: var(--shadow-lg, var(--shadow-md));
+    z-index: 1;
+}
+
+.scatter-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    background: var(--color-accent-light);
+    margin-bottom: 10px;
+}
+
+.scatter-card-icon img {
+    width: 24px;
+    height: 24px;
+}
+
+.scatter-card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 4px;
+}
+
+.scatter-card p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--color-text-muted);
+}
+
+@media (max-width: 900px) {
+    .features-scatter-section {
+        padding: 28px 20px;
+    }
+
+    .features-scatter-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .features-scatter-intro {
+        padding-bottom: 96px;
+        text-align: center;
+    }
+
+    .features-scatter-intro p {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .features-scatter-hand {
+        left: 50%;
+        bottom: 0;
+        width: 72px;
+        transform: translateX(-50%);
+    }
+
+    .features-scatter-cards {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .scatter-card {
+        transform: none;
+    }
+
+    .scatter-card:hover {
+        transform: translateY(-2px);
+    }
+}
+
+/* Feature showcase - alternating image/copy panels (see home/index.html:
+   Practice + Structured Learning) with a colored rounded visual card and a
+   checklist of real capabilities on the other side. */
+.feature-showcase {
+    display: grid;
+    grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+    gap: 48px;
+    align-items: center;
+}
+
+.feature-showcase--reverse {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+}
+
+.feature-showcase--reverse .feature-showcase-visual {
+    order: 2;
+}
+
+.feature-showcase-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-xl);
+    padding: 40px;
+    aspect-ratio: 4 / 3;
+}
+
+.feature-showcase-visual img {
+    max-width: 100%;
+    height: auto;
+}
+
+.feature-showcase-visual--cyan {
+    background: #DFF6FB;
+}
+
+.feature-showcase-visual--cream {
+    background: #FDF6E3;
+}
+
+.feature-showcase-copy h2 {
+    margin: 6px 0 16px;
+}
+
+.feature-checklist {
+    list-style: none;
+    margin: 0 0 24px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.feature-checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 15px;
+    color: var(--color-text);
+}
+
+.feature-checklist-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--color-success-bg);
+    color: var(--color-success-border);
+    font-size: 12px;
+    font-weight: 700;
+    margin-top: 1px;
+}
+
+@media (max-width: 900px) {
+    .feature-showcase,
+    .feature-showcase--reverse {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .feature-showcase--reverse .feature-showcase-visual {
+        order: 0;
+    }
+
+    .feature-showcase-visual {
+        aspect-ratio: 16 / 10;
+        padding: 24px;
+    }
+}
+
 .final-cta {
     position: relative;
-    background: var(--color-dark);
+    background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-dark) 100%);
     color: var(--color-text-on-dark);
     margin-top: 40px;
-    padding: 48px 0;
+    padding: 0;
     overflow: hidden;
 }
 
 .final-cta-inner {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
     gap: var(--spacing-lg);
     flex-wrap: wrap;
 }
 
+.final-cta-text {
+    padding: 48px 0;
+    max-width: 480px;
+}
+
 .final-cta h2 {
     margin: 0 0 6px;
-    font-size: 26px;
+    font-size: 28px;
+    color: var(--color-text-on-dark);
 }
 
 .final-cta p {
-    margin: 0;
+    margin: 0 0 20px;
     color: var(--color-text-on-dark-muted);
-}
-
-.final-cta-icon {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, .1);
-    color: var(--color-text-on-dark);
-    flex-shrink: 0;
-}
-
-.final-cta-icon svg {
-    width: 30px;
-    height: 30px;
-}
-
-@media (min-width: 641px) {
-    .final-cta-icon {
-        display: flex;
-    }
 }
 
 .final-cta .btn,
@@ -197,4 +451,34 @@
 .final-cta-btn:hover {
     background: var(--color-bg-muted);
     border-color: var(--color-bg-muted);
+}
+
+.final-cta-photo {
+    display: block;
+    height: 260px;
+    width: auto;
+    max-width: 100%;
+    flex-shrink: 0;
+    align-self: flex-end;
+    margin: 0 auto;
+}
+
+@media (max-width: 640px) {
+    .final-cta-inner {
+        justify-content: center;
+        text-align: center;
+    }
+
+    .final-cta-text {
+        max-width: 100%;
+    }
+
+    .final-cta .hero-actions,
+    .final-cta-btn {
+        margin: 0 auto;
+    }
+
+    .final-cta-photo {
+        height: 180px;
+    }
 }

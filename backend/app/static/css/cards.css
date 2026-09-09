@@ -11,19 +11,20 @@
 .entity-card {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 20px;
+    padding: 0 0 20px;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     text-decoration: none;
     color: var(--color-text);
     background: var(--color-card);
+    overflow: hidden;
     transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
 }
 
 .entity-card h3 {
     font-size: 17px;
     font-weight: 700;
+    margin: 30px 18px 4px;
 }
 
 .entity-card:hover {
@@ -38,41 +39,48 @@
 
 .entity-card-meta {
     display: block;
+    margin: 0 18px;
     font-size: 13px;
     color: var(--color-text-muted);
 }
 
-.entity-card--media {
-    padding: 0 0 20px;
-    overflow: hidden;
+/* Same "color block + badge" language as the exam cards
+   (components/exam_card.html / .exam-card-color) - the palette cycles by
+   card position so a grid of generically-shaped items (subjects, papers,
+   mock tests, resources) still reads as visually distinct card to card. */
+.entity-card-color {
+    display: flex;
+    align-items: flex-end;
+    height: 72px;
+    padding: 0 18px;
+    background: var(--color-accent);
 }
 
-.entity-card-media {
-    display: block;
-    aspect-ratio: 16 / 9;
-    overflow: hidden;
-    background: var(--color-bg-muted);
+.entity-card:nth-child(6n+2) .entity-card-color { background: #B7852E; }
+.entity-card:nth-child(6n+3) .entity-card-color { background: #9A5B3C; }
+.entity-card:nth-child(6n+4) .entity-card-color { background: #4338CA; }
+.entity-card:nth-child(6n+5) .entity-card-color { background: #CA8A04; }
+.entity-card:nth-child(6n+6) .entity-card-color { background: #B91C1C; }
+
+.entity-card-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    transform: translateY(50%);
+    border-radius: var(--radius-sm);
+    background: var(--color-card);
+    box-shadow: var(--shadow-md);
+    color: var(--color-text);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 12px;
 }
 
-.entity-card-media img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform .25s ease;
-}
-
-.entity-card--media:hover .entity-card-media img {
-    transform: scale(1.05);
-}
-
-.entity-card--media h3,
-.entity-card--media .entity-card-meta {
-    margin-left: 20px;
-    margin-right: 20px;
-}
-
-.entity-card--media h3 {
-    margin-top: 16px;
+.entity-card-badge svg {
+    width: 18px;
+    height: 18px;
 }
 
 /* Premium exam card - home page + /exams listing. See components/exam_card.html. */
@@ -83,12 +91,13 @@
 .exam-card {
     display: flex;
     flex-direction: column;
-    padding: 26px;
+    padding: 0 0 22px;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     text-decoration: none;
     color: var(--color-text);
     background: var(--color-card);
+    overflow: hidden;
     transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 
@@ -98,42 +107,45 @@
     border-color: var(--color-accent);
 }
 
-.exam-card-icon {
+/* Solid color block on top (cycling through a fixed brand-safe palette by
+   card position) with a small badge showing the exam's own code
+   overlapping its bottom edge - real per-exam text, never a generic
+   reused image, and visually distinct card-to-card at a glance. */
+.exam-card-color {
+    display: flex;
+    align-items: flex-end;
+    height: 92px;
+    padding: 0 20px;
+    background: var(--color-accent);
+}
+
+.exam-card:nth-child(6n+2) .exam-card-color { background: #B7852E; }
+.exam-card:nth-child(6n+3) .exam-card-color { background: #9A5B3C; }
+.exam-card:nth-child(6n+4) .exam-card-color { background: #4338CA; }
+.exam-card:nth-child(6n+5) .exam-card-color { background: #CA8A04; }
+.exam-card:nth-child(6n+6) .exam-card-color { background: #B91C1C; }
+
+.exam-card-badge {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 56px;
-    height: 56px;
+    width: 48px;
+    height: 48px;
+    transform: translateY(50%);
     border-radius: var(--radius-md);
-    background: var(--color-accent-light);
-    margin-bottom: var(--spacing-md);
-    transition: transform .18s ease;
-}
-
-/* Slight badge-color rotation so a grid of exam cards without individual
-   admin-uploaded icons still reads as visually distinct at a glance -
-   brand blue/navy shades only, no new colors. */
-.exam-card:nth-child(3n+2) .exam-card-icon {
-    background: #DCE7FB;
-}
-
-.exam-card:nth-child(3n+3) .exam-card-icon {
-    background: #E8EDF5;
-}
-
-.exam-card:hover .exam-card-icon {
-    transform: scale(1.06);
-}
-
-.exam-card-icon img {
-    width: 34px;
-    height: 34px;
+    background: var(--color-card);
+    box-shadow: var(--shadow-md);
+    color: var(--color-text);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: .02em;
 }
 
 .exam-card-title {
     font-size: 19px;
     font-weight: 700;
-    margin: 0 0 6px;
+    margin: 32px 20px 6px;
 }
 
 .exam-card:hover .exam-card-title {
@@ -141,7 +153,7 @@
 }
 
 .exam-card-description {
-    margin: 0 0 var(--spacing-sm);
+    margin: 0 20px var(--spacing-sm);
     font-size: 14px;
     line-height: 1.5;
     color: var(--color-text-muted);
@@ -155,10 +167,13 @@
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: var(--spacing-md);
+    margin: 0 20px var(--spacing-md);
 }
 
 .exam-card-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     font-size: 12px;
     font-weight: 600;
     color: var(--color-accent);
@@ -167,8 +182,14 @@
     border-radius: var(--radius-pill);
 }
 
+.exam-card-tag svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+}
+
 .exam-card-cta {
-    margin-top: auto;
+    margin: auto 20px 0;
     padding-top: var(--spacing-sm);
     font-size: 14px;
     font-weight: 700;

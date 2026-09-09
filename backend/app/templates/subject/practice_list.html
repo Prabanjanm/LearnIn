@@ -51,6 +51,11 @@
         <div class="card-grid">
             {% for subject in subjects %}
             <a class="entity-card" href="{{ subject.url }}">
+                <span class="entity-card-color">
+                    <span class="entity-card-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>
+                    </span>
+                </span>
                 <h3>{{ subject.title }}</h3>
                 <span class="entity-card-meta">{{ subject.meta }}</span>
             </a>

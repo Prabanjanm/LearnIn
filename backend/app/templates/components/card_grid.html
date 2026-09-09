@@ -1,20 +1,37 @@
 {#
-    Generic entity card grid - reused by the department/subject/paper/blog
-    listing pages. Callers pass a list of plain dicts (built server-side) shaped as:
-        {"title": str, "url": str, "meta": str | None, "image_url": str | None,
+    Generic entity card grid - reused by the department/subject/paper/
+    resource listing pages (blogs have their own richer blog_card.html).
+    Callers pass a list of plain dicts (built server-side) shaped as:
+        {"title": str, "url": str, "meta": str | None,
+         "icon": "department"|"subject"|"paper"|"mock_test"|"resource"|None,
          "target_blank": bool | None}
-    instead of looping over ORM objects here, so this macro never needs to know
-    about departments/subjects/papers/blogs individually. image_url is only
-    ever a real uploaded/derived asset URL - omitted entirely (no placeholder
-    image) when a caller doesn't have one.
+    Same "color block + badge" visual language as the exam cards
+    (components/exam_card.html): a color cycles by card position (see
+    .entity-card:nth-child in cards.css) and the badge shows a small icon
+    matched to `icon` when given, else the item's own initials - never a
+    generic reused photo/illustration.
 #}
 {% macro render_card_grid(items, empty_message="Nothing published yet.") %}
 <div class="card-grid">
     {% for item in items %}
-    <a class="entity-card{% if item.image_url %} entity-card--media{% endif %}" href="{{ item.url }}"{% if item.target_blank %} target="_blank" rel="noopener"{% endif %}>
-        {% if item.image_url %}
-        <span class="entity-card-media"><img src="{{ item.image_url }}" alt="" loading="lazy"></span>
-        {% endif %}
+    <a class="entity-card" href="{{ item.url }}"{% if item.target_blank %} target="_blank" rel="noopener"{% endif %}>
+        <span class="entity-card-color">
+            <span class="entity-card-badge">
+                {% if item.icon == "department" %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V7l8-4 8 4v14"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg>
+                {% elif item.icon == "subject" %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>
+                {% elif item.icon == "paper" %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4"/><path d="M9 13h6M9 17h6"/></svg>
+                {% elif item.icon == "mock_test" %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 11l2 2 4-4"/></svg>
+                {% elif item.icon == "resource" %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                {% else %}
+                {{ item.title[:2] | upper }}
+                {% endif %}
+            </span>
+        </span>
         <h3>{{ item.title }}</h3>
         {% if item.meta %}<span class="entity-card-meta">{{ item.meta }}</span>{% endif %}
     </a>

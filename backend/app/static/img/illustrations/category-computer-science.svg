@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 360" role="img" aria-hidden="true">
+  <!-- Original LearnIn scene: a laptop with a code-bracket glyph on screen,
+       for Computer Science / Information Technology departments. -->
+  <defs>
+    <filter id="cs-shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+  </defs>
+
+  <circle cx="210" cy="170" r="160" fill="#EFF4FF"/>
+  <ellipse cx="210" cy="300" rx="140" ry="14" fill="#1E3A5F" opacity="0.14" filter="url(#cs-shadow)"/>
+
+  <!-- laptop base -->
+  <path d="M96 268l14-26h200l14 26a10 10 0 0 1-10 14H106a10 10 0 0 1-10-14z" fill="#1E3A5F"/>
+  <rect x="150" y="272" width="120" height="6" rx="3" fill="#0f2843"/>
+
+  <!-- laptop screen -->
+  <rect x="118" y="92" width="184" height="128" rx="10" fill="#1E3A5F"/>
+  <rect x="130" y="104" width="160" height="104" rx="4" fill="#0f2843"/>
+
+  <!-- code brackets on screen -->
+  <path d="M186 122l-26 34 26 34" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M234 122l26 34-26 34" fill="none" stroke="#2563eb" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M214 128l-10 60" fill="none" stroke="#93c5fd" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- floating chips -->
+  <g>
+    <rect x="60" y="150" width="46" height="46" rx="12" fill="#FFFFFF" stroke="#EAEAEA"/>
+    <path d="M76 173h14M83 166v14" stroke="#2563eb" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <g>
+    <rect x="308" y="196" width="52" height="52" rx="14" fill="#FFFFFF" stroke="#EAEAEA"/>
+    <circle cx="334" cy="222" r="12" fill="none" stroke="#1d4ed8" stroke-width="4"/>
+  </g>
+</svg>

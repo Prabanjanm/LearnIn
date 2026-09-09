@@ -85,6 +85,7 @@ def test_exam_department_subject_paper_pages_render(admin_auth_headers):
     assert department["name"] in exam_page.text
     assert 'class="container breadcrumbs"' in exam_page.text
     assert 'class="entity-card"' in exam_page.text
+    assert 'class="entity-card-color"' in exam_page.text
 
     dept_page = client.get(f"/{exam['slug']}/{department['slug']}")
     assert dept_page.status_code == 200

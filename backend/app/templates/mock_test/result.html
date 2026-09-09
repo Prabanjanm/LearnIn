@@ -4,9 +4,28 @@
 {% block title %}Result - {{ mock_test.title }} | LearnIn{% endblock %}
 {% block description %}Your result for the {{ mock_test.title }} mock test.{% endblock %}
 
-{% block css %}<link rel="stylesheet" href="/static/css/quiz.css?v=2">{% endblock %}
+{% block css %}<link rel="stylesheet" href="/static/css/quiz.css?v=3">{% endblock %}
 
 {% block breadcrumbs %}{{ render_breadcrumbs(breadcrumbs) }}{% endblock %}
+
+{% macro answer_display(question, raw_answer) %}
+{%- if not raw_answer -%}
+Not answered
+{%- elif question.question_type.value == "NAT" -%}
+{{ raw_answer }}
+{%- else -%}
+{%- set parts = [] -%}
+{%- for label in raw_answer.split(",") -%}
+    {%- set label = label.strip() -%}
+    {%- for option in question.options -%}
+        {%- if option.label == label -%}
+            {%- set _ = parts.append(label ~ ". " ~ option.option_text) -%}
+        {%- endif -%}
+    {%- endfor -%}
+{%- endfor -%}
+{{ parts | join("; ") if parts else raw_answer }}
+{%- endif -%}
+{% endmacro %}
 
 {% block content %}
 <div class="container">
@@ -110,10 +129,34 @@
                 <span>{{ answer.marks_awarded }} marks</span>
             </div>
             <p>{{ answer.question.question_text }}</p>
+
+            {% if answer.question.options %}
+            <div class="quiz-options quiz-options--review">
+                {% for option in answer.question.options %}
+                {% set submitted_labels = (answer.submitted_answer or "").split(",") | map("trim") | list %}
+                {% set correct_labels = answer.question.correct_answer.split(",") | map("trim") | list %}
+                <div class="quiz-option
+                    {%- if option.label in correct_labels %} correct
+                    {%- elif option.label in submitted_labels %} incorrect
+                    {%- endif %}">
+                    <strong>{{ option.label }}.</strong> {{ option.option_text }}
+                    {% if option.label in submitted_labels %}<span class="quiz-option-tag">Your answer</span>{% endif %}
+                    {% if option.label in correct_labels and option.label not in submitted_labels %}<span class="quiz-option-tag">Correct answer</span>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <div class="quiz-feedback {% if answer.is_correct is none %}{% elif answer.is_correct %}correct{% else %}incorrect{% endif %}">
-                {% if answer.is_correct is none %}Unanswered{% elif answer.is_correct %}Correct{% else %}Incorrect{% endif %}
-                &mdash; Correct answer: {{ answer.question.correct_answer }}
-                {% if answer.question.explanation %} &mdash; {{ answer.question.explanation }}{% endif %}
+                <div><strong>{% if answer.is_correct is none %}Unanswered{% elif answer.is_correct %}Correct{% else %}Incorrect{% endif %}</strong></div>
+                {% if not answer.question.options %}
+                {# NAT questions have no option list to highlight above, so the answer is only ever shown here as plain text. #}
+                <div>Your answer: {{ answer_display(answer.question, answer.submitted_answer) }}</div>
+                {% if not answer.is_correct %}
+                <div>Correct answer: {{ answer_display(answer.question, answer.question.correct_answer) }}</div>
+                {% endif %}
+                {% endif %}
+                {% if answer.question.explanation %}<div>Explanation: {{ answer.question.explanation }}</div>{% endif %}
             </div>
         </div>
         {% endfor %}

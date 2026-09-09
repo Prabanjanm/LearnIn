@@ -14,7 +14,24 @@
         return;
     }
 
-    loader.addEventListener("animationend", function () {
+    // Cycle the logo through its 5 expression frames (idle/blink/wink/
+    // tilt/return - see app/static/img/brand/loader-*.webp) while the
+    // overlay is visible, instead of one static image.
+    var logoImg = document.getElementById("page-loader-logo");
+    var frames = ["idle", "blink", "wink", "tilt", "return"];
+    var frameIndex = 0;
+    var frameTimer = logoImg && setInterval(function () {
+        frameIndex = (frameIndex + 1) % frames.length;
+        logoImg.src = "/static/img/brand/loader-" + frames[frameIndex] + ".webp";
+    }, 220);
+
+    // animationend bubbles up from child animations too (the logo's own
+    // entrance animation ends well before the overlay's fade-out) - only
+    // react to the loader's own fade-out finishing, or the overlay would
+    // get removed - and the fade cut short - the moment the logo settles.
+    loader.addEventListener("animationend", function (event) {
+        if (event.target !== loader || event.animationName !== "page-loader-fade-out") return;
+        clearInterval(frameTimer);
         loader.remove();
     });
 })();
@@ -314,4 +331,98 @@
     );
 
     counters.forEach(function (el) { observer.observe(el); });
+})();
+
+// Navbar "Exams" mega-menu: a <details> panel (matching the existing
+// nav-account pattern - native, keyboard/touch accessible with zero extra
+// JS for open/close) whose menu is filled from the real, already-public
+// GET /api/exams/ list the first time it's opened, then cached in memory
+// so re-opening never re-fetches. Never a hardcoded/fake exam list.
+(function () {
+    var dropdown = document.querySelector("[data-nav-exams-dropdown]");
+    var menu = dropdown && dropdown.querySelector("[data-nav-exams-menu]");
+    if (!dropdown || !menu) return;
+
+    var loaded = false;
+
+    dropdown.addEventListener("toggle", function () {
+        if (!dropdown.open || loaded) return;
+        loaded = true;
+
+        fetch("/api/exams/")
+            .then(function (response) { return response.ok ? response.json() : Promise.reject(); })
+            .then(function (exams) {
+                if (!exams.length) {
+                    menu.innerHTML = '<p class="nav-dropdown-empty">No exams published yet.</p>';
+                    return;
+                }
+                var html = exams.map(function (exam) {
+                    return '<a href="/' + exam.slug + '" class="nav-dropdown-item">' +
+                        '<span class="nav-dropdown-item-code">' + exam.code + '</span>' +
+                        '<span>' + exam.name + '</span>' +
+                        '</a>';
+                }).join("");
+                html += '<a href="/exams" class="nav-dropdown-viewall">View all exams &rarr;</a>';
+                menu.innerHTML = html;
+            })
+            .catch(function () {
+                loaded = false;
+                menu.innerHTML = '<p class="nav-dropdown-empty">Couldn\'t load exams - <a href="/exams">view all exams</a>.</p>';
+            });
+    });
+
+    // Close the menu on an outside click, same expectation set by the
+    // native nav-account <details> elsewhere in the navbar.
+    document.addEventListener("click", function (event) {
+        if (dropdown.open && !dropdown.contains(event.target)) {
+            dropdown.open = false;
+        }
+    });
+})();
+
+// Hero heading typing animation: continuously types the same text out,
+// pauses, deletes it, pauses, and retypes it - one repeated phrase, never
+// a fake multi-message carousel - purely decorative, so if JS never runs
+// the static text in data-typing-text already sits in the DOM as a
+// fallback and nothing is lost.
+(function () {
+    var el = document.querySelector("[data-typing-text]");
+    if (!el) return;
+
+    var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var text = el.getAttribute("data-typing-text") || el.textContent;
+
+    if (reduceMotion) {
+        el.textContent = text;
+        return;
+    }
+
+    el.textContent = "";
+    el.classList.add("typing-caret");
+
+    var TYPE_SPEED = 45;
+    var DELETE_SPEED = 30;
+    var HOLD_FULL = 1800;
+    var HOLD_EMPTY = 500;
+
+    var i = 0;
+    function typeNext() {
+        i += 1;
+        el.textContent = text.slice(0, i);
+        if (i < text.length) {
+            window.setTimeout(typeNext, TYPE_SPEED);
+        } else {
+            window.setTimeout(deleteNext, HOLD_FULL);
+        }
+    }
+    function deleteNext() {
+        i -= 1;
+        el.textContent = text.slice(0, i);
+        if (i > 0) {
+            window.setTimeout(deleteNext, DELETE_SPEED);
+        } else {
+            window.setTimeout(typeNext, HOLD_EMPTY);
+        }
+    }
+    window.setTimeout(typeNext, 300);
 })();

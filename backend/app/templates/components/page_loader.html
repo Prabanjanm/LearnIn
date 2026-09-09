@@ -2,11 +2,16 @@
     Brief branded loading screen shown while a page's CSS/fonts/images are
     still loading, then fades itself out - see .page-loader in animations.css
     (pure CSS: the fade-out is a keyframe with fill-mode: forwards, so it
-    disappears on its own even if JS never runs). app.js just removes the
-    element from the DOM afterwards for tidiness; that part is optional.
+    disappears on its own even if JS never runs). app.js cycles the logo's
+    src through the 5 expression frames (idle/blink/wink/tilt/return) and
+    removes the element from the DOM afterwards; if JS never runs, the
+    "idle" frame below is the static fallback shown throughout.
 #}
 {% macro render_page_loader() %}
 <div class="page-loader" id="page-loader" aria-hidden="true">
-    <img class="page-loader-logo" src="/static/img/brand/logo-mark.webp" alt="">
+    <span class="page-loader-badge">
+        <img class="page-loader-logo" id="page-loader-logo" src="/static/img/brand/loader-idle.webp" alt="">
+    </span>
+    <span class="page-loader-text">Loading&hellip;</span>
 </div>
 {% endmacro %}

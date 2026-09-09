@@ -119,7 +119,16 @@ class MockTestService(BaseService):
         mock_test = self.get_published_by_id(db, mock_test_id)
         session = mock_test_session_service.start_or_resume(db, mock_test_id, client_token, student_id)
 
-        deadline = session.started_at + timedelta(seconds=mock_test.duration * 60)
+        started_at = session.started_at
+        if started_at.tzinfo is None:
+            # SQLite (dev/tests only - Postgres in production preserves the
+            # offset natively) drops tzinfo on round-trip; it's always
+            # written as UTC-aware, so a naive value read back is always
+            # re-interpreted as UTC rather than compared against an aware
+            # "now" and raising TypeError.
+            started_at = started_at.replace(tzinfo=timezone.utc)
+
+        deadline = started_at + timedelta(seconds=mock_test.duration * 60)
         remaining = max(0, int((deadline - datetime.now(timezone.utc)).total_seconds()))
 
         attempt_id = None
@@ -132,7 +141,7 @@ class MockTestService(BaseService):
         return MockTestStartResponse(
             client_token=session.client_token,
             duration_seconds=mock_test.duration * 60,
-            started_at=session.started_at.isoformat(),
+            started_at=started_at.isoformat(),
             deadline=deadline.isoformat(),
             remaining_seconds=remaining,
             submitted=session.submitted_at is not None,

@@ -1,7 +1,6 @@
 {% macro render_navbar(request) %}
 {% set nav_items = [
     {"href": "/", "label": "Home", "exact": true},
-    {"href": "/exams", "label": "Exams"},
     {"href": "/papers", "label": "Previous Year Papers"},
     {"href": "/mock-tests", "label": "Mock Tests"},
     {"href": "/practice", "label": "Practice"},
@@ -12,11 +11,22 @@
     <div class="container navbar-inner">
 
         <a href="/" class="logo">
-            <img class="logo-mark" src="/static/img/brand/logo-mark.webp" alt="" width="32" height="32">
+            <img class="logo-mark" src="/static/img/brand/logo-mark.webp?v=2" alt="" width="40" height="40">
             <span>LearnIn</span>
         </a>
 
         <nav class="nav-links" id="nav-links">
+            {% set exams_active = request.url.path.startswith("/exams") %}
+            <details class="nav-dropdown" data-nav-exams-dropdown>
+                <summary class="{% if exams_active %}nav-link--active{% endif %}"{% if exams_active %} aria-current="page"{% endif %}>
+                    Exams
+                    <svg class="nav-dropdown-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+                </summary>
+                <div class="nav-dropdown-menu" data-nav-exams-menu>
+                    <p class="nav-dropdown-loading">Loading exams&hellip;</p>
+                </div>
+            </details>
+
             {% for item in nav_items %}
             {% set is_active = (request.url.path == item.href) if item.exact else request.url.path.startswith(item.href) %}
             <a href="{{ item.href }}" class="{% if is_active %}nav-link--active{% endif %}"{% if is_active %} aria-current="page"{% endif %}>{{ item.label }}</a>

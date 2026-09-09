@@ -15,7 +15,9 @@
             <h1>{{ subject.name }}</h1>
             <p>{{ department.name }} &middot; {{ exam.name }}</p>
         </div>
-        <img class="page-hero-illustration" src="/static/img/illustrations/study.webp" alt="" aria-hidden="true">
+        <span class="glow-visual">
+            <img class="page-hero-illustration" src="{{ subject_hero_image }}" alt="" aria-hidden="true">
+        </span>
     </section>
 
     <section class="section">

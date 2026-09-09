@@ -60,6 +60,11 @@
         <div class="card-grid">
             {% for mock_test in mock_tests %}
             <a class="entity-card" href="{{ mock_test.url }}">
+                <span class="entity-card-color">
+                    <span class="entity-card-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 11l2 2 4-4"/></svg>
+                    </span>
+                </span>
                 <h3>{{ mock_test.title }}</h3>
                 <span class="entity-card-meta">{{ mock_test.exam_name }} &middot; {{ mock_test.subject_name }}</span>
                 <span class="entity-card-meta">{{ mock_test.total_questions }} questions &middot; {{ mock_test.duration }} min &middot; {{ mock_test.total_marks }} marks</span>

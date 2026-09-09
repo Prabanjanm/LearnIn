@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 360" role="img" aria-hidden="true">
+  <!-- Original LearnIn scene: a graph axis with a plotted curve and a pi
+       symbol, for Mathematics departments/subjects. -->
+  <defs>
+    <filter id="mx-shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+  </defs>
+
+  <circle cx="210" cy="170" r="160" fill="#EFF4FF"/>
+  <ellipse cx="210" cy="300" rx="140" ry="14" fill="#1E3A5F" opacity="0.14" filter="url(#mx-shadow)"/>
+
+  <!-- card -->
+  <rect x="90" y="90" width="220" height="170" rx="16" fill="#FFFFFF" stroke="#EAEAEA"/>
+
+  <!-- axes -->
+  <path d="M120 230h170M150 250V110" stroke="#1E3A5F" stroke-width="4" stroke-linecap="round"/>
+  <path d="M280 224l10 6-10 6M156 116l-6-10 6-10" fill="none" stroke="#1E3A5F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- curve -->
+  <path d="M150 210c20-70 60-90 120-90" fill="none" stroke="#2563eb" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="150" cy="210" r="6" fill="#1d4ed8"/>
+  <circle cx="270" cy="120" r="6" fill="#1d4ed8"/>
+
+  <!-- pi symbol chip -->
+  <g transform="translate(58,150)">
+    <circle r="34" fill="#FFFFFF" stroke="#EAEAEA"/>
+    <path d="M-16-10h32M-10-10v22M8-10v14a8 8 0 0 0 8 8" fill="none" stroke="#2563eb" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- protractor chip -->
+  <g transform="translate(330,220)">
+    <circle r="30" fill="#FFFFFF" stroke="#EAEAEA"/>
+    <path d="M-16 8a20 20 0 0 1 32 0" fill="none" stroke="#93c5fd" stroke-width="6" stroke-linecap="round"/>
+    <path d="M0-14v10" stroke="#93c5fd" stroke-width="5" stroke-linecap="round"/>
+  </g>
+</svg>

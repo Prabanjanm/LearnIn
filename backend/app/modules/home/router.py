@@ -4,6 +4,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
+from app.common.utils.category_illustration import resolve_category_illustration
 from app.common.utils.drive_urls import drive_thumbnail_url
 from app.core.database import get_db
 from app.modules.blog.service import blog_service
@@ -46,9 +47,10 @@ def home(request: Request, db: Session = Depends(get_db)):
     exam_cards = [
         {
             "title": exam.name,
+            "code": exam.code,
             "url": f"/{exam.slug}",
             "description": exam.description,
-            "icon_url": drive_thumbnail_url(exam.icon_file_id),
+            "icon_url": drive_thumbnail_url(exam.icon_file_id) or resolve_category_illustration(exam.name),
             "paper_count": paper_counts.get(exam.id, 0),
             "mock_test_count": mock_test_counts.get(exam.id, 0),
         }
@@ -72,6 +74,7 @@ def home(request: Request, db: Session = Depends(get_db)):
             "title": f"{paper.subject.department.exam.code} {paper.year} - {paper.subject.name}",
             "url": f"/{paper.subject.department.exam.slug}/{paper.subject.department.slug}/{paper.subject.slug}/{paper.year}",
             "meta": f"{paper.total_questions} questions" + (" · Answer key available" if paper.answer_file_id else ""),
+            "icon": "paper",
         }
         for paper in recent_papers
     ]
@@ -85,6 +88,7 @@ def home(request: Request, db: Session = Depends(get_db)):
                 f"/{mock_test.paper.subject.slug}/{mock_test.paper.year}/mock-test/{mock_test.id}"
             ),
             "meta": f"{mock_test.total_questions} questions · {mock_test.duration} min",
+            "icon": "mock_test",
         }
         for mock_test in recent_mock_tests
     ]

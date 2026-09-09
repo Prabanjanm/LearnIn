@@ -118,9 +118,13 @@ class Question(
         nullable=False
     )
 
-    difficulty: Mapped[DifficultyEnum] = mapped_column(
+    # Nullable: real exam-source questions (official papers/answer keys)
+    # don't come with a difficulty rating, and that must never be invented
+    # (see scripts/import_gate_pyq.py) - only admin-authored/mock questions
+    # set this today.
+    difficulty: Mapped[DifficultyEnum | None] = mapped_column(
         Enum(DifficultyEnum, name="difficultyenum"),
-        nullable=False
+        nullable=True
     )
 
     # Relationships

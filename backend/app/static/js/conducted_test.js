@@ -207,6 +207,7 @@ function setSaveStatus(text, isError) {
     if (!el) return;
     el.textContent = text;
     el.classList.toggle("cbt-save-status--error", Boolean(isError));
+    el.classList.toggle("cbt-save-status--saved", !isError && text === "Saved");
 }
 
 async function persistAnswer(questionId) {
@@ -273,13 +274,22 @@ function renderQuestion(index) {
     card.appendChild(createOptionsElementForResume(question, answers[question.id]));
     panel.appendChild(card);
 
+    const isLastQuestion = index === questionEntries.length - 1;
+
+    if (isLastQuestion) {
+        const notice = document.createElement("p");
+        notice.className = "cbt-last-question-notice";
+        notice.textContent = "You've reached the last question. Save your answer, then click “Submit Test” above when you're ready to finish.";
+        panel.appendChild(notice);
+    }
+
     const controls = document.createElement("div");
     controls.className = "cbt-controls";
     controls.innerHTML = `
-        <button type="button" class="btn-ghost" id="cbt-prev" ${index === 0 ? "disabled" : ""}>Previous</button>
-        <button type="button" class="btn-ghost" id="cbt-clear">Clear Answer</button>
+        <button type="button" class="btn btn-secondary" id="cbt-prev" ${index === 0 ? "disabled" : ""}>Previous</button>
+        <button type="button" class="btn btn-secondary" id="cbt-clear">Clear Answer</button>
         <span class="spacer"></span>
-        <button type="button" class="btn" id="cbt-next">${index === questionEntries.length - 1 ? "Save" : "Save & Next"}</button>
+        <button type="button" class="btn" id="cbt-next">${isLastQuestion ? "Save Answer" : "Save & Next"}</button>
     `;
     panel.appendChild(controls);
 

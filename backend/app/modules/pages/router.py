@@ -13,6 +13,7 @@ from app.common.exceptions.exceptions import (
 from app.core.config import settings
 from app.core.database import get_db
 from app.common.rate_limit import rate_limit
+from app.common.utils.category_illustration import resolve_category_illustration
 from app.common.utils.drive_urls import drive_thumbnail_url
 from app.common.utils.markdown_render import render_markdown
 from app.core.google_drive import get_drive_client
@@ -483,6 +484,7 @@ def exam_list_page(request: Request, db: Session = Depends(get_db)):
     exam_cards = [
         {
             "title": exam.name,
+            "code": exam.code,
             "url": f"/{exam.slug}",
             "description": exam.description,
             "icon_url": drive_thumbnail_url(exam.icon_file_id),
@@ -727,16 +729,24 @@ def exam_page(exam_slug: str, request: Request, db: Session = Depends(get_db)):
             "title": d.name,
             "url": f"/{ctx.exam.slug}/{d.slug}",
             "meta": f"{d.code} · {len(subject_service.get_published_by_department(db, d.id))} subjects",
+            "icon": "department",
         }
         for d in departments
     ]
+
+    exam_hero_image = drive_thumbnail_url(ctx.exam.icon_file_id) or resolve_category_illustration(
+        ctx.exam.name
+    )
 
     return templates.TemplateResponse(
         request=request,
         name="exam/exam.html",
         context={
             "exam": ctx.exam,
+            "exam_hero_image": exam_hero_image,
             "department_cards": department_cards,
+            "papers_count": paper_service.count_published_by_exam(db).get(ctx.exam.id, 0),
+            "mock_tests_count": mock_test_service.count_published_by_exam(db).get(ctx.exam.id, 0),
             "breadcrumbs": ctx.breadcrumbs_with_current(ctx.exam.name),
         },
     )
@@ -760,9 +770,14 @@ def department_page(
             "title": s.name,
             "url": f"/{ctx.exam.slug}/{ctx.department.slug}/{s.slug}",
             "meta": f"{len(paper_service.get_published_by_subject(db, s.id))} papers",
+            "icon": "subject",
         }
         for s in subjects
     ]
+
+    department_hero_image = drive_thumbnail_url(
+        ctx.department.icon_file_id
+    ) or resolve_category_illustration(ctx.department.name, ctx.exam.name)
 
     return templates.TemplateResponse(
         request=request,
@@ -770,6 +785,7 @@ def department_page(
         context={
             "exam": ctx.exam,
             "department": ctx.department,
+            "department_hero_image": department_hero_image,
             "subject_cards": subject_cards,
             "breadcrumbs": ctx.breadcrumbs_with_current(ctx.department.name),
         },
@@ -797,6 +813,7 @@ def subject_page(
             "title": p.title,
             "url": f"{base_url}/{p.year}",
             "meta": f"{p.year} · {p.total_questions} questions",
+            "icon": "paper",
         }
         for p in papers
     ]
@@ -808,9 +825,14 @@ def subject_page(
             "url": f"https://drive.google.com/file/d/{r.google_drive_file_id}/view",
             "meta": r.resource_type,
             "target_blank": True,
+            "icon": "resource",
         }
         for r in resources
     ]
+
+    subject_hero_image = drive_thumbnail_url(
+        ctx.subject.icon_file_id
+    ) or resolve_category_illustration(ctx.subject.name, ctx.department.name, ctx.exam.name)
 
     return templates.TemplateResponse(
         request=request,
@@ -819,6 +841,7 @@ def subject_page(
             "exam": ctx.exam,
             "department": ctx.department,
             "subject": ctx.subject,
+            "subject_hero_image": subject_hero_image,
             "paper_cards": paper_cards,
             "resource_cards": resource_cards,
             "breadcrumbs": ctx.breadcrumbs_with_current(ctx.subject.name),

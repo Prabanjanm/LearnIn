@@ -4,7 +4,7 @@
 {% block title %}{{ mock_test.title }} - Mock Test | LearnIn{% endblock %}
 {% block description %}Take the {{ mock_test.title }} timed mock test for {{ paper.title }} ({{ paper.year }}).{% endblock %}
 
-{% block css %}<link rel="stylesheet" href="/static/css/quiz.css?v=2">{% endblock %}
+{% block css %}<link rel="stylesheet" href="/static/css/quiz.css?v=3">{% endblock %}
 
 {% block breadcrumbs %}{{ render_breadcrumbs(breadcrumbs) }}{% endblock %}
 
@@ -25,6 +25,16 @@
                 <h1>{{ mock_test.title }}</h1>
                 <p>{{ question_count }} questions &middot; {{ mock_test.duration }} minutes &middot; {{ mock_test.total_marks }} marks</p>
                 <button id="start-mock-test" class="btn">Start Test</button>
+
+                <div class="quiz-start-notice">
+                    <strong>Before you begin:</strong>
+                    <ul>
+                        <li>The timer starts as soon as you click <strong>Start Test</strong> and cannot be paused.</li>
+                        <li>Your answers are saved automatically as you go &mdash; you can safely refresh or reopen this page.</li>
+                        <li>Use <strong>Mark for Review</strong> to flag questions you want to revisit before submitting.</li>
+                        <li>Once you submit, this attempt is scored and final &mdash; you can always start a fresh attempt afterward.</li>
+                    </ul>
+                </div>
             </div>
             <img class="page-hero-illustration" src="/static/img/illustrations/mock-test.webp" alt="" aria-hidden="true">
         </section>
@@ -34,5 +44,5 @@
 {% endblock %}
 
 {% block js %}
-<script type="module" src="/static/js/mock_test.js?v=2"></script>
+<script type="module" src="/static/js/mock_test.js?v=3"></script>
 {% endblock %}

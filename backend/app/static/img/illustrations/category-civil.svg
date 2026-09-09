@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 360" role="img" aria-hidden="true">
+  <!-- Original LearnIn scene: a building/skyline with a T-square, for Civil
+       Engineering departments/subjects. -->
+  <defs>
+    <filter id="ce-shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+  </defs>
+
+  <circle cx="210" cy="170" r="160" fill="#EFF4FF"/>
+  <ellipse cx="210" cy="300" rx="140" ry="14" fill="#1E3A5F" opacity="0.14" filter="url(#ce-shadow)"/>
+
+  <!-- skyline -->
+  <rect x="110" y="150" width="60" height="110" fill="#93c5fd"/>
+  <rect x="176" y="110" width="70" height="150" fill="#2563eb"/>
+  <rect x="252" y="170" width="54" height="90" fill="#1d4ed8"/>
+
+  <!-- windows -->
+  <g fill="#EFF4FF">
+    <rect x="122" y="164" width="12" height="14" rx="2"/>
+    <rect x="146" y="164" width="12" height="14" rx="2"/>
+    <rect x="122" y="190" width="12" height="14" rx="2"/>
+    <rect x="146" y="190" width="12" height="14" rx="2"/>
+    <rect x="122" y="216" width="12" height="14" rx="2"/>
+    <rect x="146" y="216" width="12" height="14" rx="2"/>
+
+    <rect x="192" y="126" width="14" height="16" rx="2"/>
+    <rect x="218" y="126" width="14" height="16" rx="2"/>
+    <rect x="192" y="156" width="14" height="16" rx="2"/>
+    <rect x="218" y="156" width="14" height="16" rx="2"/>
+    <rect x="192" y="186" width="14" height="16" rx="2"/>
+    <rect x="218" y="186" width="14" height="16" rx="2"/>
+    <rect x="192" y="216" width="14" height="16" rx="2"/>
+    <rect x="218" y="216" width="14" height="16" rx="2"/>
+
+    <rect x="264" y="184" width="12" height="14" rx="2"/>
+    <rect x="286" y="184" width="12" height="14" rx="2"/>
+    <rect x="264" y="210" width="12" height="14" rx="2"/>
+    <rect x="286" y="210" width="12" height="14" rx="2"/>
+  </g>
+
+  <rect x="100" y="260" width="220" height="10" rx="5" fill="#1E3A5F"/>
+
+  <!-- T-square / ruler chip -->
+  <g transform="translate(90,110)">
+    <rect x="-38" y="-14" width="76" height="20" rx="6" fill="#FFFFFF" stroke="#EAEAEA"/>
+    <rect x="-6" y="-14" width="12" height="60" rx="6" fill="#FFFFFF" stroke="#EAEAEA"/>
+    <path d="M-30 -4v8M-16 -4v8M0 -4v8M14 -4v8M28 -4v8" stroke="#1E3A5F" stroke-width="2"/>
+  </g>
+</svg>
