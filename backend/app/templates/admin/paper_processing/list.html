@@ -1,0 +1,57 @@
+{% extends "admin/_layout.html" %}
+{% from "components/icons.html" import icon %}
+
+{% block title %}Paper Processing - LearnIn Admin{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/paper-processing.css">{% endblock %}
+
+{% block breadcrumb %}
+<span class="admin-breadcrumb-sep">/</span>
+<span>Paper Processing</span>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <div>
+        <h1>Paper Processing</h1>
+        <p class="admin-page-subtitle">
+            Turn a collected question-paper PDF into reviewed, published questions.
+            {{ jobs|length }} job{{ '' if jobs|length == 1 else 's' }}.
+        </p>
+    </div>
+    <a class="admin-btn admin-btn-primary" href="{{ base_path }}/new">{{ icon('plus', 16) }} New</a>
+</div>
+
+<div class="admin-table-wrapper">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Year</th>
+                <th>Subject</th>
+                <th>Status</th>
+                <th>Questions</th>
+                <th>Created</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for job in jobs %}
+            <tr>
+                <td>{{ job.id }}</td>
+                <td>{{ job.title }}</td>
+                <td>{{ job.year }}</td>
+                <td>{{ job.subject.name if job.subject else job.subject_id }}</td>
+                <td><span class="pp-status pp-status--{{ job.status.value|lower }}">{{ status_labels.get(job.status, job.status.value) }}</span></td>
+                <td>{{ job.questions_extracted }}</td>
+                <td>{{ job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at else '' }}</td>
+                <td><a class="admin-btn admin-btn-secondary admin-btn-sm" href="{{ base_path }}/{{ job.id }}">Open</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" class="admin-table-empty">No processing jobs yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

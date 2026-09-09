@@ -43,6 +43,7 @@ def download_file(
     file_id: str,
     filename: str | None = None,
     mime_type: str | None = None,
+    inline: bool = False,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
 ):
@@ -89,8 +90,10 @@ def download_file(
     # server rejecting raw control chars in header values.
     safe_filename = "".join(ch for ch in filename if ch not in '"' and ord(ch) >= 32) or "download"
 
+    disposition = "inline" if inline else "attachment"
+
     return Response(
         content=content,
         media_type=mime_type,
-        headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
+        headers={"Content-Disposition": f'{disposition}; filename="{safe_filename}"'},
     )

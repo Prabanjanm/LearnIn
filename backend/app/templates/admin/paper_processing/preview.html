@@ -1,0 +1,123 @@
+{% extends "admin/_layout.html" %}
+
+{% block title %}Preview #{{ job.id }} - LearnIn Admin{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/paper-processing.css">{% endblock %}
+
+{% block breadcrumb %}
+<span class="admin-breadcrumb-sep">/</span>
+<a href="{{ base_path }}">Paper Processing</a>
+<span class="admin-breadcrumb-sep">/</span>
+<a href="{{ base_path }}/{{ job.id }}">#{{ job.id }}</a>
+<span class="admin-breadcrumb-sep">/</span>
+<span>Preview</span>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <div>
+        <h1>
+            {% if job.status.value == 'PUBLISHED' %}Published{% else %}Processing Complete{% endif %}
+        </h1>
+        <p class="admin-page-subtitle">{{ job.title }} ({{ job.year }})</p>
+    </div>
+    <a class="admin-btn admin-btn-secondary" href="{{ base_path }}/{{ job.id }}/review">Back to review</a>
+</div>
+
+{% if error %}<p class="admin-error">{{ error }}</p>{% endif %}
+
+{% if request.query_params.get('published') %}
+<div class="admin-toast admin-toast--success">
+    Published. The paper and its questions were created as DRAFT so you can check
+    them in the Papers / Questions screens before making them live.
+</div>
+{% endif %}
+
+<div class="pp-panel">
+    <dl class="pp-meta">
+        <div><dt>Questions extracted</dt><dd>{{ job.questions_extracted }}</dd></div>
+        <div><dt>Questions verified</dt><dd>{{ verified_count }}</dd></div>
+        <div><dt>Low-confidence items</dt><dd>{{ job.questions_low_confidence }}</dd></div>
+        <div><dt>PDF type</dt><dd>{{ pdf_type_label }}</dd></div>
+        <div><dt>Original PDF</dt><dd>Stored</dd></div>
+        <div><dt>Clean PDF</dt><dd>{{ 'Generated' if job.generated_file_id else 'Not generated yet' }}</dd></div>
+        <div><dt>Questions</dt><dd>{{ 'Saved' if job.paper_id else 'Staged for review' }}</dd></div>
+        <div><dt>Answer key</dt><dd>{{ 'Attached (unparsed)' if job.answer_file_id else 'Not supplied' }}</dd></div>
+    </dl>
+
+    {% if extra_images_count %}
+    <div class="pp-note">
+        {{ extra_images_count }} question{{ 's' if extra_images_count != 1 else '' }} have more than one associated
+        image. The published Question keeps only the first (its "primary" image, shown first in
+        the review screen) - the existing Question schema has a single image slot, unchanged by
+        this pipeline. Every image stays visible and editable on this job's review screen either way.
+    </div>
+    {% endif %}
+
+    {% if blockers %}
+    <div class="pp-note pp-note--warn">
+        <strong>Not ready to publish yet:</strong>
+        <ul>
+            {% for blocker in blockers %}<li>{{ blocker }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="pp-actions">
+        <form method="post" action="{{ base_path }}/{{ job.id }}/generate-pdf">
+            <button type="submit" class="admin-btn admin-btn-secondary"
+                    {% if job.status.value not in ['REVIEWED', 'READY_TO_PUBLISH'] %}disabled{% endif %}>
+                {{ 'Regenerate' if job.generated_file_id else 'Generate' }} LearnIn PDF
+            </button>
+        </form>
+
+        {% if job.generated_file_id %}
+        <a class="admin-btn admin-btn-secondary"
+           href="/api/admin/files/{{ job.generated_file_id }}/download?inline=true"
+           target="_blank" rel="noopener">Preview PDF</a>
+        <a class="admin-btn admin-btn-secondary"
+           href="/api/admin/files/{{ job.generated_file_id }}/download">Download PDF</a>
+        {% endif %}
+
+        {% if job.status.value != 'PUBLISHED' %}
+        <form method="post" action="{{ base_path }}/{{ job.id }}/publish">
+            <button type="submit" class="admin-btn admin-btn-primary" {% if blockers %}disabled{% endif %}>
+                Publish paper
+            </button>
+        </form>
+        {% else %}
+        <a class="admin-btn admin-btn-secondary" href="/admin/manage/papers">View papers</a>
+        {% endif %}
+    </div>
+</div>
+
+<h2 class="pp-subheading">Final content ({{ questions|length }} questions)</h2>
+
+<div class="pp-final">
+    {% for question in questions %}
+    <article class="pp-final-question">
+        <p class="pp-final-text"><strong>{{ loop.index }}.</strong> {{ question.question_text }}</p>
+        {% if question.images %}
+        <div class="pp-image-list">
+            {% for image in question.images %}
+            {% if image.thumbnail_url %}
+            <a href="{{ image.view_url }}" target="_blank" rel="noopener">
+                <img src="{{ image.thumbnail_url }}" alt="Question image" class="pp-image-thumb" loading="lazy">
+            </a>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+        <ul class="pp-final-options">
+            {% for option in question.options %}
+            <li>({{ option.label }}) {{ option.option_text }}</li>
+            {% endfor %}
+        </ul>
+        <p class="pp-final-answer">
+            {% if question.correct_answer %}Answer: {{ question.correct_answer }}
+            {% else %}Answer Key: Not Available{% endif %}
+        </p>
+    </article>
+    {% endfor %}
+</div>
+{% endblock %}

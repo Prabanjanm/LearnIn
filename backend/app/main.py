@@ -15,6 +15,7 @@ from app.common.exceptions.exceptions import (
     ForbiddenException,
     GoogleDriveConfigError,
     InvalidCredentialsException,
+    InvalidStateException,
     LearnInException,
     NotFoundException,
 )
@@ -43,6 +44,8 @@ from app.modules.conducted_test.pages import router as conducted_test_pages_rout
 from app.modules.conducted_test_attempt.router import router as conducted_test_attempt_router
 from app.modules.conducted_test_attempt.pages import router as conducted_test_attempt_pages_router
 from app.modules.search.router import router as search_router
+from app.modules.paper_processing.router import router as paper_processing_router
+from app.modules.paper_processing.pages import router as paper_processing_pages_router
 from app.modules.pages.router import router as pages_router
 from app.modules.student.middleware import StudentIdentityMiddleware
 from app.modules.student.router import router as student_router
@@ -82,6 +85,8 @@ app.include_router(mock_test_router)
 app.include_router(mock_test_question_router)
 app.include_router(blog_router)
 app.include_router(search_router)
+app.include_router(paper_processing_router)
+app.include_router(paper_processing_pages_router)
 app.include_router(student_router)
 app.include_router(media_router)
 app.include_router(institution_router)
@@ -104,6 +109,7 @@ EXCEPTION_STATUS_CODES = {
     InvalidCredentialsException: 401,
     ForbiddenException: 403,
     GoogleDriveConfigError: 503,
+    InvalidStateException: 400,
 }
 
 _ERROR_MESSAGES = {

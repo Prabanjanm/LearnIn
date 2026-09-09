@@ -45,6 +45,7 @@ def _file_id_columns():
         from app.modules.exam.model import Exam
         from app.modules.option.model import Option
         from app.modules.paper.model import Paper
+        from app.modules.paper_processing.model import ExtractedQuestionImage, PaperProcessingJob
         from app.modules.question.model import Question
         from app.modules.resource.model import Resource
         from app.modules.student.model import Student
@@ -61,6 +62,11 @@ def _file_id_columns():
             (Option, "image_file_id"),
             (Resource, "google_drive_file_id"),
             (Blog, "thumbnail_file_id"),
+            (PaperProcessingJob, "original_file_id"),
+            (PaperProcessingJob, "cleaned_file_id"),
+            (PaperProcessingJob, "generated_file_id"),
+            (PaperProcessingJob, "answer_file_id"),
+            (ExtractedQuestionImage, "file_id"),
             (Student, "avatar_file_id"),
         ]
     return _FILE_ID_COLUMNS
@@ -72,6 +78,7 @@ def _cascade_children():
         from app.modules.department.model import Department
         from app.modules.exam.model import Exam
         from app.modules.paper.model import Paper
+        from app.modules.paper_processing.model import ExtractedQuestion, PaperProcessingJob
         from app.modules.question.model import Question
         from app.modules.subject.model import Subject
 
@@ -81,6 +88,8 @@ def _cascade_children():
             Subject: ["papers", "resources"],
             Paper: ["questions"],
             Question: ["options"],
+            PaperProcessingJob: ["extracted_questions"],
+            ExtractedQuestion: ["images"],
         }
     return _CASCADE_CHILDREN
 

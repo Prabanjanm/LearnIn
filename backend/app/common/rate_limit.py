@@ -36,3 +36,9 @@ def rate_limit(max_requests: int, window_seconds: int):
         bucket.append(now)
 
     return dependency
+
+
+def reset_rate_limits() -> None:
+    """Test-only helper: clears every bucket so one test's requests never
+    trip a limit meant for another test sharing this process-wide state."""
+    _buckets.clear()

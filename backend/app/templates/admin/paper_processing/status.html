@@ -1,0 +1,86 @@
+{% extends "admin/_layout.html" %}
+
+{% block title %}Processing #{{ job.id }} - LearnIn Admin{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/paper-processing.css">{% endblock %}
+
+{% block breadcrumb %}
+<span class="admin-breadcrumb-sep">/</span>
+<a href="{{ base_path }}">Paper Processing</a>
+<span class="admin-breadcrumb-sep">/</span>
+<span>#{{ job.id }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <div>
+        <h1>{{ job.title }} ({{ job.year }})</h1>
+        <p class="admin-page-subtitle">Step 2 - Processing</p>
+    </div>
+    <a class="admin-btn admin-btn-secondary" href="{{ base_path }}">Back to list</a>
+</div>
+
+<div class="pp-panel"
+     data-pp-status
+     data-job-id="{{ job.id }}"
+     data-review-url="{{ base_path }}/{{ job.id }}/review">
+
+    <div class="pp-status-row">
+        {% if is_busy %}<span class="pp-spinner" data-pp-spinner aria-hidden="true"></span>{% endif %}
+        <span class="pp-status pp-status--{{ job.status.value|lower }}" data-pp-status-label>{{ status_label }}</span>
+    </div>
+
+    <dl class="pp-meta">
+        <div><dt>PDF type</dt><dd data-pp-pdf-type>{{ pdf_type_label }}</dd></div>
+        <div><dt>OCR used</dt><dd data-pp-ocr>{{ 'Yes' if job.ocr_used else 'No' }}</dd></div>
+        <div><dt>Watermark</dt><dd>{{ job.watermark_status.value.replace('_', ' ')|title }}</dd></div>
+        <div><dt>Questions detected</dt><dd data-pp-count>{{ job.questions_extracted }}</dd></div>
+        <div><dt>Low confidence</dt><dd data-pp-low>{{ job.questions_low_confidence }}</dd></div>
+        <div><dt>Original PDF</dt><dd>Stored</dd></div>
+    </dl>
+
+    {% if job.watermark_status.value == 'NEEDS_MANUAL_REVIEW' %}
+    <p class="pp-note pp-note--warn">
+        Watermark cleaning was not confident about some repeated text, so the PDF was
+        left untouched. Nothing was removed - check the source PDF yourself before publishing.
+    </p>
+    {% endif %}
+
+    {% if job.error_message %}
+    <p class="pp-note pp-note--error" data-pp-error>{{ job.error_message }}</p>
+    {% endif %}
+
+    {% if job.cancel_requested and is_busy %}
+    <p class="pp-note pp-note--warn">
+        Stop requested - processing will halt at the next stage checkpoint (within a few seconds).
+    </p>
+    {% endif %}
+
+    {% if is_stuck %}
+    <p class="pp-note pp-note--warn">
+        This job has been sitting in an in-progress state. Processing runs inside the
+        web process, so a server restart can interrupt it. Re-running is safe - the
+        original upload is never modified.
+    </p>
+    {% endif %}
+
+    <div class="pp-actions">
+        {% if not is_busy %}
+        <a class="admin-btn admin-btn-primary" href="{{ base_path }}/{{ job.id }}/review">Go to review</a>
+        {% endif %}
+        {% if is_busy %}
+        <form method="post" action="{{ base_path }}/{{ job.id }}/stop"
+              onsubmit="return confirm('Stop this processing job? It will halt at the next stage checkpoint.');">
+            <button type="submit" class="admin-btn admin-btn-danger" {% if job.cancel_requested %}disabled{% endif %}>
+                {{ 'Stopping...' if job.cancel_requested else 'Stop processing' }}
+            </button>
+        </form>
+        {% endif %}
+        <form method="post" action="{{ base_path }}/{{ job.id }}/reprocess">
+            <button type="submit" class="admin-btn admin-btn-secondary">Run processing again</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}<script src="/static/js/components/paper-processing.js"></script>{% endblock %}

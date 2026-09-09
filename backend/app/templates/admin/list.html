@@ -46,7 +46,7 @@
             <tr>
                 <th class="admin-table-checkbox-col"><input type="checkbox" data-select-all aria-label="Select all rows"></th>
                 {% for column in columns %}
-                <th data-sortable data-col-index="{{ loop.index0 }}">{{ column }}</th>
+                <th data-sortable data-col-index="{{ loop.index0 }}">{{ "Live at" if column == "public_url" else column }}</th>
                 {% endfor %}
                 <th>Actions</th>
             </tr>
@@ -66,7 +66,13 @@
             <tr>
                 <td class="admin-table-checkbox-col"><input type="checkbox" name="ids" value="{{ row.id }}" data-row-checkbox></td>
                 {% for column in columns %}
-                <td>{% if column == 'status' %}{{ status_badge(row[column]) }}{% else %}{{ row[column] }}{% endif %}</td>
+                <td>
+                    {% if column == 'status' %}{{ status_badge(row[column]) }}
+                    {% elif column == 'public_url' %}
+                        {% if row[column] %}<a href="{{ row[column] }}" target="_blank" rel="noopener">View live &rarr;</a>
+                        {% else %}<span class="admin-muted">Not published yet</span>{% endif %}
+                    {% else %}{{ row[column] }}{% endif %}
+                </td>
                 {% endfor %}
                 <td class="admin-table-actions">
                     <button type="button" class="admin-btn admin-btn-secondary admin-btn-sm admin-icon-action"
