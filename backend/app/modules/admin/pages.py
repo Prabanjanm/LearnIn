@@ -201,6 +201,25 @@ def logout():
     return response
 
 
+def _paper_public_url(paper: Paper) -> str | None:
+    """
+    The path a published paper is actually reachable at on the public
+    site (see resolve_paper / paper_page in app/modules/pages/router.py) -
+    exam/department/subject slugs plus the paper's year. Returns None if
+    any ancestor is missing (shouldn't happen for a real row, but a
+    dangling subject_id should show "not available" rather than a broken
+    link).
+    """
+    subject = paper.subject
+    department = subject.department if subject else None
+    exam = department.exam if department else None
+
+    if not (subject and department and exam):
+        return None
+
+    return f"/{exam.slug}/{department.slug}/{subject.slug}/{paper.year}"
+
+
 # ----------------------------------------------------------- dashboard ----
 
 STAT_ENTITIES = [
@@ -962,6 +981,14 @@ def entity_list(
     rows, total = config["service"].get_all_paginated(db, page, page_size)
     total_pages = max((total + page_size - 1) // page_size, 1)
     page = min(page, total_pages)
+
+    if entity_key == "papers":
+        # Papers management is where a paper actually goes live for
+        # students - the paper-processing job's own "Published" badge only
+        # means "a Paper row was created", so without this an admin has no
+        # way to see (or reach) the student-facing URL from this list.
+        for row in rows:
+            row.public_url = _paper_public_url(row) if row.status == StatusEnum.PUBLISHED else None
 
     range_start = 0 if total == 0 else (page - 1) * page_size + 1
     range_end = min(page * page_size, total)

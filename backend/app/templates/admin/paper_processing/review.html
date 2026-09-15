@@ -1,0 +1,155 @@
+{% extends "admin/_layout.html" %}
+
+{% block title %}Review #{{ job.id }} - LearnIn Admin{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/paper-processing.css">{% endblock %}
+
+{% block breadcrumb %}
+<span class="admin-breadcrumb-sep">/</span>
+<a href="{{ base_path }}">Paper Processing</a>
+<span class="admin-breadcrumb-sep">/</span>
+<a href="{{ base_path }}/{{ job.id }}">#{{ job.id }}</a>
+<span class="admin-breadcrumb-sep">/</span>
+<span>Review</span>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <div>
+        <h1>Step 3 - Review &amp; correct</h1>
+        <p class="admin-page-subtitle">
+            {{ job.title }} ({{ job.year }}) &middot; PDF type: {{ pdf_type_label }}
+            &middot; {{ job.questions_extracted }} detected,
+            {{ job.questions_low_confidence }} low confidence
+        </p>
+    </div>
+    <a class="admin-btn admin-btn-secondary" href="{{ base_path }}/{{ job.id }}">Back to status</a>
+</div>
+
+{% if error %}<p class="admin-error">{{ error }}</p>{% endif %}
+
+<p class="pp-note">
+    Everything below was extracted from the uploaded PDF. Nothing here has been
+    invented, completed or corrected automatically, and no answer key was inferred -
+    leave "Correct answer" blank if the source does not state one. Nothing reaches the
+    live question bank until you publish.
+</p>
+
+<div class="pp-review" data-pp-review data-job-id="{{ job.id }}">
+
+    {% for question in questions %}
+    <article class="pp-question {% if question.needs_review %}pp-question--flagged{% endif %}"
+             data-pp-question data-question-id="{{ question.id }}">
+
+        <header class="pp-question-head">
+            <span class="pp-question-index">Q{{ question.order_index }}</span>
+            <span class="pp-badge pp-badge--{{ question.confidence.value|lower }}">{{ question.confidence.value }} confidence</span>
+            <label class="pp-flag">
+                <input type="checkbox" data-pp-needs-review {% if question.needs_review %}checked{% endif %}>
+                Needs review
+            </label>
+            <span class="pp-question-actions">
+                <button type="button" class="admin-btn admin-btn-secondary admin-btn-sm" data-pp-move="up">&uarr;</button>
+                <button type="button" class="admin-btn admin-btn-secondary admin-btn-sm" data-pp-move="down">&darr;</button>
+                <button type="button" class="admin-btn admin-btn-secondary admin-btn-sm" data-pp-split>Split</button>
+                <button type="button" class="admin-btn admin-btn-secondary admin-btn-sm" data-pp-merge>Merge with next</button>
+                <button type="button" class="admin-btn admin-btn-danger admin-btn-sm" data-pp-delete>Delete</button>
+            </span>
+        </header>
+
+        <div class="admin-field">
+            <label>Question text</label>
+            <textarea data-pp-text rows="3">{{ question.question_text }}</textarea>
+        </div>
+
+        <div class="pp-options">
+            {% for label in ['A', 'B', 'C', 'D'] %}
+            {% set existing = question.options | selectattr('label', 'equalto', label) | list | first %}
+            <div class="admin-field pp-option">
+                <label>Option {{ label }}</label>
+                <input type="text" data-pp-option="{{ label }}" value="{{ existing.option_text if existing else '' }}">
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="pp-images" data-pp-images>
+            <label>Diagrams / images for this question</label>
+            <p class="pp-note">
+                Preserved exactly as found in the source PDF - nothing here is redrawn,
+                described or interpreted. Remove one if it was associated with the wrong
+                question, or move it to the question it actually belongs to.
+            </p>
+            <div class="pp-image-list">
+                {% for image in question.images %}
+                <div class="pp-image-item" data-pp-image data-image-id="{{ image.id }}">
+                    {% if image.thumbnail_url %}
+                    <a href="{{ image.view_url }}" target="_blank" rel="noopener">
+                        <img src="{{ image.thumbnail_url }}" alt="Question image" class="pp-image-thumb" loading="lazy">
+                    </a>
+                    {% endif %}
+                    <span class="pp-image-meta">
+                        {{ image.source_type.value|lower|replace('_', ' ') }}
+                        {% if image.page_number is not none %}&middot; page {{ image.page_number + 1 }}{% endif %}
+                    </span>
+                    <div class="pp-image-actions">
+                        <label class="admin-btn admin-btn-secondary admin-btn-sm pp-image-file-btn">
+                            Replace
+                            <input type="file" accept="image/*" data-pp-image-replace hidden>
+                        </label>
+                        <button type="button" class="admin-btn admin-btn-secondary admin-btn-sm" data-pp-image-move="up">&uarr;</button>
+                        <button type="button" class="admin-btn admin-btn-secondary admin-btn-sm" data-pp-image-move="down">&darr;</button>
+                        <button type="button" class="admin-btn admin-btn-secondary admin-btn-sm" data-pp-image-reassign>Move to question&hellip;</button>
+                        <button type="button" class="admin-btn admin-btn-danger admin-btn-sm" data-pp-image-remove>Remove</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <label class="admin-btn admin-btn-secondary admin-btn-sm pp-image-file-btn">
+                + Add image
+                <input type="file" accept="image/*" data-pp-image-add hidden>
+            </label>
+        </div>
+
+        <div class="admin-field pp-answer">
+            <label>Correct answer (leave blank if the source does not state one)</label>
+            <select data-pp-answer>
+                <option value="" {% if not question.correct_answer %}selected{% endif %}>Not available</option>
+                {% for label in ['A', 'B', 'C', 'D'] %}
+                <option value="{{ label }}" {% if question.correct_answer == label %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {% if question.raw_source_text %}
+        <details class="pp-raw">
+            <summary>Show the raw extracted text this was segmented from</summary>
+            <pre>{{ question.raw_source_text }}</pre>
+        </details>
+        {% endif %}
+
+        <div class="pp-question-foot">
+            <button type="button" class="admin-btn admin-btn-primary admin-btn-sm" data-pp-save>Save question</button>
+            <span class="pp-inline-status" data-pp-question-status></span>
+        </div>
+    </article>
+    {% else %}
+    <p class="pp-note pp-note--warn">
+        No questions were detected in this PDF. You can add them manually below,
+        or re-run processing from the status page.
+    </p>
+    {% endfor %}
+
+</div>
+
+<div class="pp-actions">
+    <button type="button" class="admin-btn admin-btn-secondary" data-pp-add data-job-id="{{ job.id }}">
+        + Add question
+    </button>
+
+    <form method="post" action="{{ base_path }}/{{ job.id }}/save">
+        <button type="submit" class="admin-btn admin-btn-primary">Save review and continue</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block js %}<script src="/static/js/components/paper-processing.js"></script>{% endblock %}

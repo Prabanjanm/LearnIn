@@ -202,6 +202,11 @@
     z-index: 20;
 }
 
+.admin-muted {
+    color: var(--color-text-muted);
+    font-size: 13px;
+}
+
 .admin-breadcrumb {
     display: flex;
     align-items: center;
