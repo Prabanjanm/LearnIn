@@ -158,14 +158,53 @@
     }
 }
 
-/* Subtle graph-paper backdrop behind the hero + exam ticker only - a
-   generic, widely-used decorative pattern (not unique to any one site),
-   built from a plain CSS grid so it needs no image asset at all. */
+/* Soft colored backdrop behind the hero + exam ticker - a tinted wash with
+   two blurred accent blobs (one blue, one violet, echoing
+   .hero-accent-heading's gradient) under the existing graph-paper texture,
+   so the hero reads as an inviting colored panel rather than plain white,
+   without needing an image asset. position:relative + z-index:1 on the
+   hero's own content (.centered-hero-content, set below) keeps the text
+   above the blobs. */
 .hero-grid-bg {
+    position: relative;
+    isolation: isolate;
+    background-color: var(--color-accent-light);
     background-image:
-        linear-gradient(to right, rgba(30, 58, 95, .06) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(30, 58, 95, .06) 1px, transparent 1px);
+        linear-gradient(to right, rgba(30, 58, 95, .05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(30, 58, 95, .05) 1px, transparent 1px);
     background-size: 40px 40px;
+    overflow: hidden;
+}
+
+.hero-grid-bg::before,
+.hero-grid-bg::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    width: 45vw;
+    height: 45vw;
+    max-width: 560px;
+    max-height: 560px;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.55;
+}
+
+.hero-grid-bg::before {
+    top: -18%;
+    left: -12%;
+    background: radial-gradient(circle, var(--color-accent) 0%, transparent 70%);
+}
+
+.hero-grid-bg::after {
+    top: -8%;
+    right: -14%;
+    background: radial-gradient(circle, #7C3AED 0%, transparent 70%);
+}
+
+.centered-hero-content {
+    position: relative;
+    z-index: 1;
 }
 
 .hero-kicker {

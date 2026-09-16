@@ -24,9 +24,12 @@ from app.common.exceptions.exceptions import (
 from app.common.rate_limit import rate_limit
 from app.common.utils.file_tracking import cleanup_drive_files
 from app.core.database import get_db
-from app.core.enums import ProcessingStatusEnum
+from app.core.enums import PaperTypeEnum, PaperUsageEnum, ProcessingStatusEnum
 from app.modules.admin.dependencies import get_optional_admin
 from app.modules.admin.model import Admin
+from app.modules.department.model import Department
+from app.modules.exam.model import Exam
+from app.modules.paper.service import paper_service
 from app.modules.subject.model import Subject
 
 from .background import is_stuck, run_pipeline_in_background
@@ -43,6 +46,18 @@ templates = Jinja2Templates(directory="app/templates")
 LOGIN_REDIRECT = "/admin/login"
 
 BASE_PATH = "/admin/paper-processing"
+
+# Shared by the "new job" form, a job's preview page, and the standalone
+# per-paper usage page (papers with no processing job at all) - one list,
+# used everywhere "Use This Paper For" is rendered.
+USAGE_OPTIONS = [
+    (PaperUsageEnum.PREVIOUS_YEAR_PAPERS, "Previous Year Papers"),
+    (PaperUsageEnum.PRACTICE, "Practice"),
+    (PaperUsageEnum.MOCK_TEST, "Mock Tests"),
+    (PaperUsageEnum.SUBJECT_PRACTICE, "Subject Practice"),
+    (PaperUsageEnum.EXAM_PRACTICE, "Exam Practice"),
+    (PaperUsageEnum.RESOURCE, "Resources"),
+]
 
 # Statuses where the pipeline is still working and the page should poll.
 BUSY_STATUSES = {
@@ -103,19 +118,47 @@ def _job_context(db: Session, job) -> dict:
     }
 
 
-def _render_new_form(request: Request, admin, db: Session, error: str | None, status_code: int = 200):
-    subjects = (
-        db.query(Subject)
-        .order_by(Subject.name)
-        .all()
-    )
+def _build_exam_tree(db: Session) -> list[dict]:
+    """
+    Every exam -> department -> subject, nested, for the "new job" form's
+    cascading selects - one JSON blob rendered once, filtered entirely in
+    the browser (no per-selection round trip). Not filtered to PUBLISHED
+    only: an admin has always been able to attach a paper to any subject
+    here, including one still in DRAFT.
+    """
+    exams = db.query(Exam).order_by(Exam.name).all()
+    departments = db.query(Department).order_by(Department.name).all()
+    subjects = db.query(Subject).order_by(Subject.name).all()
 
+    subjects_by_department: dict[uuid.UUID, list[dict]] = {}
+    for subject in subjects:
+        subjects_by_department.setdefault(subject.department_id, []).append(
+            {"id": str(subject.id), "name": subject.name}
+        )
+
+    departments_by_exam: dict[uuid.UUID, list[dict]] = {}
+    for department in departments:
+        departments_by_exam.setdefault(department.exam_id, []).append({
+            "id": str(department.id),
+            "name": department.name,
+            "subjects": subjects_by_department.get(department.id, []),
+        })
+
+    return [
+        {"id": str(exam.id), "name": exam.name, "departments": departments_by_exam.get(exam.id, [])}
+        for exam in exams
+    ]
+
+
+def _render_new_form(request: Request, admin, db: Session, error: str | None, status_code: int = 200):
     return templates.TemplateResponse(
         request=request,
         name="admin/paper_processing/new.html",
         context={
             "admin": admin,
-            "subjects": subjects,
+            "exam_tree_json": json.dumps(_build_exam_tree(db)),
+            "paper_types": list(PaperTypeEnum),
+            "usage_options": USAGE_OPTIONS,
             "error": error,
             "base_path": BASE_PATH,
         },
@@ -182,65 +225,207 @@ async def new_job_submit(
         file_id for file_id in (source.get("file_id"), answer.get("file_id")) if file_id
     ]
 
+    def fail(message: str):
+        db.rollback()
+        cleanup_drive_files(db, uploaded_ids)
+        return _render_new_form(request, admin, db, error=message, status_code=400)
+
     if not source:
         # Nothing was uploaded, so nothing to clean up.
-        return _render_new_form(
-            request, admin, db,
-            error="Please upload the source question paper PDF before saving.",
-            status_code=400,
-        )
+        return fail("Please upload the source question paper PDF before saving.")
 
+    # --- validate the exam -> department -> subject(s) chain server-side --
+    # (the cascading selects already only ever offer a consistent chain,
+    # but the request body is never trusted just because the form was
+    # built correctly - a subject belonging to a different department must
+    # be rejected here regardless of what the client sent.)
     try:
-        data = PaperProcessingJobCreate(
-            subject_id=uuid.UUID(str(form_data.get("subject_id") or "")),
-            title=(form_data.get("title") or "").strip(),
-            year=int(form_data.get("year") or 0),
-            source_url=(form_data.get("source_url") or "").strip() or None,
-            source_notes=(form_data.get("source_notes") or "").strip() or None,
-            original_file_id=source["file_id"],
-            original_mime_type=source.get("mime_type"),
-            original_file_size=source.get("file_size"),
-            original_filename=source.get("filename"),
-            answer_file_id=answer.get("file_id"),
-            answer_mime_type=answer.get("mime_type"),
-            answer_file_size=answer.get("file_size"),
-            answer_filename=answer.get("filename"),
-            mock_test_title=(form_data.get("mock_test_title") or "").strip() or None,
-            mock_test_description=(form_data.get("mock_test_description") or "").strip() or None,
-            mock_test_duration=(
-                int(form_data["mock_test_duration"])
-                if (form_data.get("mock_test_duration") or "").strip()
-                else None
-            ),
-            mock_test_total_marks=(
-                int(form_data["mock_test_total_marks"])
-                if (form_data.get("mock_test_total_marks") or "").strip()
-                else None
-            ),
+        exam_id = uuid.UUID(str(form_data.get("exam_id") or ""))
+        department_id = uuid.UUID(str(form_data.get("department_id") or ""))
+        subject_ids = [uuid.UUID(v) for v in form_data.getlist("subject_ids") if v]
+        year = int(form_data.get("year") or 0)
+    except ValueError:
+        return fail("Exam, department, subject and year must be selected.")
+
+    if not subject_ids:
+        return fail("Select at least one subject.")
+
+    department = db.query(Department).filter(Department.id == department_id).first()
+    if department is None or department.exam_id != exam_id:
+        return fail("The selected department does not belong to the selected exam.")
+
+    subjects = db.query(Subject).filter(Subject.id.in_(subject_ids)).all()
+    if len(subjects) != len(set(subject_ids)):
+        return fail("One or more selected subjects could not be found.")
+    for subject in subjects:
+        if subject.department_id != department_id:
+            return fail(
+                f"'{subject.name}' does not belong to the selected department - "
+                "pick subjects from the same department as the paper."
+            )
+
+    title = (form_data.get("title") or "").strip()
+    if not title:
+        return fail("A paper title is required.")
+    if not year:
+        return fail("A paper year is required.")
+
+    paper_type_raw = (form_data.get("paper_type") or "").strip()
+    paper_type = PaperTypeEnum(paper_type_raw) if paper_type_raw in PaperTypeEnum.__members__ else None
+
+    usage_flags = [
+        value for value in form_data.getlist("usage_flags")
+        if value in PaperUsageEnum.__members__
+    ]
+
+    # --- duplicate prevention: skip (not fail outright) any subject that --
+    # already has a Paper for this exact year - re-uploading the same
+    # paper never creates a second record. A second in-flight *job* for
+    # the same (subject, year) is deliberately still allowed here (a
+    # retry/second attempt before either has published is just data, not
+    # a duplicate) - Paper.uq_subject_year is what actually rejects a
+    # second one at publish time (see PaperProcessingService.publish_job).
+    skipped: list[str] = []
+    subjects_to_process = []
+    for subject in subjects:
+        if paper_service.repository.get_by_subject_and_year(db, subject.id, year) is not None:
+            skipped.append(f"{subject.name} (a paper for {year} already exists)")
+            continue
+        subjects_to_process.append(subject)
+
+    if not subjects_to_process:
+        return fail(
+            "Nothing to process - " + "; ".join(skipped)
+            if skipped else "Nothing to process."
         )
 
-        job = paper_processing_service.create_job(db, admin.id, data)
+    created_jobs = []
+    try:
+        for subject in subjects_to_process:
+            job_title = title if len(subjects_to_process) == 1 else f"{title} - {subject.name}"
+
+            data = PaperProcessingJobCreate(
+                subject_id=subject.id,
+                title=job_title,
+                year=year,
+                paper_type=paper_type,
+                usage_flags=usage_flags,
+                source_url=(form_data.get("source_url") or "").strip() or None,
+                source_notes=(form_data.get("source_notes") or "").strip() or None,
+                original_file_id=source["file_id"],
+                original_mime_type=source.get("mime_type"),
+                original_file_size=source.get("file_size"),
+                original_filename=source.get("filename"),
+                answer_file_id=answer.get("file_id"),
+                answer_mime_type=answer.get("mime_type"),
+                answer_file_size=answer.get("file_size"),
+                answer_filename=answer.get("filename"),
+            )
+            created_jobs.append(paper_processing_service.create_job(db, admin.id, data))
 
     except (ValueError, NotFoundException, AlreadyExistsException) as exc:
-        db.rollback()
-        # The uploads already reached Drive but no row now references them -
-        # delete them rather than leaking.
-        cleanup_drive_files(db, uploaded_ids)
-        return _render_new_form(request, admin, db, error=str(exc), status_code=400)
+        return fail(str(exc))
 
     except Exception:
-        db.rollback()
         logger.exception("Failed to create a paper processing job")
-        cleanup_drive_files(db, uploaded_ids)
-        return _render_new_form(
-            request, admin, db,
-            error="The job could not be created. Please try again.",
-            status_code=400,
-        )
+        return fail("The job could not be created. Please try again.")
 
-    background_tasks.add_task(run_pipeline_in_background, job.id)
+    for job in created_jobs:
+        background_tasks.add_task(run_pipeline_in_background, job.id)
 
-    return RedirectResponse(f"{BASE_PATH}/{job.id}", status_code=303)
+    if len(created_jobs) == 1:
+        return RedirectResponse(f"{BASE_PATH}/{created_jobs[0].id}", status_code=303)
+
+    # Multiple subjects selected - one job per subject was created and
+    # started; land on the list rather than picking one arbitrarily.
+    return RedirectResponse(BASE_PATH, status_code=303)
+
+
+# ---------------------------------------------- manage usage on any paper ---
+#
+# "Use This Paper For" for a paper that has no PaperProcessingJob at all -
+# created directly through the generic admin CRUD (/admin/manage/papers),
+# imported before this feature existed, or otherwise not run through this
+# pipeline. A paper WITH a job still gets managed from its own preview page
+# (see update_usage above) - this is the other entry point onto the exact
+# same PaperProcessingService.update_usage_for_paper.
+#
+# NOTE: these routes must be registered before "/{job_id}" below - otherwise
+# a request for "/papers" would match "/{job_id}" first (job_id: uuid.UUID) and
+# fail path-parameter conversion with a 422 before ever reaching this route.
+
+@router.get(BASE_PATH + "/papers")
+def papers_list(
+    request: Request,
+    admin: Admin | None = Depends(get_optional_admin),
+    db: Session = Depends(get_db),
+):
+    if admin is None:
+        return RedirectResponse(LOGIN_REDIRECT, status_code=303)
+
+    papers = paper_service.repository.list_all_with_hierarchy(db)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin/paper_processing/papers_list.html",
+        context={
+            "admin": admin,
+            "papers": papers,
+            "base_path": BASE_PATH,
+        },
+    )
+
+
+@router.get(BASE_PATH + "/papers/{paper_id}/usage")
+def paper_usage_page(
+    paper_id: uuid.UUID,
+    request: Request,
+    admin: Admin | None = Depends(get_optional_admin),
+    db: Session = Depends(get_db),
+):
+    if admin is None:
+        return RedirectResponse(LOGIN_REDIRECT, status_code=303)
+
+    try:
+        paper = paper_service.get_or_404(db, paper_id, "Paper not found")
+    except NotFoundException:
+        return RedirectResponse(f"{BASE_PATH}/papers", status_code=303)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin/paper_processing/paper_usage.html",
+        context={
+            "admin": admin,
+            "paper": paper,
+            "available_at": paper_processing_service.apply_usage(db, paper),
+            "usage_options": USAGE_OPTIONS,
+            "selected_usage": set(paper.usage_flags_list()),
+            "error": request.query_params.get("error"),
+            "base_path": BASE_PATH,
+        },
+    )
+
+
+@router.post(BASE_PATH + "/papers/{paper_id}/usage")
+async def paper_usage_update(
+    paper_id: uuid.UUID,
+    request: Request,
+    admin: Admin | None = Depends(get_optional_admin),
+    db: Session = Depends(get_db),
+    _throttle: None = Depends(rate_limit(10, 60)),
+):
+    if admin is None:
+        return RedirectResponse(LOGIN_REDIRECT, status_code=303)
+
+    form_data = await request.form()
+    usage_flags = [v for v in form_data.getlist("usage_flags") if v in PaperUsageEnum.__members__]
+
+    try:
+        paper_processing_service.update_usage_for_paper(db, paper_id, usage_flags)
+    except NotFoundException:
+        return RedirectResponse(f"{BASE_PATH}/papers", status_code=303)
+
+    return RedirectResponse(f"{BASE_PATH}/papers/{paper_id}/usage?usage_updated=1", status_code=303)
 
 
 # ------------------------------------------------------------- step 2: run --
@@ -353,8 +538,57 @@ def review_page(
             "admin": admin,
             "questions": questions,
             "error": request.query_params.get("error"),
+            "message": request.query_params.get("message"),
             **_job_context(db, job),
         },
+    )
+
+
+@router.post(BASE_PATH + "/{job_id}/answer-key")
+async def attach_answer_key(
+    job_id: uuid.UUID,
+    request: Request,
+    admin: Admin | None = Depends(get_optional_admin),
+    db: Session = Depends(get_db),
+    _throttle: None = Depends(rate_limit(10, 60)),
+):
+    """
+    Attaches or replaces the answer key on a job that already has questions
+    staged - for the common case of the question paper being uploaded (and
+    processed) before the key was ready.
+    """
+    if admin is None:
+        return RedirectResponse(LOGIN_REDIRECT, status_code=303)
+
+    form_data = await request.form()
+    answer = _parse_upload_json(form_data.get("answer_file_id"))
+
+    if not answer:
+        return RedirectResponse(
+            f"{BASE_PATH}/{job_id}/review?error="
+            + _quote("Please upload the answer key PDF before saving."),
+            status_code=303,
+        )
+
+    try:
+        message = paper_processing_service.set_answer_key(
+            db, job_id,
+            file_id=answer["file_id"],
+            mime_type=answer.get("mime_type"),
+            file_size=answer.get("file_size"),
+            filename=answer.get("filename"),
+        )
+    except NotFoundException:
+        return RedirectResponse(BASE_PATH, status_code=303)
+    except InvalidStateException as exc:
+        return RedirectResponse(
+            f"{BASE_PATH}/{job_id}/review?error={_quote(str(exc))}",
+            status_code=303,
+        )
+
+    return RedirectResponse(
+        f"{BASE_PATH}/{job_id}/review?message={_quote(message)}",
+        status_code=303,
     )
 
 
@@ -447,9 +681,44 @@ def preview_page(
             "verified_count": sum(1 for q in questions if not q.needs_review),
             "extra_images_count": sum(1 for q in questions if len(q.images) > 1),
             "error": request.query_params.get("error"),
+            "available_at": paper_processing_service.apply_usage(db, job.paper) if job.paper_id else [],
+            "usage_options": USAGE_OPTIONS,
+            "selected_usage": set(job.paper.usage_flags_list()) if job.paper_id else set(job.usage_flags_list()),
             **_job_context(db, job),
         },
     )
+
+
+@router.post(BASE_PATH + "/{job_id}/usage")
+async def update_usage(
+    job_id: uuid.UUID,
+    request: Request,
+    admin: Admin | None = Depends(get_optional_admin),
+    db: Session = Depends(get_db),
+    _throttle: None = Depends(rate_limit(10, 60)),
+):
+    """
+    Changes "Use This Paper For" on an already-published paper - re-applied
+    immediately (see PaperProcessingService.apply_usage): a newly-checked
+    area is created/restored, a newly-unchecked one is archived.
+    """
+    if admin is None:
+        return RedirectResponse(LOGIN_REDIRECT, status_code=303)
+
+    form_data = await request.form()
+    usage_flags = [v for v in form_data.getlist("usage_flags") if v in PaperUsageEnum.__members__]
+
+    try:
+        paper_processing_service.update_usage(db, job_id, usage_flags)
+    except NotFoundException:
+        return RedirectResponse(BASE_PATH, status_code=303)
+    except InvalidStateException as exc:
+        return RedirectResponse(
+            f"{BASE_PATH}/{job_id}/preview?error={_quote(str(exc))}",
+            status_code=303,
+        )
+
+    return RedirectResponse(f"{BASE_PATH}/{job_id}/preview?usage_updated=1", status_code=303)
 
 
 # -------------------------------------------------------- step 6: publish ---
@@ -483,6 +752,30 @@ def publish(
         )
 
     return RedirectResponse(f"{BASE_PATH}/{job_id}/preview?published=1", status_code=303)
+
+
+@router.post(BASE_PATH + "/{job_id}/go-live")
+def go_live(
+    job_id: uuid.UUID,
+    admin: Admin | None = Depends(get_optional_admin),
+    db: Session = Depends(get_db),
+    _throttle: None = Depends(rate_limit(5, 60)),
+):
+    """Makes an already-published (but still DRAFT) paper visible to students."""
+    if admin is None:
+        return RedirectResponse(LOGIN_REDIRECT, status_code=303)
+
+    try:
+        paper_processing_service.go_live(db, job_id)
+    except NotFoundException:
+        return RedirectResponse(BASE_PATH, status_code=303)
+    except InvalidStateException as exc:
+        return RedirectResponse(
+            f"{BASE_PATH}/{job_id}/preview?error={_quote(str(exc))}",
+            status_code=303,
+        )
+
+    return RedirectResponse(f"{BASE_PATH}/{job_id}/preview?live=1", status_code=303)
 
 
 def _quote(message: str) -> str:

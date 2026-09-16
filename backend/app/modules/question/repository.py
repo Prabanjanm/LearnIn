@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.orm import Session, selectinload
 
 from app.common.repositories.base_repository import BaseRepository
@@ -17,7 +18,7 @@ class QuestionRepository(BaseRepository):
     def get_by_id(
         self,
         db: Session,
-        question_id: int
+        question_id: uuid.UUID
     ):
         return (
             db.query(Question)
@@ -29,7 +30,7 @@ class QuestionRepository(BaseRepository):
     def get_by_paper(
         self,
         db: Session,
-        paper_id: int
+        paper_id: uuid.UUID
     ):
         return (
             db.query(Question)
@@ -42,7 +43,7 @@ class QuestionRepository(BaseRepository):
     def get_published_by_paper(
         self,
         db: Session,
-        paper_id: int
+        paper_id: uuid.UUID
     ):
         return (
             db.query(Question)
@@ -58,7 +59,7 @@ class QuestionRepository(BaseRepository):
     def get_published_by_id(
         self,
         db: Session,
-        question_id: int
+        question_id: uuid.UUID
     ):
         return (
             db.query(Question)
@@ -96,7 +97,7 @@ class QuestionRepository(BaseRepository):
     def exists_by_number(
         self,
         db: Session,
-        paper_id: int,
+        paper_id: uuid.UUID,
         question_number: int
     ) -> bool:
         return (

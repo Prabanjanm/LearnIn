@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.orm import Session, selectinload
 
 from app.common.repositories.base_repository import BaseRepository
@@ -15,7 +16,7 @@ class SubjectRepository(BaseRepository):
     def get_published_by_department(
         self,
         db: Session,
-        department_id: int
+        department_id: uuid.UUID
     ):
         return (
             db.query(Subject)
@@ -30,7 +31,7 @@ class SubjectRepository(BaseRepository):
     def get_published_by_slug(
         self,
         db: Session,
-        department_id: int,
+        department_id: uuid.UUID,
         slug: str
     ):
         return (
@@ -46,8 +47,8 @@ class SubjectRepository(BaseRepository):
     def get_filtered(
         self,
         db: Session,
-        exam_id: int | None = None,
-        department_id: int | None = None,
+        exam_id: uuid.UUID | None = None,
+        department_id: uuid.UUID | None = None,
         term: str | None = None,
         page: int = 1,
         page_size: int = 24,

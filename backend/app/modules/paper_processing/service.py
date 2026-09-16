@@ -7,6 +7,7 @@ place - `publish_job` - and only after an explicit admin review has cleared
 every flagged item. Nothing in this module ever invents question content,
 option text, or an answer key.
 """
+import uuid
 import logging
 
 from sqlalchemy.orm import Session
@@ -21,8 +22,11 @@ from app.core.enums import (
     DifficultyEnum,
     ExtractionConfidenceEnum,
     ImageSourceType,
+    PaperUsageEnum,
+    PdfTypeEnum,
     ProcessingStatusEnum,
     QuestionType,
+    ResourceType,
     StatusEnum,
     WatermarkStatusEnum,
 )
@@ -33,9 +37,14 @@ from app.modules.paper.schema import PaperCreate
 from app.modules.paper.service import paper_service
 from app.modules.question.schema import OptionIn, QuestionCreate
 from app.modules.question.service import question_service
+from app.modules.resource.schema import ResourceCreate
+from app.modules.resource.service import resource_service
 from app.modules.subject.repository import SubjectRepository
 
+from .answer_key_parser import ParsedAnswerKeyEntry, gate_negative_marks, parse_answer_key
+from .extraction import OcrUnavailableError, extract_text_with_positions
 from .model import ExtractedOption, ExtractedQuestion, ExtractedQuestionImage, PaperProcessingJob
+from .pdf_analysis import analyze_pdf
 from .pdf_generator import build_paper_pdf
 from .repository import (
     ExtractedQuestionImageRepository,
@@ -86,10 +95,12 @@ class PaperProcessingService(BaseService):
         self._questions = ExtractedQuestionRepository()
         self._images = ExtractedQuestionImageRepository()
         self._subjects = SubjectRepository()
+        self._mock_tests = mock_test_service.repository
+        self._resources = resource_service.repository
 
     # ------------------------------------------------------------ lookup --
 
-    def get_job(self, db: Session, job_id: int) -> PaperProcessingJob:
+    def get_job(self, db: Session, job_id: uuid.UUID) -> PaperProcessingJob:
         job = self.repository.get_with_questions(db, job_id)
 
         if job is None:
@@ -100,7 +111,7 @@ class PaperProcessingService(BaseService):
     def list_jobs(self, db: Session, limit: int = 100):
         return self.repository.list_recent(db, limit)
 
-    def list_questions(self, db: Session, job_id: int):
+    def list_questions(self, db: Session, job_id: uuid.UUID):
         """Staged questions for one job, in admin-controlled order."""
         return self._questions.list_for_job(db, job_id)
 
@@ -109,7 +120,7 @@ class PaperProcessingService(BaseService):
     def create_job(
         self,
         db: Session,
-        admin_id: int,
+        admin_id: uuid.UUID,
         data: PaperProcessingJobCreate,
     ) -> PaperProcessingJob:
 
@@ -123,6 +134,7 @@ class PaperProcessingService(BaseService):
             subject_id=data.subject_id,
             title=data.title,
             year=data.year,
+            paper_type=data.paper_type,
             source_url=data.source_url,
             source_notes=data.source_notes,
             original_file_id=data.original_file_id,
@@ -141,6 +153,7 @@ class PaperProcessingService(BaseService):
             watermark_status=WatermarkStatusEnum.NOT_NEEDED,
             ocr_used=False,
         )
+        job.set_usage_flags([flag.value for flag in data.usage_flags])
 
         return self.repository.create(db, job)
 
@@ -169,7 +182,7 @@ class PaperProcessingService(BaseService):
         """`message` must already be user-safe - tracebacks are logged only."""
         return self.set_status(db, job, status, message)
 
-    def request_cancel(self, db: Session, job_id: int) -> PaperProcessingJob:
+    def request_cancel(self, db: Session, job_id: uuid.UUID) -> PaperProcessingJob:
         """
         Asks a running job to stop at its next stage checkpoint. This is
         cooperative, not a hard kill - there is no task queue to interrupt a
@@ -238,7 +251,9 @@ class PaperProcessingService(BaseService):
                 raw_source_text=parsed.raw_source_text,
                 confidence=parsed.confidence,
                 needs_review=parsed.needs_review,
-                # Never populated by extraction - admin input only.
+                # Never populated by question-paper extraction itself - only
+                # admin input, or a matched answer-key row applied right
+                # after this (see `apply_answer_key`), ever sets these.
                 correct_answer=None,
                 options=[
                     ExtractedOption(label=option.label, option_text=option.option_text)
@@ -317,6 +332,113 @@ class PaperProcessingService(BaseService):
         db.flush()
         self.resync_counters(db, job)
 
+    def apply_answer_key(
+        self,
+        db: Session,
+        job: PaperProcessingJob,
+        entries: list[ParsedAnswerKeyEntry],
+    ) -> tuple[int, int]:
+        """
+        Matches parsed answer-key rows to this job's already-staged
+        ExtractedQuestion rows by question number, filling in
+        question_type/marks/negative_marks/correct_answer where a match is
+        found. Never runs for a job with no key uploaded, and never fails
+        the job if the key doesn't parse - see `background.run_pipeline`.
+
+        Matching is by `question_number` first (the number the question
+        paper itself used). If none of the staged questions have a
+        question_number (can happen on some OCR'd papers) and the counts
+        line up exactly, falls back to a positional match by order_index -
+        still deterministic, never a guess about *which* question a row
+        belongs to beyond "the paper and the key list them in the same
+        order."
+
+        Returns (matched_count, len(entries)).
+        """
+        questions = self._questions.list_for_job(db, job.id)
+
+        by_number = {q.question_number: q for q in questions if q.question_number is not None}
+
+        positional = None
+        if not by_number and len(questions) == len(entries):
+            positional = sorted(questions, key=lambda q: q.order_index)
+
+        matched = 0
+        for position, entry in enumerate(entries):
+            question = by_number.get(entry.q_no) if by_number else (
+                positional[position] if positional else None
+            )
+            if question is None:
+                continue
+
+            question.question_type = entry.question_type
+            question.marks = entry.marks
+            question.negative_marks = gate_negative_marks(entry.question_type, entry.marks)
+            if question.correct_answer is None:
+                question.correct_answer = entry.key_or_range
+            matched += 1
+
+        db.commit()
+        return matched, len(entries)
+
+    def set_answer_key(
+        self,
+        db: Session,
+        job_id: uuid.UUID,
+        file_id: str,
+        mime_type: str | None,
+        file_size: int | None,
+        filename: str | None,
+    ) -> str:
+        """
+        Attaches (or replaces) the answer key on a job that has already
+        finished the extraction pipeline - covering the job that was created
+        without one and the admin only has the key ready afterwards.
+
+        Runs the same download/OCR/parse/match sequence as the pipeline's
+        own optional answer-key step (see `background.run_pipeline`), but
+        here a failure is raised back to the admin instead of being logged
+        and swallowed - this is a deliberate action with an obvious place to
+        show the result, unlike the pipeline's unattended run.
+
+        Returns an admin-facing summary message on success.
+        """
+        job = self._editable_job(db, job_id)
+
+        old_file_id = job.answer_file_id
+        job.answer_file_id = file_id
+        job.answer_mime_type = mime_type
+        job.answer_file_size = file_size
+        job.answer_filename = filename
+        db.commit()
+
+        if old_file_id and old_file_id != file_id:
+            cleanup_drive_file(db, old_file_id)
+
+        drive = get_drive_client()
+
+        try:
+            key_content = drive.download_file(file_id)
+            key_analysis = analyze_pdf(key_content)
+            key_text, _, _ = extract_text_with_positions(
+                key_content, key_analysis["pdf_type"] or PdfTypeEnum.UNKNOWN
+            )
+            entries = parse_answer_key(key_text)
+        except OcrUnavailableError as exc:
+            raise InvalidStateException(str(exc))
+        except Exception as exc:
+            logger.exception("Job %s: answer key parsing failed", job.id)
+            raise InvalidStateException(
+                "The answer key was saved but could not be read. "
+                "Try a clearer scan, or contact an administrator."
+            ) from exc
+
+        if not entries:
+            return "The answer key was saved, but no rows could be parsed from it."
+
+        matched, total = self.apply_answer_key(db, job, entries)
+        return f"Answer key matched {matched} of {total} question(s)."
+
     def resync_counters(self, db: Session, job: PaperProcessingJob) -> None:
         questions = self._questions.list_for_job(db, job.id)
 
@@ -331,7 +453,7 @@ class PaperProcessingService(BaseService):
 
     # -------------------------------------------------------- review edit --
 
-    def _editable_job(self, db: Session, job_id: int) -> PaperProcessingJob:
+    def _editable_job(self, db: Session, job_id: uuid.UUID) -> PaperProcessingJob:
         job = self.get_job(db, job_id)
 
         if job.status == ProcessingStatusEnum.PUBLISHED:
@@ -356,8 +478,8 @@ class PaperProcessingService(BaseService):
     def get_question(
         self,
         db: Session,
-        job_id: int,
-        question_id: int,
+        job_id: uuid.UUID,
+        question_id: uuid.UUID,
     ) -> ExtractedQuestion:
         question = self._questions.get_for_job(db, job_id, question_id)
 
@@ -369,8 +491,8 @@ class PaperProcessingService(BaseService):
     def update_question(
         self,
         db: Session,
-        job_id: int,
-        question_id: int,
+        job_id: uuid.UUID,
+        question_id: uuid.UUID,
         data: ExtractedQuestionIn,
     ) -> ExtractedQuestion:
 
@@ -410,8 +532,8 @@ class PaperProcessingService(BaseService):
     def set_needs_review(
         self,
         db: Session,
-        job_id: int,
-        question_id: int,
+        job_id: uuid.UUID,
+        question_id: uuid.UUID,
         needs_review: bool,
     ) -> ExtractedQuestion:
         self._editable_job(db, job_id)
@@ -426,7 +548,7 @@ class PaperProcessingService(BaseService):
     def add_question(
         self,
         db: Session,
-        job_id: int,
+        job_id: uuid.UUID,
         data: ExtractedQuestionIn,
     ) -> ExtractedQuestion:
 
@@ -465,7 +587,7 @@ class PaperProcessingService(BaseService):
 
         return question
 
-    def delete_question(self, db: Session, job_id: int, question_id: int) -> None:
+    def delete_question(self, db: Session, job_id: uuid.UUID, question_id: uuid.UUID) -> None:
         job = self._editable_job(db, job_id)
         question = self.get_question(db, job_id, question_id)
 
@@ -486,8 +608,8 @@ class PaperProcessingService(BaseService):
     def move_question(
         self,
         db: Session,
-        job_id: int,
-        question_id: int,
+        job_id: uuid.UUID,
+        question_id: uuid.UUID,
         direction: str,
     ) -> None:
         """direction is "up" or "down"; out-of-range moves are a no-op."""
@@ -516,8 +638,8 @@ class PaperProcessingService(BaseService):
     def split_question(
         self,
         db: Session,
-        job_id: int,
-        question_id: int,
+        job_id: uuid.UUID,
+        question_id: uuid.UUID,
         split_at: int | None = None,
     ) -> list[ExtractedQuestion]:
         """
@@ -573,8 +695,8 @@ class PaperProcessingService(BaseService):
     def merge_with_next(
         self,
         db: Session,
-        job_id: int,
-        question_id: int,
+        job_id: uuid.UUID,
+        question_id: uuid.UUID,
     ) -> ExtractedQuestion:
         """
         Concatenates this block's text with the next one's into a single
@@ -667,7 +789,7 @@ class PaperProcessingService(BaseService):
     # bytes themselves - only which question a Drive file_id belongs to.
 
     def _get_image(
-        self, db: Session, job_id: int, question_id: int, image_id: int
+        self, db: Session, job_id: uuid.UUID, question_id: uuid.UUID, image_id: uuid.UUID
     ) -> ExtractedQuestionImage:
         question = self.get_question(db, job_id, question_id)
         image = self._images.get_for_question(db, question.id, image_id)
@@ -680,8 +802,8 @@ class PaperProcessingService(BaseService):
     def add_manual_image(
         self,
         db: Session,
-        job_id: int,
-        question_id: int,
+        job_id: uuid.UUID,
+        question_id: uuid.UUID,
         file_id: str,
         mime_type: str | None,
         file_size: int | None,
@@ -710,9 +832,9 @@ class PaperProcessingService(BaseService):
     def replace_image(
         self,
         db: Session,
-        job_id: int,
-        question_id: int,
-        image_id: int,
+        job_id: uuid.UUID,
+        question_id: uuid.UUID,
+        image_id: uuid.UUID,
         file_id: str,
         mime_type: str | None,
         file_size: int | None,
@@ -740,7 +862,7 @@ class PaperProcessingService(BaseService):
 
         return image
 
-    def remove_image(self, db: Session, job_id: int, question_id: int, image_id: int) -> None:
+    def remove_image(self, db: Session, job_id: uuid.UUID, question_id: uuid.UUID, image_id: uuid.UUID) -> None:
         job = self._editable_job(db, job_id)
         image = self._get_image(db, job_id, question_id, image_id)
 
@@ -754,10 +876,10 @@ class PaperProcessingService(BaseService):
     def reassign_image(
         self,
         db: Session,
-        job_id: int,
-        question_id: int,
-        image_id: int,
-        target_question_id: int,
+        job_id: uuid.UUID,
+        question_id: uuid.UUID,
+        image_id: uuid.UUID,
+        target_question_id: uuid.UUID,
     ) -> ExtractedQuestionImage:
         """Moves one image to a different question in the same job - for
         when a diagram was associated with the wrong question."""
@@ -777,9 +899,9 @@ class PaperProcessingService(BaseService):
     def move_image(
         self,
         db: Session,
-        job_id: int,
-        question_id: int,
-        image_id: int,
+        job_id: uuid.UUID,
+        question_id: uuid.UUID,
+        image_id: uuid.UUID,
         direction: str,
     ) -> None:
         """direction is "up" or "down"; out-of-range moves are a no-op."""
@@ -804,7 +926,7 @@ class PaperProcessingService(BaseService):
 
     # ------------------------------------------------------------ review --
 
-    def mark_reviewed(self, db: Session, job_id: int) -> PaperProcessingJob:
+    def mark_reviewed(self, db: Session, job_id: uuid.UUID) -> PaperProcessingJob:
         job = self._editable_job(db, job_id)
 
         if not job.extracted_questions:
@@ -821,7 +943,7 @@ class PaperProcessingService(BaseService):
 
     # -------------------------------------------------------- generation --
 
-    def generate_pdf(self, db: Session, job_id: int) -> PaperProcessingJob:
+    def generate_pdf(self, db: Session, job_id: uuid.UUID) -> PaperProcessingJob:
         job = self.get_job(db, job_id)
 
         if job.status not in (
@@ -950,7 +1072,7 @@ class PaperProcessingService(BaseService):
         `publish_job`)."""
         return sum(1 for q in self._questions.list_for_job(db, job.id) if len(q.images) > 1)
 
-    def publish_job(self, db: Session, job_id: int):
+    def publish_job(self, db: Session, job_id: uuid.UUID):
         job = self.get_job(db, job_id)
 
         if job.status == ProcessingStatusEnum.PUBLISHED:
@@ -992,15 +1114,18 @@ class PaperProcessingService(BaseService):
             created_question = question_service.create_question(db, QuestionCreate(
                 paper_id=paper.id,
                 question_number=question.order_index,
-                question_type=DEFAULT_QUESTION_TYPE,
+                question_type=question.question_type or DEFAULT_QUESTION_TYPE,
                 difficulty=DEFAULT_DIFFICULTY,
                 question_text=question.question_text,
                 image_file_id=primary_image.file_id if primary_image else None,
                 image_mime_type=primary_image.mime_type if primary_image else None,
                 image_file_size=primary_image.file_size if primary_image else None,
                 image_filename=primary_image.filename if primary_image else None,
-                marks=DEFAULT_MARKS,
-                negative_marks=DEFAULT_NEGATIVE_MARKS,
+                marks=question.marks if question.marks is not None else DEFAULT_MARKS,
+                negative_marks=(
+                    question.negative_marks if question.negative_marks is not None
+                    else DEFAULT_NEGATIVE_MARKS
+                ),
                 correct_answer=(question.correct_answer or NO_ANSWER_SENTINEL),
                 options=[
                     OptionIn(label=option.label, option_text=option.option_text)
@@ -1028,7 +1153,172 @@ class PaperProcessingService(BaseService):
         db.commit()
         db.refresh(job)
 
+        # The admin's "Use This Paper For" selection lives on the Paper
+        # itself from here on (see Paper.usage_flags) - the job's own copy
+        # stays as a record of what was selected at upload time.
+        paper.set_usage_flags(job.usage_flags_list())
+        db.commit()
+        db.refresh(paper)
+
+        self.apply_usage(db, paper)
+
         return paper
+
+    def go_live(self, db: Session, job_id: uuid.UUID):
+        """
+        Flips the paper this job published into DRAFT (see `publish_job`)
+        over to PUBLISHED, i.e. visible to students - a deliberate, separate
+        click from Publish so a paper can be checked one more time (e.g. via
+        the generated PDF) before it goes live, without that check having to
+        happen on the unrelated generic admin CRUD screen.
+        """
+        job = self.get_job(db, job_id)
+
+        if job.status != ProcessingStatusEnum.PUBLISHED or job.paper_id is None:
+            raise InvalidStateException("Publish this paper before making it live.")
+
+        paper = job.paper
+        if paper.status == StatusEnum.PUBLISHED:
+            raise InvalidStateException("This paper is already live.")
+
+        paper.status = StatusEnum.PUBLISHED
+        db.commit()
+        db.refresh(paper)
+
+        return paper
+
+    # ------------------------------------------------------------ usage --
+    #
+    # "Use This Paper For" (see PaperUsageEnum). PREVIOUS_YEAR_PAPERS/
+    # PRACTICE/SUBJECT_PRACTICE/EXAM_PRACTICE need no row of their own - a
+    # PUBLISHED Paper already appears on those pages through the existing
+    # exam/department/subject hierarchy, so those flags only affect what
+    # `apply_usage` reports back as "available at". MOCK_TEST and RESOURCE
+    # are the two that create something - both idempotent (get-or-create by
+    # a stable natural key) and reversible (archived via StatusMixin, never
+    # hard-deleted, if the admin later unchecks them).
+
+    _MOCK_TEST_TITLE_SUFFIX = " - Full Mock Test"
+    _RESOURCE_TITLE_SUFFIX = " - Full Paper"
+
+    def apply_usage(self, db: Session, paper) -> list[dict]:
+        """
+        Applies Paper.usage_flags to real rows - works for ANY paper, not
+        only one that came through this pipeline: one published here, one
+        created directly via the generic admin CRUD, or one that predates
+        this feature entirely (usage_flags starts NULL/empty until an
+        admin sets it - see update_usage_for_paper).
+        """
+        subject = paper.subject
+        department = subject.department
+        exam = department.exam
+        base_url = f"/{exam.slug}/{department.slug}/{subject.slug}/{paper.year}"
+
+        flags = set(paper.usage_flags_list())
+        available: list[dict] = []
+
+        if PaperUsageEnum.PREVIOUS_YEAR_PAPERS.value in flags:
+            available.append({"label": "Previous Year Papers", "url": base_url})
+
+        if PaperUsageEnum.PRACTICE.value in flags:
+            available.append({"label": "Practice (this paper)", "url": f"{base_url}/practice"})
+
+        if PaperUsageEnum.SUBJECT_PRACTICE.value in flags:
+            available.append({
+                "label": f"{subject.name} (subject page)",
+                "url": f"/{exam.slug}/{department.slug}/{subject.slug}",
+            })
+
+        if PaperUsageEnum.EXAM_PRACTICE.value in flags:
+            available.append({"label": f"{exam.name} (exam page)", "url": f"/{exam.slug}"})
+
+        mock_test_title = f"{paper.title}{self._MOCK_TEST_TITLE_SUFFIX}"
+        existing_mock_test = self._mock_tests.get_by_paper_and_title(db, paper.id, mock_test_title)
+
+        if PaperUsageEnum.MOCK_TEST.value in flags:
+            if existing_mock_test is None:
+                question_ids = [q.id for q in question_service.get_by_paper(db, paper.id)]
+                existing_mock_test = mock_test_service.create_mock_test(db, MockTestCreate(
+                    paper_id=paper.id,
+                    title=mock_test_title,
+                    description=f"Auto-generated full-length mock test from {paper.title}.",
+                    duration=paper.duration or 60,
+                    total_marks=len(question_ids),
+                    question_ids=question_ids,
+                    status=StatusEnum.DRAFT,
+                ))
+            elif existing_mock_test.status == StatusEnum.ARCHIVED:
+                existing_mock_test.status = StatusEnum.DRAFT
+                db.commit()
+            available.append({
+                "label": "Mock Test",
+                "url": f"{base_url}/mock-test/{existing_mock_test.id}",
+            })
+        elif existing_mock_test is not None and existing_mock_test.status != StatusEnum.ARCHIVED:
+            existing_mock_test.status = StatusEnum.ARCHIVED
+            db.commit()
+
+        resource_title = f"{paper.title}{self._RESOURCE_TITLE_SUFFIX}"
+        existing_resource = self._resources.get_by_subject_and_file(db, subject.id, paper.question_file_id)
+
+        if PaperUsageEnum.RESOURCE.value in flags:
+            if existing_resource is None:
+                existing_resource = resource_service.create_resource(db, ResourceCreate(
+                    subject_id=subject.id,
+                    title=resource_title,
+                    description=f"The full {paper.year} {subject.name} question paper.",
+                    resource_type=ResourceType.PYQ,
+                    google_drive_file_id=paper.question_file_id,
+                    google_drive_mime_type=paper.question_file_mime_type,
+                    google_drive_file_size=paper.question_file_size,
+                    google_drive_filename=paper.question_filename,
+                    status=StatusEnum.DRAFT,
+                ))
+            elif existing_resource.status == StatusEnum.ARCHIVED:
+                existing_resource.status = StatusEnum.DRAFT
+                db.commit()
+            available.append({
+                "label": "Resources",
+                "url": f"/{exam.slug}/{department.slug}/{subject.slug}#resources",
+            })
+        elif existing_resource is not None and existing_resource.status != StatusEnum.ARCHIVED:
+            existing_resource.status = StatusEnum.ARCHIVED
+            db.commit()
+
+        return available
+
+    def update_usage(self, db: Session, job_id: uuid.UUID, usage_flags: list[str]) -> list[dict]:
+        """
+        Changing "Use This Paper For" after publish, from the processing
+        job's own preview page - re-applies immediately so a newly-checked
+        area is created/restored and a newly-unchecked one is archived.
+        """
+        job = self.get_job(db, job_id)
+
+        if job.status != ProcessingStatusEnum.PUBLISHED:
+            raise InvalidStateException("This paper has not been published yet - nothing to update.")
+
+        job.set_usage_flags(usage_flags)
+        db.commit()
+        db.refresh(job)
+
+        return self.update_usage_for_paper(db, job.paper_id, usage_flags)
+
+    def update_usage_for_paper(self, db: Session, paper_id: uuid.UUID, usage_flags: list[str]) -> list[dict]:
+        """
+        Changing "Use This Paper For" directly on a Paper - the entry point
+        for a paper that has no PaperProcessingJob at all (created via the
+        generic admin CRUD, or imported before this feature existed) as
+        well as for one that does (update_usage above delegates here after
+        updating the job's own copy of the flags).
+        """
+        paper = paper_service.get_or_404(db, paper_id, "Paper not found")
+
+        paper.set_usage_flags(usage_flags)
+        db.commit()
+        db.refresh(paper)
+
+        return self.apply_usage(db, paper)
 
 
 paper_processing_service = PaperProcessingService()

@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import NotFoundException
@@ -25,6 +26,7 @@ class PaperService(BaseService):
             subject_id=data.subject_id,
             title=data.title,
             year=data.year,
+            paper_type=data.paper_type,
             question_file_id=data.question_file_id,
             question_file_mime_type=data.question_file_mime_type,
             question_file_size=data.question_file_file_size,
@@ -43,7 +45,7 @@ class PaperService(BaseService):
     def get_published_by_id(
         self,
         db: Session,
-        paper_id: int
+        paper_id: uuid.UUID
     ) -> Paper:
 
         paper = self.repository.get_published_by_id(db, paper_id)
@@ -56,7 +58,7 @@ class PaperService(BaseService):
     def get_published_by_subject(
         self,
         db: Session,
-        subject_id: int
+        subject_id: uuid.UUID
     ):
         return self.repository.get_published_by_subject(db, subject_id)
 
@@ -82,9 +84,9 @@ class PaperService(BaseService):
     def get_filtered(
         self,
         db: Session,
-        exam_id: int | None = None,
-        department_id: int | None = None,
-        subject_id: int | None = None,
+        exam_id: uuid.UUID | None = None,
+        department_id: uuid.UUID | None = None,
+        subject_id: uuid.UUID | None = None,
         year: int | None = None,
         has_answer_key: bool | None = None,
         term: str | None = None,
@@ -104,7 +106,7 @@ class PaperService(BaseService):
     def get_published_by_year(
         self,
         db: Session,
-        subject_id: int,
+        subject_id: uuid.UUID,
         year: int
     ) -> Paper:
 

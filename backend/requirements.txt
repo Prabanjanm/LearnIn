@@ -42,6 +42,15 @@ pytesseract==0.3.13
 Pillow==12.3.0
 reportlab==5.0.1
 
+# Gemini OCR - preferred scanned-PDF OCR engine when GEMINI_API_KEY is set
+# (see app/core/gemini_client.py); falls back to pytesseract above otherwise.
+# Pinned to 1.2.0, NOT the latest (2.x) release: google-genai>=1.3.0 requires
+# httpx>=0.28.1, which conflicts with the httpx==0.27.2 pin below (needed for
+# starlette==0.35.1's TestClient). 1.2.0 has no httpx dependency at all and
+# exposes the same genai.Client(...).models.generate_content(...) API used
+# here.
+google-genai==1.2.0
+
 # Google Drive storage (OAuth user credentials, not a service account -
 # see backend/scripts/authorize_google_drive.py)
 google-api-python-client==2.198.0

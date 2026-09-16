@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.orm import Session
 
 from app.common.repositories.base_repository import BaseRepository
@@ -25,7 +26,7 @@ class ExamRepository(BaseRepository):
     def get_published_by_id(
         self,
         db: Session,
-        exam_id: int
+        exam_id: uuid.UUID
     ):
         return (
             db.query(Exam)

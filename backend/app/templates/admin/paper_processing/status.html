@@ -2,7 +2,7 @@
 
 {% block title %}Processing #{{ job.id }} - LearnIn Admin{% endblock %}
 
-{% block css %}<link rel="stylesheet" href="/static/css/paper-processing.css">{% endblock %}
+{% block css %}<link rel="stylesheet" href="/static/css/paper-processing.css?v=5">{% endblock %}
 
 {% block breadcrumb %}
 <span class="admin-breadcrumb-sep">/</span>
@@ -12,6 +12,8 @@
 {% endblock %}
 
 {% block content %}
+{% include "components/ocr_loading_overlay.html" %}
+
 <div class="admin-page-header">
     <div>
         <h1>{{ job.title }} ({{ job.year }})</h1>

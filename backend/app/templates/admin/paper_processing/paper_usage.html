@@ -1,0 +1,64 @@
+{% extends "admin/_layout.html" %}
+
+{% block title %}Usage - {{ paper.title }} - LearnIn Admin{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/paper-processing.css?v=5">{% endblock %}
+
+{% block breadcrumb %}
+<span class="admin-breadcrumb-sep">/</span>
+<a href="{{ base_path }}">Paper Processing</a>
+<span class="admin-breadcrumb-sep">/</span>
+<a href="{{ base_path }}/papers">Papers</a>
+<span class="admin-breadcrumb-sep">/</span>
+<span>{{ paper.title }}</span>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <div>
+        <h1>{{ paper.title }} ({{ paper.year }})</h1>
+        <p class="admin-page-subtitle">
+            {% if paper.subject %}{{ paper.subject.department.exam.name }} / {{ paper.subject.department.name }} / {{ paper.subject.name }}{% endif %}
+            &middot; {{ paper.status.value }}
+        </p>
+    </div>
+    <a class="admin-btn admin-btn-secondary" href="{{ base_path }}/papers">Back to papers</a>
+</div>
+
+{% if error %}<p class="admin-error">{{ error }}</p>{% endif %}
+{% if request.query_params.get('usage_updated') %}
+<div class="admin-toast admin-toast--success">Usage updated.</div>
+{% endif %}
+
+<div class="pp-panel">
+    <h2 class="pp-subheading">Where this paper is available</h2>
+
+    {% if available_at %}
+    <ul class="pp-availability-list">
+        {% for item in available_at %}
+        <li><a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.label }}</a></li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="admin-field-hint">Nothing selected under "Use this paper for" yet.</p>
+    {% endif %}
+
+    <form method="post" action="{{ base_path }}/papers/{{ paper.id }}/usage" class="admin-form">
+        <div class="admin-field">
+            <label>Use this paper for</label>
+            <div class="admin-checkbox-group">
+                {% for value, label in usage_options %}
+                <div class="admin-field--checkbox">
+                    <label>
+                        <input type="checkbox" name="usage_flags" value="{{ value.value }}"
+                            {% if value.value in selected_usage %}checked{% endif %}>
+                        {{ label }}
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <button type="submit" class="admin-btn admin-btn-primary">Update usage</button>
+    </form>
+</div>
+{% endblock %}

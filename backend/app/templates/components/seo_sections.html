@@ -1,0 +1,34 @@
+{#
+    Shared "what is this page" intro (last-updated + 2-4 real paragraphs)
+    and "what's next" outro (heading + text + CTA links) used across every
+    major browsing page - see app/common/utils/seo_copy.py for how the
+    text itself is built from real data server-side. Both macros render
+    nothing if given no paragraphs/heading, so a page with no real data to
+    summarize just skips the section instead of showing an empty box.
+#}
+{% macro render_seo_intro(paragraphs, last_updated=None) %}
+{% if paragraphs %}
+<section class="seo-intro">
+    {% if last_updated %}<p class="seo-updated">Last updated: {{ last_updated }}</p>{% endif %}
+    {% for paragraph in paragraphs %}
+    <p>{{ paragraph }}</p>
+    {% endfor %}
+</section>
+{% endif %}
+{% endmacro %}
+
+{% macro render_seo_outro(heading, text, ctas=[]) %}
+{% if heading %}
+<section class="seo-outro">
+    <h2>{{ heading }}</h2>
+    <p>{{ text }}</p>
+    {% if ctas %}
+    <div class="seo-outro-ctas">
+        {% for cta in ctas %}
+        <a class="btn {% if not loop.first %}btn-secondary{% endif %}" href="{{ cta.url }}">{{ cta.label }}</a>
+        {% endfor %}
+    </div>
+    {% endif %}
+</section>
+{% endif %}
+{% endmacro %}

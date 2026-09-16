@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.orm import Session, selectinload
 
 from app.common.repositories.base_repository import BaseRepository
@@ -25,7 +26,7 @@ class PaperProcessingJobRepository(BaseRepository):
             .all()
         )
 
-    def get_with_questions(self, db: Session, job_id: int):
+    def get_with_questions(self, db: Session, job_id: uuid.UUID):
         return (
             db.query(PaperProcessingJob)
             .options(
@@ -54,7 +55,7 @@ class ExtractedQuestionRepository(BaseRepository):
     def __init__(self):
         super().__init__(ExtractedQuestion)
 
-    def get_for_job(self, db: Session, job_id: int, question_id: int):
+    def get_for_job(self, db: Session, job_id: uuid.UUID, question_id: uuid.UUID):
         return (
             db.query(ExtractedQuestion)
             .options(
@@ -68,7 +69,7 @@ class ExtractedQuestionRepository(BaseRepository):
             .first()
         )
 
-    def list_for_job(self, db: Session, job_id: int):
+    def list_for_job(self, db: Session, job_id: uuid.UUID):
         return (
             db.query(ExtractedQuestion)
             .options(
@@ -80,7 +81,7 @@ class ExtractedQuestionRepository(BaseRepository):
             .all()
         )
 
-    def max_order_index(self, db: Session, job_id: int) -> int:
+    def max_order_index(self, db: Session, job_id: uuid.UUID) -> int:
         rows = (
             db.query(ExtractedQuestion.order_index)
             .filter(ExtractedQuestion.job_id == job_id)
@@ -100,7 +101,7 @@ class ExtractedQuestionImageRepository(BaseRepository):
     def __init__(self):
         super().__init__(ExtractedQuestionImage)
 
-    def get_for_question(self, db: Session, question_id: int, image_id: int):
+    def get_for_question(self, db: Session, question_id: uuid.UUID, image_id: uuid.UUID):
         return (
             db.query(ExtractedQuestionImage)
             .filter(
@@ -110,7 +111,7 @@ class ExtractedQuestionImageRepository(BaseRepository):
             .first()
         )
 
-    def max_order_index(self, db: Session, question_id: int) -> int:
+    def max_order_index(self, db: Session, question_id: uuid.UUID) -> int:
         rows = (
             db.query(ExtractedQuestionImage.order_index)
             .filter(ExtractedQuestionImage.extracted_question_id == question_id)

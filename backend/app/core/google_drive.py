@@ -44,6 +44,20 @@ def resolve_category_folder_id(category: str | None) -> str | None:
     return settings.GOOGLE_DRIVE_FOLDER_ID
 
 
+# Categories whose files are never linked to directly - only downloaded back
+# server-side (by this same service account) by the pipeline that uploaded
+# them. Uploading one of these skips the extra set_public_permission() Drive
+# API call that every other category needs, cutting the upload in half:
+# normally it's two sequential round trips (create, then make public), and
+# for these categories nothing ever needs the public link in the first
+# place.
+NON_PUBLIC_CATEGORIES = {"paper_processing_sources"}
+
+
+def category_is_public(category: str | None) -> bool:
+    return category not in NON_PUBLIC_CATEGORIES
+
+
 @dataclass
 class DriveUploadResult:
     """

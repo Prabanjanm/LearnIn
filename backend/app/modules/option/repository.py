@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.orm import Session
 
 from app.common.repositories.base_repository import BaseRepository
@@ -13,7 +14,7 @@ class OptionRepository(BaseRepository):
     def get_by_question(
         self,
         db: Session,
-        question_id: int
+        question_id: uuid.UUID
     ):
         return (
             db.query(Option)
@@ -25,7 +26,7 @@ class OptionRepository(BaseRepository):
     def exists_by_label(
         self,
         db: Session,
-        question_id: int,
+        question_id: uuid.UUID,
         label: str
     ) -> bool:
         return (

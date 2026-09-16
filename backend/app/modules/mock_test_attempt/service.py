@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.exc import IntegrityError
@@ -20,7 +21,7 @@ class MockTestAttemptService(BaseService):
     def record_attempt(
         self,
         db: Session,
-        mock_test_id: int,
+        mock_test_id: uuid.UUID,
         time_taken_seconds: int | None,
         scored_marks: float,
         total_marks: float,
@@ -28,7 +29,7 @@ class MockTestAttemptService(BaseService):
         incorrect_count: int,
         unanswered_count: int,
         answers: list[dict],
-        student_id: int | None = None,
+        student_id: uuid.UUID | None = None,
         client_token: str | None = None,
     ) -> MockTestAttempt:
         """
@@ -81,7 +82,7 @@ class MockTestAttemptService(BaseService):
     def get_by_student(
         self,
         db: Session,
-        student_id: int,
+        student_id: uuid.UUID,
         limit: int = 20
     ) -> list[MockTestAttempt]:
         return self.repository.get_by_student(db, student_id, limit)
@@ -89,7 +90,7 @@ class MockTestAttemptService(BaseService):
     def get_weak_subjects(
         self,
         db: Session,
-        student_id: int,
+        student_id: uuid.UUID,
         min_answered: int = 3,
         limit: int = 3
     ) -> list[dict]:
@@ -120,7 +121,7 @@ class MockTestAttemptService(BaseService):
     def get_with_answers(
         self,
         db: Session,
-        attempt_id: int
+        attempt_id: uuid.UUID
     ) -> MockTestAttempt:
 
         attempt = self.repository.get_with_answers(db, attempt_id)
@@ -146,9 +147,9 @@ class MockTestSessionService(BaseService):
     def start_or_resume(
         self,
         db: Session,
-        mock_test_id: int,
+        mock_test_id: uuid.UUID,
         client_token: str,
-        student_id: int | None,
+        student_id: uuid.UUID | None,
     ) -> MockTestSession:
         existing = self.repository.get_by_client_token(db, mock_test_id, client_token)
 
@@ -181,7 +182,7 @@ class MockTestSessionService(BaseService):
     def get_session_state(
         self,
         db: Session,
-        mock_test_id: int,
+        mock_test_id: uuid.UUID,
         client_token: str,
     ) -> tuple[dict[int, str], set[int]]:
         """Persisted answers/marks for restoring an active session - used
@@ -204,8 +205,8 @@ class MockTestSessionService(BaseService):
         db: Session,
         mock_test,
         client_token: str,
-        student_id: int | None,
-        question_id: int,
+        student_id: uuid.UUID | None,
+        question_id: uuid.UUID,
         answer: str | None,
         marked: bool,
     ) -> None:
@@ -254,7 +255,7 @@ class MockTestSessionService(BaseService):
     def get_elapsed_seconds(
         self,
         db: Session,
-        mock_test_id: int,
+        mock_test_id: uuid.UUID,
         client_token: str | None,
     ) -> int | None:
         """

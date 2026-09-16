@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import NotFoundException
@@ -38,14 +39,14 @@ class SubjectService(BaseService):
     def get_published_by_department(
         self,
         db: Session,
-        department_id: int
+        department_id: uuid.UUID
     ):
         return self.repository.get_published_by_department(db, department_id)
 
     def get_published_by_slug(
         self,
         db: Session,
-        department_id: int,
+        department_id: uuid.UUID,
         slug: str
     ) -> Subject:
 
@@ -59,8 +60,8 @@ class SubjectService(BaseService):
     def get_filtered(
         self,
         db: Session,
-        exam_id: int | None = None,
-        department_id: int | None = None,
+        exam_id: uuid.UUID | None = None,
+        department_id: uuid.UUID | None = None,
         term: str | None = None,
         page: int = 1,
         page_size: int = 24,

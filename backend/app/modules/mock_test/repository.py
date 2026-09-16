@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
@@ -18,7 +19,7 @@ class MockTestRepository(BaseRepository):
     def get_by_paper(
         self,
         db: Session,
-        paper_id: int
+        paper_id: uuid.UUID
     ):
         return (
             db.query(MockTest)
@@ -27,10 +28,27 @@ class MockTestRepository(BaseRepository):
             .all()
         )
 
+    def get_by_paper_and_title(
+        self,
+        db: Session,
+        paper_id: uuid.UUID,
+        title: str,
+    ):
+        """Idempotency lookup for the Paper Processing "Use as Mock Test"
+        automation (see paper_processing/service.py apply_usage) - the
+        auto-created mock test for a given paper always uses the same
+        title convention, so re-applying that usage flag finds and reuses
+        it instead of creating a second one."""
+        return (
+            db.query(MockTest)
+            .filter(MockTest.paper_id == paper_id, MockTest.title == title)
+            .first()
+        )
+
     def get_published_by_paper(
         self,
         db: Session,
-        paper_id: int
+        paper_id: uuid.UUID
     ):
         return (
             db.query(MockTest)
@@ -45,7 +63,7 @@ class MockTestRepository(BaseRepository):
     def get_published_by_id(
         self,
         db: Session,
-        mock_test_id: int
+        mock_test_id: uuid.UUID
     ):
         return (
             db.query(MockTest)
@@ -98,9 +116,9 @@ class MockTestRepository(BaseRepository):
     def get_filtered(
         self,
         db: Session,
-        exam_id: int | None = None,
-        department_id: int | None = None,
-        subject_id: int | None = None,
+        exam_id: uuid.UUID | None = None,
+        department_id: uuid.UUID | None = None,
+        subject_id: uuid.UUID | None = None,
         term: str | None = None,
         page: int = 1,
         page_size: int = 20,

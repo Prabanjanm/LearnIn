@@ -6,8 +6,11 @@ from app.common.utils.drive_urls import drive_thumbnail_url, drive_view_url
 from app.core.enums import (
     ExtractionConfidenceEnum,
     ImageSourceType,
+    PaperTypeEnum,
+    PaperUsageEnum,
     PdfTypeEnum,
     ProcessingStatusEnum,
+    QuestionType,
     WatermarkStatusEnum,
 )
 
@@ -16,6 +19,8 @@ class PaperProcessingJobCreate(BaseModel):
     subject_id: uuid.UUID
     title: str = Field(min_length=1, max_length=255)
     year: int = Field(ge=1900, le=2200)
+    paper_type: PaperTypeEnum | None = None
+    usage_flags: list[PaperUsageEnum] = []
     source_url: str | None = Field(default=None, max_length=1000)
     source_notes: str | None = None
 
@@ -96,6 +101,9 @@ class ExtractedQuestionResponse(BaseModel):
     confidence: ExtractionConfidenceEnum
     needs_review: bool
     correct_answer: str | None = None
+    question_type: QuestionType | None = None
+    marks: float | None = None
+    negative_marks: float | None = None
     options: list[ExtractedOptionResponse] = []
     images: list[ExtractedQuestionImageResponse] = []
 
@@ -116,6 +124,13 @@ class PaperProcessingJobStatusResponse(BaseModel):
     paper_id: uuid.UUID | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UsageUpdateRequest(BaseModel):
+    """Changing "Use This Paper For" after publish - re-applied immediately
+    by PaperProcessingService.apply_usage (create newly-selected areas,
+    archive ones no longer selected)."""
+    usage_flags: list[PaperUsageEnum] = []
 
 
 class MergeRequest(BaseModel):

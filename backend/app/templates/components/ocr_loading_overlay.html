@@ -1,0 +1,32 @@
+{#
+    Full-screen blurred overlay shown while a Paper Processing job is
+    running - the branded logo (frame-cycled the same way as
+    components/page_loader.html) next to a looping "Learn" -> "LearnIn"
+    wordmark. See app/static/js/components/paper-processing.js's
+    initOcrOverlay() for the show()/hide() lifecycle and frame-cycling, and
+    .pp-ocr-overlay in paper-processing.css for the animation itself.
+
+    `is_busy` (optional): when true, renders visible - used on status.html,
+    which already knows whether the job is running. Omitted (or false) on
+    new.html, where it starts hidden and JS shows it the instant the upload
+    form submits, to bridge the gap before the status page even loads.
+#}
+<div class="pp-ocr-overlay" data-pp-ocr-overlay {% if not (is_busy is defined and is_busy) %}hidden{% endif %} aria-hidden="true">
+    <div class="pp-ocr-overlay-panel">
+        <span class="pp-ocr-overlay-logo-wrap">
+            <img class="pp-ocr-overlay-logo" data-pp-ocr-overlay-logo src="/static/img/brand/loader-idle.webp" alt="">
+        </span>
+        <div class="pp-ocr-wordmark">
+            <span class="pp-ocr-letter" style="--i:0">L</span>
+            <span class="pp-ocr-letter" style="--i:1">e</span>
+            <span class="pp-ocr-letter" style="--i:2">a</span>
+            <span class="pp-ocr-letter" style="--i:3">r</span>
+            <span class="pp-ocr-letter" style="--i:4">n</span>
+            <span class="pp-ocr-letter pp-ocr-letter--badge" style="--i:5">
+                <span class="pp-ocr-badge-icon"></span>
+                <span class="pp-ocr-badge-text">In</span>
+            </span>
+        </div>
+        <p class="pp-ocr-overlay-caption">Processing your paper&hellip; this can take a moment for scanned pages.</p>
+    </div>
+</div>

@@ -3,7 +3,7 @@ import uuid
 from pydantic import BaseModel, ConfigDict, computed_field
 
 from app.common.utils.drive_urls import drive_download_url, drive_view_url
-from app.core.enums import StatusEnum
+from app.core.enums import PaperTypeEnum, StatusEnum
 
 
 class PaperBase(BaseModel):
@@ -13,6 +13,7 @@ class PaperBase(BaseModel):
 
 class PaperCreate(PaperBase):
     subject_id: uuid.UUID
+    paper_type: PaperTypeEnum | None = None
     question_file_id: str
     question_file_mime_type: str | None = None
     # Note: the admin CRUD engine's generic upload-field expansion
@@ -38,6 +39,7 @@ class PaperUpdate(BaseModel):
     subject_id: uuid.UUID | None = None
     title: str | None = None
     year: int | None = None
+    paper_type: PaperTypeEnum | None = None
     question_file_id: str | None = None
     question_file_mime_type: str | None = None
     question_file_file_size: int | None = None
@@ -55,6 +57,7 @@ class PaperResponse(PaperBase):
 
     id: uuid.UUID
     subject_id: uuid.UUID
+    paper_type: PaperTypeEnum | None = None
     question_file_id: str
     question_filename: str | None = None
     answer_file_id: str | None = None

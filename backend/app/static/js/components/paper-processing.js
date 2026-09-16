@@ -79,9 +79,119 @@ async function ppRequest(url, options = {}) {
     return response.json();
 }
 
+/* ------------------------------------------------------- OCR overlay -- */
+/*
+    Full-screen blurred overlay with the branded logo + a looping "Learn"
+    -> "In" wordmark (markup: components/ocr_loading_overlay.html, styling:
+    .pp-ocr-overlay in paper-processing.css). Shown either server-rendered
+    (status.html, while is_busy) or by initNewJobForm() the instant the
+    upload form submits. The logo frame-cycles exactly like the site's
+    branded page-loader (app.js) - same five expression frames, same
+    setInterval technique.
+*/
+
+const PP_OCR_LOGO_FRAMES = ["idle", "blink", "wink", "tilt", "return"];
+
+function initOcrOverlay() {
+    const overlay = document.querySelector("[data-pp-ocr-overlay]");
+    if (!overlay) {
+        return { show() {}, hide() {} };
+    }
+
+    const logo = overlay.querySelector("[data-pp-ocr-overlay-logo]");
+    let frameTimer = null;
+
+    function startFrameCycle() {
+        if (frameTimer || !logo) {
+            return;
+        }
+        let frameIndex = 0;
+        frameTimer = setInterval(() => {
+            frameIndex = (frameIndex + 1) % PP_OCR_LOGO_FRAMES.length;
+            logo.src = `/static/img/brand/loader-${PP_OCR_LOGO_FRAMES[frameIndex]}.webp`;
+        }, 500);
+    }
+
+    function stopFrameCycle() {
+        if (frameTimer) {
+            clearInterval(frameTimer);
+            frameTimer = null;
+        }
+    }
+
+    if (!overlay.hidden) {
+        startFrameCycle();
+    }
+
+    return {
+        show() {
+            overlay.hidden = false;
+            startFrameCycle();
+        },
+        hide() {
+            overlay.hidden = true;
+            stopFrameCycle();
+        },
+    };
+}
+
+/* Guards the "Step 1" upload form against a second submit while the first
+   is still in flight - the button disables synchronously in this same
+   event, before the browser can process a second click, and also shows
+   the OCR overlay right away (it stays up across the redirect to the
+   status page, which renders it again server-side while the job is busy). */
+function initNewJobForm(overlay) {
+    const form = document.getElementById("paper-processing-form");
+    if (!form) {
+        return;
+    }
+
+    let submitting = false;
+    form.addEventListener("submit", (event) => {
+        if (submitting) {
+            event.preventDefault();
+            return;
+        }
+        submitting = true;
+        overlay.show();
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+        }
+    });
+}
+
+/* Guards the review screen's "Save review and continue" against a double
+   submit - the button appears twice (top of the page and under the question
+   list, both wired to the one form via the `form=""` attribute), so both
+   copies are disabled together the instant either is clicked. A failed save
+   redirects back to this same page with a fresh, enabled button; a
+   successful one navigates away entirely - either way there is no need to
+   re-enable it by hand. */
+function initReviewSaveForm() {
+    const form = document.getElementById("pp-save-review-form");
+    if (!form) {
+        return;
+    }
+
+    const buttons = document.querySelectorAll('[data-pp-save-review]');
+
+    let submitting = false;
+    form.addEventListener("submit", (event) => {
+        if (submitting) {
+            event.preventDefault();
+            return;
+        }
+        submitting = true;
+        buttons.forEach((button) => {
+            button.disabled = true;
+        });
+    });
+}
+
 /* ------------------------------------------------------ status polling -- */
 
-function initStatusPolling() {
+function initStatusPolling(overlay) {
     const panel = document.querySelector("[data-pp-status]");
     if (!panel) {
         return;
@@ -122,6 +232,7 @@ function initStatusPolling() {
             if (spinner) {
                 spinner.remove();
             }
+            overlay.hide();
             if (data.status === "READY_FOR_REVIEW" && reviewUrl) {
                 window.location.href = reviewUrl;
             } else {
@@ -425,6 +536,9 @@ function initReview() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    initStatusPolling();
+    const overlay = initOcrOverlay();
+    initStatusPolling(overlay);
+    initNewJobForm(overlay);
     initReview();
+    initReviewSaveForm();
 });

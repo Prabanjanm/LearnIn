@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy import case, func
 from sqlalchemy.orm import Session, selectinload
 
@@ -19,7 +20,7 @@ class MockTestAttemptRepository(BaseRepository):
     def get_by_student(
         self,
         db: Session,
-        student_id: int,
+        student_id: uuid.UUID,
         limit: int = 20
     ):
         return (
@@ -40,7 +41,7 @@ class MockTestAttemptRepository(BaseRepository):
     def get_subject_accuracy(
         self,
         db: Session,
-        student_id: int
+        student_id: uuid.UUID
     ):
         """
         Per-subject correct/incorrect counts across every graded answer
@@ -69,7 +70,7 @@ class MockTestAttemptRepository(BaseRepository):
     def get_by_client_token(
         self,
         db: Session,
-        mock_test_id: int,
+        mock_test_id: uuid.UUID,
         client_token: str
     ):
         return (
@@ -84,7 +85,7 @@ class MockTestAttemptRepository(BaseRepository):
     def get_with_answers(
         self,
         db: Session,
-        attempt_id: int
+        attempt_id: uuid.UUID
     ):
         return (
             db.query(MockTestAttempt)
@@ -105,7 +106,7 @@ class MockTestSessionRepository(BaseRepository):
     def get_by_client_token(
         self,
         db: Session,
-        mock_test_id: int,
+        mock_test_id: uuid.UUID,
         client_token: str
     ):
         return (
@@ -120,7 +121,7 @@ class MockTestSessionRepository(BaseRepository):
     def get_with_answers(
         self,
         db: Session,
-        mock_test_id: int,
+        mock_test_id: uuid.UUID,
         client_token: str
     ):
         return (
@@ -136,8 +137,8 @@ class MockTestSessionRepository(BaseRepository):
     def upsert_answer(
         self,
         db: Session,
-        session_id: int,
-        question_id: int,
+        session_id: uuid.UUID,
+        question_id: uuid.UUID,
         selected_answer: str | None,
         is_marked: bool,
     ) -> MockTestSessionAnswer:

@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
@@ -17,7 +18,7 @@ class PaperRepository(BaseRepository):
     def get_published_by_subject(
         self,
         db: Session,
-        subject_id: int
+        subject_id: uuid.UUID
     ):
         return (
             db.query(Paper)
@@ -32,7 +33,7 @@ class PaperRepository(BaseRepository):
     def get_published_by_id(
         self,
         db: Session,
-        paper_id: int
+        paper_id: uuid.UUID
     ):
         return (
             db.query(Paper)
@@ -43,10 +44,42 @@ class PaperRepository(BaseRepository):
             .first()
         )
 
+    def list_all_with_hierarchy(self, db: Session):
+        """Every paper regardless of status, with its subject/department/
+        exam eager-loaded - powers the Paper Processing "manage usage"
+        list, which must cover papers created outside this pipeline too
+        (generic admin CRUD, an older import), not only ones with a job."""
+        return (
+            db.query(Paper)
+            .options(
+                selectinload(Paper.subject)
+                .selectinload(Subject.department)
+                .selectinload(Department.exam)
+            )
+            .order_by(Paper.created_at.desc())
+            .all()
+        )
+
+    def get_by_subject_and_year(
+        self,
+        db: Session,
+        subject_id: uuid.UUID,
+        year: int
+    ):
+        """Any status, not just PUBLISHED - the duplicate-prevention check
+        in Paper Processing's "new job" form must catch an existing DRAFT
+        paper too, not just a live one (uq_subject_year covers every
+        status)."""
+        return (
+            db.query(Paper)
+            .filter(Paper.subject_id == subject_id, Paper.year == year)
+            .first()
+        )
+
     def get_published_by_year(
         self,
         db: Session,
-        subject_id: int,
+        subject_id: uuid.UUID,
         year: int
     ):
         return (
@@ -84,9 +117,9 @@ class PaperRepository(BaseRepository):
     def get_filtered(
         self,
         db: Session,
-        exam_id: int | None = None,
-        department_id: int | None = None,
-        subject_id: int | None = None,
+        exam_id: uuid.UUID | None = None,
+        department_id: uuid.UUID | None = None,
+        subject_id: uuid.UUID | None = None,
         year: int | None = None,
         has_answer_key: bool | None = None,
         term: str | None = None,

@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
@@ -27,21 +28,21 @@ class MockTestService(BaseService):
     def get_by_paper(
         self,
         db: Session,
-        paper_id: int
+        paper_id: uuid.UUID
     ):
         return self.repository.get_by_paper(db, paper_id)
 
     def get_published_by_paper(
         self,
         db: Session,
-        paper_id: int
+        paper_id: uuid.UUID
     ):
         return self.repository.get_published_by_paper(db, paper_id)
 
     def get_published_by_id(
         self,
         db: Session,
-        mock_test_id: int
+        mock_test_id: uuid.UUID
     ) -> MockTest:
 
         mock_test = self.repository.get_published_by_id(db, mock_test_id)
@@ -73,9 +74,9 @@ class MockTestService(BaseService):
     def get_filtered(
         self,
         db: Session,
-        exam_id: int | None = None,
-        department_id: int | None = None,
-        subject_id: int | None = None,
+        exam_id: uuid.UUID | None = None,
+        department_id: uuid.UUID | None = None,
+        subject_id: uuid.UUID | None = None,
         term: str | None = None,
         page: int = 1,
         page_size: int = 20,
@@ -85,7 +86,7 @@ class MockTestService(BaseService):
     def get_questions_for_taking(
         self,
         db: Session,
-        mock_test_id: int
+        mock_test_id: uuid.UUID
     ) -> list:
         """
         Ordered question list for a student taking this mock test - the
@@ -103,9 +104,9 @@ class MockTestService(BaseService):
     def start_session(
         self,
         db: Session,
-        mock_test_id: int,
+        mock_test_id: uuid.UUID,
         client_token: str,
-        student_id: int | None = None,
+        student_id: uuid.UUID | None = None,
     ) -> MockTestStartResponse:
         """
         Establishes (or resumes) the server-authoritative clock for one
@@ -153,10 +154,10 @@ class MockTestService(BaseService):
     def save_answer(
         self,
         db: Session,
-        mock_test_id: int,
+        mock_test_id: uuid.UUID,
         client_token: str,
-        student_id: int | None,
-        question_id: int,
+        student_id: uuid.UUID | None,
+        question_id: uuid.UUID,
         answer: str,
         marked: bool,
     ) -> None:
@@ -170,9 +171,9 @@ class MockTestService(BaseService):
     def submit_attempt(
         self,
         db: Session,
-        mock_test_id: int,
+        mock_test_id: uuid.UUID,
         answers: list[MockTestSubmitAnswer],
-        student_id: int | None = None,
+        student_id: uuid.UUID | None = None,
         client_token: str | None = None,
     ) -> MockTestSubmitResponse:
         """

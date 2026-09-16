@@ -3,7 +3,7 @@
 
 {% block title %}New Processing Job - LearnIn Admin{% endblock %}
 
-{% block css %}<link rel="stylesheet" href="/static/css/paper-processing.css">{% endblock %}
+{% block css %}<link rel="stylesheet" href="/static/css/paper-processing.css?v=5">{% endblock %}
 
 {% block breadcrumb %}
 <span class="admin-breadcrumb-sep">/</span>
@@ -13,9 +13,11 @@
 {% endblock %}
 
 {% block content %}
+{% include "components/ocr_loading_overlay.html" %}
+
 <div class="admin-page-header">
     <div>
-        <h1>Step 1 - Upload the source paper</h1>
+        <h1>Step 1 - Where does this paper belong?</h1>
         <p class="admin-page-subtitle">
             Nothing is saved to the live question bank at this step. The PDF is
             validated, cleaned and read, then you review every question by hand
@@ -29,20 +31,28 @@
 <p class="admin-error">{{ error }}</p>
 {% endif %}
 
-<form method="post" action="{{ base_path }}/new" class="admin-form" enctype="multipart/form-data">
+<form method="post" action="{{ base_path }}/new" class="admin-form" enctype="multipart/form-data" id="paper-processing-form">
 
     <div class="admin-field">
-        <label for="subject_id">Subject *</label>
-        <select id="subject_id" name="subject_id" required>
-            <option value="">Select a subject...</option>
-            {% for subject in subjects %}
-            <option value="{{ subject.id }}">
-                {{ subject.name }}
-                {%- if subject.department %} - {{ subject.department.name }}{% endif %}
-                (#{{ subject.id }})
-            </option>
-            {% endfor %}
+        <label for="exam_id">Exam *</label>
+        <select id="exam_id" name="exam_id" required>
+            <option value="">Select an exam...</option>
         </select>
+    </div>
+
+    <div class="admin-field">
+        <label for="department_id">Department / Discipline *</label>
+        <select id="department_id" name="department_id" required disabled>
+            <option value="">Select an exam first...</option>
+        </select>
+    </div>
+
+    <div class="admin-field">
+        <label>Subject(s) *</label>
+        <p class="admin-field-hint">Select every subject this paper contains questions from - one Paper is created per subject.</p>
+        <div id="subject_checkboxes" class="admin-checkbox-group">
+            <p class="admin-field-hint">Select a department first...</p>
+        </div>
     </div>
 
     <div class="admin-field">
@@ -51,8 +61,22 @@
     </div>
 
     <div class="admin-field">
-        <label for="year">Year *</label>
+        <label for="year">Exam year *</label>
         <input type="number" id="year" name="year" required min="1900" max="2200">
+    </div>
+
+    <div class="admin-field">
+        <label>Paper type *</label>
+        <div class="admin-checkbox-group">
+            {% for pt in paper_types %}
+            <div class="admin-field--checkbox">
+                <label>
+                    <input type="radio" name="paper_type" value="{{ pt.value }}" {% if loop.first %}checked{% endif %}>
+                    {{ pt.value.replace("_", " ").title() }}
+                </label>
+            </div>
+            {% endfor %}
+        </div>
     </div>
 
     {{ render_upload_field({
@@ -65,11 +89,33 @@
 
     {{ render_upload_field({
         "name": "answer_file_id",
-        "label": "Answer key PDF (optional - stored as-is, never parsed)",
+        "label": "Answer key PDF (optional)",
         "category": "paper_processing_sources",
         "accept": ".pdf",
         "required": False,
     }) }}
+    <p class="admin-field-hint">
+        If it's a table with Q.No / Session / Q.Type / Section / Key-or-Range / Marks columns
+        (the standard GATE answer-key format), it's parsed automatically and used to fill in
+        each question's type, marks and correct answer - review and adjust anything on the
+        review screen afterward.
+    </p>
+
+    <div class="admin-field">
+        <label>Use this paper for *</label>
+        <p class="admin-field-hint">Determines where the paper appears once it's published.</p>
+        <div class="admin-checkbox-group">
+            {% for value, label in usage_options %}
+            <div class="admin-field--checkbox">
+                <label>
+                    <input type="checkbox" name="usage_flags" value="{{ value.value }}"
+                        {% if value.value in ("PREVIOUS_YEAR_PAPERS", "PRACTICE", "MOCK_TEST") %}checked{% endif %}>
+                    {{ label }}
+                </label>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
 
     <div class="admin-field">
         <label for="source_url">Source URL (where this PDF was collected from)</label>
@@ -110,4 +156,75 @@
 
     <button type="submit" class="admin-btn admin-btn-primary">Upload and start processing</button>
 </form>
+{% endblock %}
+
+{% block js %}
+<script src="/static/js/components/paper-processing.js"></script>
+<script>
+(function () {
+    var EXAM_TREE = {{ exam_tree_json | safe }};
+
+    var examSelect = document.getElementById("exam_id");
+    var departmentSelect = document.getElementById("department_id");
+    var subjectContainer = document.getElementById("subject_checkboxes");
+
+    EXAM_TREE.forEach(function (exam) {
+        var option = document.createElement("option");
+        option.value = exam.id;
+        option.textContent = exam.name;
+        examSelect.appendChild(option);
+    });
+
+    function renderDepartments(examId) {
+        departmentSelect.innerHTML = "";
+        var exam = EXAM_TREE.find(function (e) { return String(e.id) === String(examId); });
+
+        if (!exam || !exam.departments.length) {
+            departmentSelect.innerHTML = '<option value="">No departments for this exam yet</option>';
+            departmentSelect.disabled = true;
+            renderSubjects(null);
+            return;
+        }
+
+        departmentSelect.disabled = false;
+        departmentSelect.innerHTML = '<option value="">Select a department...</option>';
+        exam.departments.forEach(function (dept) {
+            var option = document.createElement("option");
+            option.value = dept.id;
+            option.textContent = dept.name;
+            departmentSelect.appendChild(option);
+        });
+        renderSubjects(null);
+    }
+
+    function renderSubjects(departmentId) {
+        subjectContainer.innerHTML = "";
+
+        if (!departmentId) {
+            subjectContainer.innerHTML = '<p class="admin-field-hint">Select a department first...</p>';
+            return;
+        }
+
+        var exam = EXAM_TREE.find(function (e) { return String(e.id) === String(examSelect.value); });
+        var department = exam && exam.departments.find(function (d) { return String(d.id) === String(departmentId); });
+
+        if (!department || !department.subjects.length) {
+            subjectContainer.innerHTML = '<p class="admin-field-hint">No subjects for this department yet.</p>';
+            return;
+        }
+
+        department.subjects.forEach(function (subject) {
+            var row = document.createElement("div");
+            row.className = "admin-field--checkbox";
+            row.innerHTML = '<label><input type="checkbox" name="subject_ids" value="' + subject.id + '"> ' + subject.name + '</label>';
+            subjectContainer.appendChild(row);
+        });
+    }
+
+    examSelect.addEventListener("change", function () { renderDepartments(examSelect.value); });
+    departmentSelect.addEventListener("change", function () { renderSubjects(departmentSelect.value); });
+
+    renderDepartments(null);
+})();
+</script>
 {% endblock %}

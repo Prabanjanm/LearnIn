@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
@@ -15,7 +16,7 @@ class MockTestQuestionRepository(BaseRepository):
     def get_by_mock_test(
         self,
         db: Session,
-        mock_test_id: int
+        mock_test_id: uuid.UUID
     ):
         return (
             db.query(MockTestQuestion)
@@ -28,8 +29,8 @@ class MockTestQuestionRepository(BaseRepository):
     def exists_link(
         self,
         db: Session,
-        mock_test_id: int,
-        question_id: int
+        mock_test_id: uuid.UUID,
+        question_id: uuid.UUID
     ) -> bool:
         return (
             db.query(MockTestQuestion)
@@ -44,7 +45,7 @@ class MockTestQuestionRepository(BaseRepository):
     def get_max_order(
         self,
         db: Session,
-        mock_test_id: int
+        mock_test_id: uuid.UUID
     ) -> int:
         return (
             db.query(func.max(MockTestQuestion.question_order))

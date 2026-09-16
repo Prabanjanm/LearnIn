@@ -98,6 +98,12 @@ def drive(monkeypatch):
     return fake
 
 
+# subject_id -> (exam_id, department_id), so _create_job can build the new
+# hierarchy-validated "new job" form without every call site needing to
+# thread exam/department ids through as well.
+_SUBJECT_HIERARCHY: dict[uuid.UUID, tuple[uuid.UUID, uuid.UUID]] = {}
+
+
 def _make_subject(admin_auth_headers, suffix: str) -> uuid.UUID:
     exam = client.post(
         "/api/exams/",
@@ -117,7 +123,10 @@ def _make_subject(admin_auth_headers, suffix: str) -> uuid.UUID:
         headers=admin_auth_headers,
     ).json()
 
-    return uuid.UUID(subject["id"])
+    subject_id = uuid.UUID(subject["id"])
+    _SUBJECT_HIERARCHY[subject_id] = (uuid.UUID(exam["id"]), uuid.UUID(department["id"]))
+
+    return subject_id
 
 
 def _upload_blob(file_id: str, filename="source.pdf") -> str:
@@ -137,6 +146,7 @@ def _create_job(
     content: bytes,
     title="GATE CSE",
     year=2024,
+    usage_flags=("PREVIOUS_YEAR_PAPERS", "PRACTICE", "MOCK_TEST"),
 ) -> uuid.UUID:
     """Posts the real step-1 form, with the background task stubbed out."""
     started: list[str] = []
@@ -146,13 +156,18 @@ def _create_job(
     )
 
     source_id = drive.seed(content)
+    exam_id, department_id = _SUBJECT_HIERARCHY[subject_id]
 
     response = client.post(
         f"{UI}/new",
         data={
-            "subject_id": str(subject_id),
+            "exam_id": str(exam_id),
+            "department_id": str(department_id),
+            "subject_ids": [str(subject_id)],
             "title": title,
             "year": str(year),
+            "paper_type": "PREVIOUS_YEAR",
+            "usage_flags": list(usage_flags),
             "original_file_id": _upload_blob(source_id),
             "answer_file_id": "",
             "source_url": "https://example.com/paper.pdf",
@@ -162,7 +177,7 @@ def _create_job(
         follow_redirects=False,
     )
 
-    assert response.status_code == 303
+    assert response.status_code == 303, response.text
     job_id_str = response.headers["location"].rsplit("/", 1)[1]
     job_id = uuid.UUID(job_id_str)
 
@@ -222,6 +237,12 @@ def test_validation_failure_is_reported_without_a_traceback(
 def test_scanned_pdf_fails_cleanly_when_ocr_engine_is_unavailable(
     admin_auth_headers, drive, db_session, monkeypatch
 ):
+    # This test is specifically about the pytesseract path - force it even
+    # though a real GEMINI_API_KEY is present in this environment's .env
+    # (extraction.py prefers Gemini whenever a key is configured).
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", None)
+
     subject_id = _make_subject(admin_auth_headers, "C")
     job_id = _create_job(
         admin_auth_headers, drive, monkeypatch, subject_id, scanned_pdf(page_count=2)
@@ -295,6 +316,46 @@ def test_stop_button_halts_the_pipeline_at_the_next_checkpoint(
     assert job.questions_extracted == 0
 
 
+def test_a_stop_requested_after_questions_are_detected_still_saves_them(
+    admin_auth_headers, drive, db_session, monkeypatch
+):
+    """
+    A cancellation that lands *after* question detection has already
+    produced real, parsed questions must not throw them away - visual
+    detection (the slowest stage on a long paper) is the only thing that
+    gets cut short. This is the fix for "cancel loses everything even
+    though questions were already detected".
+    """
+    subject_id = _make_subject(admin_auth_headers, "L2")
+    job_id = _create_job(
+        admin_auth_headers, drive, monkeypatch, subject_id, sample_paper_pdf()
+    )
+
+    # False for every _checkpoint() call before question detection, True
+    # from then on - simulates an admin clicking Stop while the (slow)
+    # visuals pass is running, well after questions were already parsed.
+    calls = {"n": 0}
+    real_is_cancel_requested = paper_processing_service.is_cancel_requested
+
+    def fake_is_cancel_requested(db, job):
+        calls["n"] += 1
+        return calls["n"] > 5
+
+    monkeypatch.setattr(paper_processing_service, "is_cancel_requested", fake_is_cancel_requested)
+
+    run_pipeline(db_session, job_id)
+
+    job = paper_processing_service.get_job(db_session, job_id)
+    assert job.status == ProcessingStatusEnum.READY_FOR_REVIEW
+    assert "stopped as requested" in job.error_message.lower()
+    assert job.questions_extracted == 4
+
+    questions = paper_processing_service._questions.list_for_job(db_session, job_id)
+    assert len(questions) == 4
+
+    monkeypatch.setattr(paper_processing_service, "is_cancel_requested", real_is_cancel_requested)
+
+
 def test_stop_is_a_no_op_once_the_job_already_finished(
     admin_auth_headers, drive, db_session, monkeypatch
 ):
@@ -314,6 +375,11 @@ def test_stop_is_a_no_op_once_the_job_already_finished(
 def test_scanned_pdf_succeeds_when_ocr_is_available(
     admin_auth_headers, drive, db_session, monkeypatch
 ):
+    # This test is specifically about the pytesseract path - see the
+    # matching note in test_scanned_pdf_fails_cleanly_when_ocr_engine_is_unavailable.
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", None)
+
     subject_id = _make_subject(admin_auth_headers, "D")
     job_id = _create_job(
         admin_auth_headers, drive, monkeypatch, subject_id, scanned_pdf(page_count=1)

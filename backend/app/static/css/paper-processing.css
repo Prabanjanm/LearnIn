@@ -13,6 +13,25 @@
     margin-bottom: 20px;
 }
 
+.pp-answer-key {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+}
+
+.pp-answer-key summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    color: #111827;
+}
+
+.pp-answer-key form {
+    margin-top: 14px;
+}
+
 .pp-status-row {
     display: flex;
     align-items: center;
@@ -100,6 +119,16 @@
 .pp-actions form { margin: 0; }
 
 .pp-subheading { margin: 28px 0 12px; font-size: 16px; }
+
+.pp-availability-list {
+    margin: 0 0 16px;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pp-availability-list li { font-size: 14px; }
 
 /* ------------------------------------------------------------- review -- */
 
@@ -253,3 +282,124 @@
 .pp-final-options { margin: 0 0 8px 18px; padding: 0; font-size: 14px; line-height: 1.6; }
 
 .pp-final-answer { margin: 0; font-size: 12px; color: #6b7280; font-style: italic; }
+
+/* --------------------------------------------------- OCR loading overlay -- */
+/*
+    Shown while a job is running (see components/ocr_loading_overlay.html and
+    paper-processing.js's initOcrOverlay()). The logo frame-cycles exactly
+    like .page-loader-logo in animations.css; the "Learn"/"In" wordmark loops
+    on a single shared CSS animation timeline - no JS timer needed for that
+    part.
+*/
+
+.pp-ocr-overlay {
+    /* Scoped to .admin-main (position:relative in admin.css), not the whole
+       viewport - the sidebar and topbar stay visible/unblurred, only this
+       module's own content area blurs. */
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.pp-ocr-overlay[hidden] { display: none; }
+
+.pp-ocr-overlay-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 32px 44px;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    max-width: 90vw;
+}
+
+.pp-ocr-overlay-logo-wrap { display: flex; }
+
+.pp-ocr-overlay-logo {
+    width: 56px;
+    height: 56px;
+    animation: pp-ocr-logo-pulse 1.4s ease-in-out infinite;
+}
+
+.pp-ocr-wordmark {
+    display: flex;
+    align-items: center;
+    font-family: var(--font-heading, inherit);
+    font-size: 28px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.pp-ocr-letter {
+    opacity: 0;
+    transform: translateY(6px);
+    animation: pp-ocr-letter-in 3.2s ease-in-out infinite;
+    animation-delay: calc(var(--i) * 0.12s);
+}
+
+.pp-ocr-letter--badge { display: inline-flex; align-items: center; gap: 4px; }
+
+.pp-ocr-badge-icon {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #4338ca;
+    display: inline-block;
+    animation: pp-ocr-badge-spin 3.2s ease-in-out infinite;
+    animation-delay: calc(var(--i) * 0.12s);
+}
+
+.pp-ocr-badge-text {
+    opacity: 0;
+    animation: pp-ocr-badge-text-in 3.2s ease-in-out infinite;
+    animation-delay: calc(var(--i) * 0.12s + 0.25s);
+}
+
+.pp-ocr-overlay-caption {
+    margin: 0;
+    font-size: 13px;
+    color: #6b7280;
+    text-align: center;
+}
+
+@keyframes pp-ocr-logo-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+}
+
+@keyframes pp-ocr-letter-in {
+    0% { opacity: 0; transform: translateY(6px); }
+    8%, 82% { opacity: 1; transform: translateY(0); }
+    92%, 100% { opacity: 0; transform: translateY(-4px); }
+}
+
+@keyframes pp-ocr-badge-spin {
+    0%, 8% { transform: rotate(0deg); }
+    18% { transform: rotate(360deg); }
+    82%, 100% { transform: rotate(360deg); }
+}
+
+@keyframes pp-ocr-badge-text-in {
+    0%, 20% { opacity: 0; }
+    28%, 82% { opacity: 1; }
+    92%, 100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pp-ocr-overlay-logo,
+    .pp-ocr-letter,
+    .pp-ocr-badge-icon,
+    .pp-ocr-badge-text {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+}

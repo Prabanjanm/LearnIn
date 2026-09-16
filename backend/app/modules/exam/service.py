@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import NotFoundException
@@ -45,7 +46,7 @@ class ExamService(BaseService):
     def get_published_by_id(
         self,
         db: Session,
-        exam_id: int
+        exam_id: uuid.UUID
     ) -> Exam:
 
         exam = self.repository.get_published_by_id(db, exam_id)

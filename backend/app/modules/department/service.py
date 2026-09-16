@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import NotFoundException
@@ -39,14 +40,14 @@ class DepartmentService(BaseService):
     def get_published_by_exam(
         self,
         db: Session,
-        exam_id: int
+        exam_id: uuid.UUID
     ):
         return self.repository.get_published_by_exam(db, exam_id)
 
     def get_published_by_slug(
         self,
         db: Session,
-        exam_id: int,
+        exam_id: uuid.UUID,
         slug: str
     ) -> Department:
 

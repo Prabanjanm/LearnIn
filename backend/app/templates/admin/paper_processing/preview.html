@@ -2,7 +2,7 @@
 
 {% block title %}Preview #{{ job.id }} - LearnIn Admin{% endblock %}
 
-{% block css %}<link rel="stylesheet" href="/static/css/paper-processing.css">{% endblock %}
+{% block css %}<link rel="stylesheet" href="/static/css/paper-processing.css?v=5">{% endblock %}
 
 {% block breadcrumb %}
 <span class="admin-breadcrumb-sep">/</span>
@@ -33,6 +33,57 @@
 </div>
 {% endif %}
 
+{% if request.query_params.get('live') %}
+<div class="admin-toast admin-toast--success">This paper is now live for students.</div>
+{% endif %}
+
+{% if request.query_params.get('usage_updated') %}
+<div class="admin-toast admin-toast--success">Usage updated.</div>
+{% endif %}
+
+{% if job.status.value == 'PUBLISHED' and job.paper and job.paper.status.value != 'PUBLISHED' %}
+<div class="pp-note pp-note--warn">
+    This paper is still a draft and not visible to students yet.
+    <form method="post" action="{{ base_path }}/{{ job.id }}/go-live" style="margin-top: 8px;">
+        <button type="submit" class="admin-btn admin-btn-primary">Go live</button>
+    </form>
+</div>
+{% endif %}
+
+{% if job.status.value == 'PUBLISHED' %}
+<div class="pp-panel">
+    <h2 class="pp-subheading">Where this paper is available</h2>
+
+    {% if available_at %}
+    <ul class="pp-availability-list">
+        {% for item in available_at %}
+        <li><a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.label }}</a> - once you publish the Paper/Mock Test/Resource itself (currently DRAFT)</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="admin-field-hint">Nothing selected under "Use this paper for" yet.</p>
+    {% endif %}
+
+    <form method="post" action="{{ base_path }}/{{ job.id }}/usage" class="admin-form">
+        <div class="admin-field">
+            <label>Use this paper for</label>
+            <div class="admin-checkbox-group">
+                {% for value, label in usage_options %}
+                <div class="admin-field--checkbox">
+                    <label>
+                        <input type="checkbox" name="usage_flags" value="{{ value.value }}"
+                            {% if value.value in selected_usage %}checked{% endif %}>
+                        {{ label }}
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <button type="submit" class="admin-btn admin-btn-secondary">Update usage</button>
+    </form>
+</div>
+{% endif %}
+
 <div class="pp-panel">
     <dl class="pp-meta">
         <div><dt>Questions extracted</dt><dd>{{ job.questions_extracted }}</dd></div>
@@ -42,7 +93,7 @@
         <div><dt>Original PDF</dt><dd>Stored</dd></div>
         <div><dt>Clean PDF</dt><dd>{{ 'Generated' if job.generated_file_id else 'Not generated yet' }}</dd></div>
         <div><dt>Questions</dt><dd>{{ 'Saved' if job.paper_id else 'Staged for review' }}</dd></div>
-        <div><dt>Answer key</dt><dd>{{ 'Attached (unparsed)' if job.answer_file_id else 'Not supplied' }}</dd></div>
+        <div><dt>Answer key</dt><dd>{{ 'Attached' if job.answer_file_id else 'Not supplied' }}</dd></div>
         <div>
             <dt>Destination</dt>
             <dd>

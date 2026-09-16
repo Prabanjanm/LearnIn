@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import AlreadyExistsException
@@ -40,7 +41,7 @@ class OptionService(BaseService):
     def get_by_question(
         self,
         db: Session,
-        question_id: int
+        question_id: uuid.UUID
     ):
         return self.repository.get_by_question(db, question_id)
 

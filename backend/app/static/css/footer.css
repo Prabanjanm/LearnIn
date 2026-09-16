@@ -1,38 +1,123 @@
 footer {
-    background: var(--color-dark);
-    color: var(--color-text-on-dark);
-    text-align: center;
-    padding: 20px;
+    background: var(--color-accent);
+    padding: 28px 0;
+}
+
+.footer-frame {
+    display: flex;
+}
+
+.footer-card {
+    flex: 1;
+    background: var(--color-bg);
+    border-radius: var(--radius-xl);
+    padding: 40px 44px 28px;
+    overflow: hidden;
+}
+
+.footer-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.footer-brand-block {
+    max-width: 320px;
 }
 
 .footer-brand {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .footer-logo-mark {
     display: block;
-    width: 22px;
-    height: 22px;
+    width: 28px;
+    height: 28px;
     flex-shrink: 0;
 }
 
-.footer-nav {
-    margin-top: 10px;
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 20px;
+.footer-brand-name {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-dark);
 }
 
-.footer-nav a {
-    color: var(--color-text-on-dark-muted);
-    text-decoration: none;
+.footer-tagline {
+    margin-top: 12px;
+    color: var(--color-text-muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.footer-copyright {
+    margin-top: 18px;
+    color: var(--color-text-muted);
     font-size: 13px;
 }
 
-.footer-nav a:hover {
-    color: var(--color-text-on-dark);
+.footer-columns {
+    display: flex;
+    gap: 48px;
+    flex-wrap: wrap;
+}
+
+.footer-col h3 {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-dark);
+    margin-bottom: 14px;
+}
+
+.footer-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.footer-col a {
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 5px 0;
+}
+
+.footer-col a:hover {
+    color: var(--color-accent);
+}
+
+.footer-wordmark {
+    margin-top: 32px;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: clamp(64px, 14vw, 180px);
+    line-height: 1;
+    color: var(--color-accent);
+    letter-spacing: -0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+}
+
+@media (max-width: 720px) {
+    .footer-card {
+        padding: 32px 24px 20px;
+    }
+
+    .footer-top {
+        flex-direction: column;
+        gap: 28px;
+    }
+
+    .footer-columns {
+        gap: 32px;
+    }
+
+    .footer-wordmark {
+        font-size: clamp(48px, 18vw, 96px);
+    }
 }

@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import NotFoundException
@@ -37,14 +38,14 @@ class ResourceService(BaseService):
     def get_published_by_subject(
         self,
         db: Session,
-        subject_id: int
+        subject_id: uuid.UUID
     ):
         return self.repository.get_published_by_subject(db, subject_id)
 
     def get_published_by_id(
         self,
         db: Session,
-        resource_id: int
+        resource_id: uuid.UUID
     ) -> Resource:
 
         resource = self.repository.get_published_by_id(db, resource_id)

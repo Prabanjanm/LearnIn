@@ -39,6 +39,7 @@ question rather than presenting a guess as settled fact.
 import logging
 import statistics
 from dataclasses import dataclass
+from typing import Callable
 
 import pymupdf as fitz
 
@@ -71,7 +72,15 @@ WHOLE_PAGE_AREA_RATIO = 0.75
 MIN_GAP_POINTS = 40.0
 GAP_LINE_MULTIPLIER = 2.2
 
-RENDER_DPI = 300
+# Candidate-crop render resolution. Was 300 - measured (locally, on a real
+# 64-page paper) at ~0.4s per full-page-width render, and a paper with
+# generous whitespace can trigger dozens of these (vector clusters + gap
+# fallbacks), which is what actually made a "no OCR needed, text-layer only"
+# paper feel slow to process. 150 renders roughly 3x faster for the same
+# crop and is still perfectly legible for an inline question image - this
+# is not the paper's own resolution, just how finely a heuristic candidate
+# region gets rasterized.
+RENDER_DPI = 150
 CROP_MARGIN = 4.0
 
 
@@ -205,12 +214,20 @@ def detect_question_visuals(
     content: bytes,
     parsed_questions: list[ParsedQuestion],
     blocks: list[PositionedBlock],
+    should_stop: Callable[[], bool] | None = None,
 ) -> dict[int, list[VisualCandidate]]:
     """
     Returns {parsed_question_index: [VisualCandidate, ...]}, ordered
     page-then-position. Never raises for a detection failure on one page or
     one object - a single bad image/drawing is logged and skipped rather
     than losing every diagram in the document.
+
+    `should_stop` (optional): checked once per page, before that page's
+    (comparatively expensive) rendering work starts. When it returns True,
+    detection stops immediately and returns whatever was already found for
+    the pages processed so far - this is the slowest stage in the pipeline
+    on a long paper, so it is also the one most worth being able to actually
+    interrupt promptly rather than only between pipeline stages.
     """
     if not parsed_questions:
         return {}
@@ -232,6 +249,13 @@ def detect_question_visuals(
         claimed: dict[tuple[int, int], list[tuple[float, float]]] = {}
 
         for page_number, page_boundaries in boundaries.items():
+            if should_stop is not None and should_stop():
+                logger.info(
+                    "Visual detection stopping early (stop requested) after %d/%d page(s)",
+                    page_number, len(boundaries),
+                )
+                break
+
             page = document[page_number]
             page_rect = page.rect
 

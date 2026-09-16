@@ -1,5 +1,7 @@
 {% extends "layouts/base.html" %}
 {% from "components/breadcrumbs.html" import render_breadcrumbs %}
+{% from "components/card_grid.html" import render_card_grid %}
+{% from "components/seo_sections.html" import render_seo_intro %}
 
 {% block title %}Result - {{ mock_test.title }} | LearnIn{% endblock %}
 {% block description %}Your result for the {{ mock_test.title }} mock test.{% endblock %}
@@ -37,6 +39,8 @@ Not answered
         </div>
         <img class="page-hero-illustration" src="/static/img/illustrations/progress.webp" alt="" aria-hidden="true">
     </section>
+
+    {{ render_seo_intro(result_intro_paragraphs) }}
 
     <section class="section">
         <div class="stat-row">
@@ -116,6 +120,16 @@ Not answered
         </div>
         {% endif %}
     </section>
+
+    {% if related_mock_test_cards %}
+    <section class="section">
+        <div class="section-head">
+            <h2>More Mock Tests for This Paper</h2>
+        </div>
+        <p class="section-subtitle">Other timed mock tests built from the same {{ paper.year }} {{ subject.name }} paper.</p>
+        {{ render_card_grid(related_mock_test_cards) }}
+    </section>
+    {% endif %}
 
     <section class="section">
         <div class="section-head">

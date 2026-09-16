@@ -5,15 +5,100 @@
 }
 
 body {
+    position: relative;
     font-family: var(--font-body);
     background: var(--color-bg);
     color: var(--color-text);
     line-height: 1.6;
 }
 
+/*
+    Site-wide ambient background - three soft blurred color blobs behind
+    every page (see layouts/base.html), not just the home hero. Absolutely
+    positioned against `body` (position:relative above, height left at its
+    natural auto/content height) rather than `position: fixed`, so the blobs
+    sit at fixed points down the actual page - one near the top, one around
+    the middle, one lower down - and scroll away with the rest of the page
+    instead of all bunching up in the same spot on every viewport.
+    z-index -1 keeps them behind all real content; they only show through
+    wherever a section doesn't paint its own opaque background (mirrors what
+    the home hero already did locally before this became global - see
+    illustrations.css's .hero-grid-bg).
+*/
+.ambient-bg {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.ambient-blob {
+    position: absolute;
+    width: 42vw;
+    height: 42vw;
+    max-width: 520px;
+    max-height: 520px;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.35;
+}
+
+.ambient-blob--blue {
+    top: 0;
+    left: -12%;
+    background: radial-gradient(circle, var(--color-accent) 0%, transparent 70%);
+}
+
+.ambient-blob--violet {
+    top: 38%;
+    right: -14%;
+    background: radial-gradient(circle, #7C3AED 0%, transparent 70%);
+}
+
+.ambient-blob--blue-soft {
+    top: 74%;
+    left: 10%;
+    opacity: 0.25;
+    background: radial-gradient(circle, var(--color-accent) 0%, transparent 70%);
+}
+
+/*
+    Base type scale. Every page-specific stylesheet still wins on its own
+    headings via more specific selectors (.page-hero h1, .section-head h2,
+    .centered-hero-content h1, etc) - this is only the fallback that makes a
+    plain, unstyled <h1>-<h4> readable as a clear hierarchy instead of
+    collapsing to "same font, just a bit bigger", which is what happens when
+    only font-family/color are set with no size or weight of their own.
+*/
 h1, h2, h3, h4, .logo {
     font-family: var(--font-heading);
     color: var(--color-dark);
+}
+
+h1 {
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+
+h2 {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+h3 {
+    font-size: 19px;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+h4 {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.4;
 }
 
 .container {
@@ -161,4 +246,59 @@ main {
 .not-found h1 {
     font-size: 80px;
     color: var(--color-border);
+}
+
+/* SEO intro/outro (see components/seo_sections.html) - short, real,
+   data-driven copy above and below a page's actual cards/tables, not a
+   wall of text. Capped width so paragraphs stay readable on wide screens. */
+.seo-intro {
+    max-width: 720px;
+    margin: 4px 0 28px;
+}
+
+.seo-updated {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin: 0 0 10px;
+}
+
+.seo-intro p {
+    margin: 0 0 12px;
+    color: var(--color-text);
+    line-height: 1.65;
+}
+
+.seo-intro p:last-child {
+    margin-bottom: 0;
+}
+
+.seo-outro {
+    margin-top: 40px;
+    padding: 24px 28px;
+    background: var(--color-bg-muted);
+    border-radius: var(--radius-lg);
+}
+
+.seo-outro h2 {
+    font-size: 19px;
+    margin: 0 0 8px;
+}
+
+.seo-outro p {
+    margin: 0;
+    color: var(--color-text-muted);
+    max-width: 640px;
+}
+
+.seo-outro-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+@media (max-width: 640px) {
+    .seo-outro {
+        padding: 20px;
+    }
 }

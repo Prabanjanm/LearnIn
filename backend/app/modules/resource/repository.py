@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.orm import Session, selectinload
 
 from app.common.repositories.base_repository import BaseRepository
@@ -16,7 +17,7 @@ class ResourceRepository(BaseRepository):
     def get_published_by_subject(
         self,
         db: Session,
-        subject_id: int
+        subject_id: uuid.UUID
     ):
         return (
             db.query(Resource)
@@ -28,10 +29,28 @@ class ResourceRepository(BaseRepository):
             .all()
         )
 
+    def get_by_subject_and_file(
+        self,
+        db: Session,
+        subject_id: uuid.UUID,
+        google_drive_file_id: str,
+    ):
+        """Idempotency lookup for the Paper Processing "Use as Resource"
+        automation (see paper_processing/service.py apply_usage) - the same
+        (subject, file) pair is never turned into two Resource rows."""
+        return (
+            db.query(Resource)
+            .filter(
+                Resource.subject_id == subject_id,
+                Resource.google_drive_file_id == google_drive_file_id,
+            )
+            .first()
+        )
+
     def get_published_by_id(
         self,
         db: Session,
-        resource_id: int
+        resource_id: uuid.UUID
     ):
         return (
             db.query(Resource)

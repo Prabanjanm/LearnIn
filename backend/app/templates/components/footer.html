@@ -1,20 +1,55 @@
+{#
+    Site-wide footer - a light card (real link columns + a large wordmark)
+    inset inside a solid brand-color frame, replacing the old single-row
+    dark bar. Link columns are all real, existing routes - no newsletter
+    signup or social links are included since neither has a real backend/
+    account behind it yet (see app/common/utils/seo_copy.py's "no fake
+    features" convention, applied here too).
+#}
 {% macro render_footer() %}
 <footer>
-    <div class="container">
+    <div class="container footer-frame">
+        <div class="footer-card">
 
-        <div class="footer-brand">
-            <img class="footer-logo-mark" src="/static/img/brand/logo-mark.webp?v=2" alt="" width="22" height="22">
-            <p>&copy; 2026 LearnIn</p>
+            <div class="footer-top">
+                <div class="footer-brand-block">
+                    <div class="footer-brand">
+                        <img class="footer-logo-mark" src="/static/img/brand/logo-mark.webp?v=2" alt="" width="28" height="28">
+                        <span class="footer-brand-name">LearnIn</span>
+                    </div>
+                    <p class="footer-tagline">
+                        Previous-year papers, mock tests, and practice questions for GATE and other
+                        government exams - all in one place.
+                    </p>
+                    <p class="footer-copyright">&copy; 2026 LearnIn</p>
+                </div>
+
+                <nav class="footer-columns">
+                    <div class="footer-col">
+                        <h3>Explore</h3>
+                        <a href="/exams">Exams</a>
+                        <a href="/papers">Previous Year Papers</a>
+                        <a href="/mock-tests">Mock Tests</a>
+                        <a href="/practice">Practice</a>
+                    </div>
+                    <div class="footer-col">
+                        <h3>Company</h3>
+                        <a href="/about">About Us</a>
+                        <a href="/contact">Contact</a>
+                        <a href="/blogs">Blogs</a>
+                    </div>
+                    <div class="footer-col">
+                        <h3>Legal</h3>
+                        <a href="/privacy">Privacy Policy</a>
+                        <a href="/terms">Terms of Use</a>
+                        <a href="/disclaimer">Disclaimer</a>
+                    </div>
+                </nav>
+            </div>
+
+            <div class="footer-wordmark" aria-hidden="true">LearnIn</div>
+
         </div>
-
-        <nav class="footer-nav">
-            <a href="/about">About</a>
-            <a href="/contact">Contact</a>
-            <a href="/privacy">Privacy Policy</a>
-            <a href="/terms">Terms of Use</a>
-            <a href="/disclaimer">Disclaimer</a>
-        </nav>
-
     </div>
 </footer>
 {% endmacro %}

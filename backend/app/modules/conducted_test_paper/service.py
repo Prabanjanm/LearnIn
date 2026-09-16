@@ -92,7 +92,7 @@ class ConductedTestPaperJobService(BaseService):
         self,
         db: Session,
         institution_id: uuid.UUID,
-        created_by_institution_user_id: int,
+        created_by_institution_user_id: uuid.UUID,
         data: ConductedTestPaperJobCreate,
     ) -> ConductedTestPaperJob:
         job = ConductedTestPaperJob(

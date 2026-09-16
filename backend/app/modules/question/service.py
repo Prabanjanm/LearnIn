@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import NotFoundException
@@ -19,14 +20,14 @@ class QuestionService(BaseService):
     def get_by_paper(
         self,
         db: Session,
-        paper_id: int
+        paper_id: uuid.UUID
     ):
         return self.repository.get_by_paper(db, paper_id)
 
     def get_published_by_paper(
         self,
         db: Session,
-        paper_id: int
+        paper_id: uuid.UUID
     ):
         return self.repository.get_published_by_paper(db, paper_id)
 
@@ -39,7 +40,7 @@ class QuestionService(BaseService):
     def get_published_by_id(
         self,
         db: Session,
-        question_id: int
+        question_id: uuid.UUID
     ) -> Question:
 
         question = self.repository.get_published_by_id(db, question_id)
@@ -164,7 +165,7 @@ class QuestionService(BaseService):
         for file_id in file_ids:
             cleanup_drive_file(db, file_id)
 
-    def _resync_paper_total_questions(self, db: Session, paper_id: int) -> None:
+    def _resync_paper_total_questions(self, db: Session, paper_id: uuid.UUID) -> None:
         """Keeps Paper.total_questions (shown on the public paper page) in
         sync with how many questions actually exist for it - the same
         pattern mock_test_question_service uses for MockTest.total_questions."""
