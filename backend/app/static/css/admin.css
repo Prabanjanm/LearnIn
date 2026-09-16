@@ -21,6 +21,23 @@
     flex-direction: column;
     padding: var(--spacing-lg) 0;
     transition: width .2s ease;
+    /* Fixed in place and scrolls on its own - scrolling the page content
+       (.admin-main) no longer drags the sidebar along with it, and a long
+       nav list scrolls only inside the sidebar itself. */
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
+    overflow-y: auto;
+    /* Scrollable, but the scrollbar itself stays invisible (still scrolls
+       fine with wheel/trackpad/keyboard - only the visible track/thumb is
+       suppressed). */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.admin-sidebar::-webkit-scrollbar {
+    display: none;
 }
 
 .admin-sidebar-top {
@@ -379,6 +396,10 @@
 .admin-main {
     padding: var(--spacing-xl);
     flex-grow: 1;
+    /* Positioning context for module-scoped overlays (e.g. the Paper
+       Processing OCR overlay, .pp-ocr-overlay) - an absolutely-positioned
+       inset:0 child fills just this content area, not the sidebar/topbar. */
+    position: relative;
 }
 
 /* ================= Toasts ================= */
@@ -461,6 +482,13 @@
     align-items: flex-start;
     margin-bottom: var(--spacing-lg);
     gap: var(--spacing-md);
+}
+
+.admin-page-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 h1, h2, h3, .admin-logo, .admin-panel-title {
@@ -1236,6 +1264,27 @@ body.admin-drawer-open {
 .admin-field--checkbox input[type="checkbox"] {
     width: 16px;
     height: 16px;
+}
+
+.admin-field-hint {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin: 2px 0 8px;
+}
+
+.admin-checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.admin-checkbox-group .admin-field--checkbox {
+    margin: 0;
 }
 
 /* ---- Markdown editor (write / preview tabs) ---- */

@@ -36,15 +36,13 @@ DB delete, then cleaned up from Drive afterward only if no surviving row
 see app/common/utils/file_tracking.py.
 
 One more dependency, discovered by actually running this against
-production: the separate, otherwise-untouched PDF-extraction feature
-(paper_processing_jobs / extracted_questions / extracted_options /
-extracted_question_images - no app model exists for these, so they're
-queried with raw SQL and only if the table actually exists) has its own
-foreign keys into papers.id and subjects.id. A handful of its rows point
-at mock papers/subjects, which blocks deleting those with a FK violation.
-This script deletes only the specific processing-job rows (and their
-extracted_* children) that reference a paper or subject being removed
-here - never the feature's other rows, and never its schema.
+production: the PDF-extraction feature (app.modules.paper_processing) has
+its own foreign keys into papers.id and subjects.id. A handful of its rows
+point at mock papers/subjects, which blocks deleting those with a FK
+violation. This script deletes only the specific PaperProcessingJob rows
+(and their ExtractedQuestion/ExtractedOption/ExtractedQuestionImage
+children) that reference a paper or subject being removed here - never
+the feature's other rows.
 
 Defaults to a dry run: reports exactly what would be deleted, deletes
 nothing. Pass --execute to actually delete, inside one transaction.
@@ -62,7 +60,6 @@ sys.path.insert(0, ".")
 
 import app.models  # noqa: E402, F401 - registers every model so relationship() strings resolve
 
-from sqlalchemy import inspect, text  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
 from app.common.utils.file_tracking import cleanup_drive_files  # noqa: E402
@@ -81,15 +78,16 @@ from app.modules.mock_test_attempt.model import (  # noqa: E402
 from app.modules.mock_test_question.model import MockTestQuestion  # noqa: E402
 from app.modules.option.model import Option  # noqa: E402
 from app.modules.paper.model import Paper  # noqa: E402
+from app.modules.paper_processing.model import (  # noqa: E402
+    ExtractedOption,
+    ExtractedQuestion,
+    ExtractedQuestionImage,
+    PaperProcessingJob,
+)
 from app.modules.question.model import Question  # noqa: E402
 from app.modules.subject.model import Subject  # noqa: E402
 
 PRESERVE_EXAM_CODE = "GATE"
-
-# The unrelated PDF-extraction feature's tables have no app model (see
-# module docstring) - referenced by raw table/column name only, and only
-# queried if the table actually exists (it doesn't in a fresh test DB).
-_EXTRACTION_TABLES = ("extracted_question_images", "extracted_options", "extracted_questions", "paper_processing_jobs")
 
 
 @dataclass
@@ -115,9 +113,10 @@ class CleanupPlan:
     conducted_attempt_answer_ids: list[int] = field(default_factory=list)
     file_ids: list[str] = field(default_factory=list)
 
-    # (table_name, id) pairs from the unrelated extraction feature, in
-    # delete order - only populated if those tables exist.
-    extraction_rows: list[tuple] = field(default_factory=list)
+    job_ids: list[int] = field(default_factory=list)
+    extracted_question_ids: list[int] = field(default_factory=list)
+    extracted_option_ids: list[int] = field(default_factory=list)
+    extracted_image_ids: list[int] = field(default_factory=list)
 
     def report_lines(self) -> list[str]:
         lines = [
@@ -138,7 +137,9 @@ class CleanupPlan:
             f"  conducted_tests: {len(self.conducted_test_ids)}",
             f"  conducted_test_attempts: {len(self.conducted_attempt_ids)}",
             f"  conducted_test_attempt_answers: {len(self.conducted_attempt_answer_ids)}",
-            f"  unrelated extraction-feature rows (only ones pointing at deleted mock data): {len(self.extraction_rows)}",
+            f"  paper_processing_jobs (only ones pointing at deleted mock data): {len(self.job_ids)}",
+            f"  extracted_questions / extracted_options / extracted_question_images: "
+            f"{len(self.extracted_question_ids)} / {len(self.extracted_option_ids)} / {len(self.extracted_image_ids)}",
             f"  Drive files to check for cleanup: {len(self.file_ids)}",
             "",
             f"Left in place (empty, not deleted): {len(self.exam_ids)} mock exams, "
@@ -185,30 +186,19 @@ def build_plan(db: Session, preserve_exam_code: str = PRESERVE_EXAM_CODE) -> Cle
         file_ids += _ids(db.query(Option.image_file_id).filter(Option.id.in_(plan.option_ids), Option.image_file_id.isnot(None)))
     plan.file_ids = sorted(set(file_ids))
 
-    # Unrelated extraction feature - see module docstring. Skipped entirely
-    # if the tables don't exist (e.g. the test DB never creates them).
-    inspector = inspect(db.bind)
-    if inspector.has_table("paper_processing_jobs") and (plan.paper_ids or plan.subject_ids):
-        job_ids = _ids(db.execute(
-            text("select id from paper_processing_jobs where paper_id in :paper_ids or subject_id in :subject_ids")
-            .bindparams(paper_ids=tuple(plan.paper_ids or [-1]), subject_ids=tuple(plan.subject_ids or [-1])),
+    # See module docstring: PaperProcessingJob has its own FKs into
+    # papers.id/subjects.id - only the specific jobs (and their extracted_*
+    # children) tied to a paper/subject being removed here are deleted.
+    if plan.paper_ids or plan.subject_ids:
+        plan.job_ids = _ids(db.query(PaperProcessingJob.id).filter(
+            PaperProcessingJob.paper_id.in_(plan.paper_ids or [-1])
+            | PaperProcessingJob.subject_id.in_(plan.subject_ids or [-1])
         ))
-        extracted_question_ids = _ids(db.execute(
-            text("select id from extracted_questions where job_id in :ids").bindparams(ids=tuple(job_ids or [-1]))
-        )) if job_ids else []
-        extracted_option_ids = _ids(db.execute(
-            text("select id from extracted_options where extracted_question_id in :ids").bindparams(ids=tuple(extracted_question_ids or [-1]))
-        )) if extracted_question_ids else []
-        extracted_image_ids = _ids(db.execute(
-            text("select id from extracted_question_images where extracted_question_id in :ids").bindparams(ids=tuple(extracted_question_ids or [-1]))
-        )) if extracted_question_ids else []
-
-        plan.extraction_rows = (
-            [("extracted_question_images", i) for i in extracted_image_ids]
-            + [("extracted_options", i) for i in extracted_option_ids]
-            + [("extracted_questions", i) for i in extracted_question_ids]
-            + [("paper_processing_jobs", i) for i in job_ids]
-        )
+    if plan.job_ids:
+        plan.extracted_question_ids = _ids(db.query(ExtractedQuestion.id).filter(ExtractedQuestion.job_id.in_(plan.job_ids)))
+    if plan.extracted_question_ids:
+        plan.extracted_option_ids = _ids(db.query(ExtractedOption.id).filter(ExtractedOption.extracted_question_id.in_(plan.extracted_question_ids)))
+        plan.extracted_image_ids = _ids(db.query(ExtractedQuestionImage.id).filter(ExtractedQuestionImage.extracted_question_id.in_(plan.extracted_question_ids)))
 
     return plan
 
@@ -220,9 +210,10 @@ def execute_plan(db: Session, plan: CleanupPlan) -> None:
         if ids:
             db.query(model).filter(model.id.in_(ids)).delete(synchronize_session=False)
 
-    for table, row_id in plan.extraction_rows:
-        db.execute(text(f"delete from {table} where id = :id"), {"id": row_id})
-
+    delete(ExtractedQuestionImage, plan.extracted_image_ids)
+    delete(ExtractedOption, plan.extracted_option_ids)
+    delete(ExtractedQuestion, plan.extracted_question_ids)
+    delete(PaperProcessingJob, plan.job_ids)
     delete(ConductedTestAttemptAnswer, plan.conducted_attempt_answer_ids)
     delete(ConductedTestAttempt, plan.conducted_attempt_ids)
     delete(ConductedTest, plan.conducted_test_ids)

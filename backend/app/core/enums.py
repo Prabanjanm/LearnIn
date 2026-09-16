@@ -74,6 +74,45 @@ class PdfTypeEnum(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
+class PaperTypeEnum(str, Enum):
+    """
+    What kind of paper this is, as set by the admin at upload time - never
+    inferred from the PDF content. Distinct from PdfTypeEnum (which
+    describes the source PDF's OCR shape - text vs scanned), this
+    describes the paper's real-world nature.
+    """
+
+    PREVIOUS_YEAR = "PREVIOUS_YEAR"
+
+    PRACTICE = "PRACTICE"
+
+    OTHER = "OTHER"
+
+
+class PaperUsageEnum(str, Enum):
+    """
+    Where an admin wants a processed paper to appear, chosen at upload time
+    on the Paper Processing "new job" form (see paper_processing/service.py
+    apply_usage). PREVIOUS_YEAR_PAPERS/PRACTICE/SUBJECT_PRACTICE/
+    EXAM_PRACTICE need no extra row - once a Paper is PUBLISHED it already
+    appears on its subject/exam pages and the site-wide practice/papers
+    listings through the existing hierarchy. MOCK_TEST and RESOURCE are the
+    two that actually create something else (a MockTest / Resource row).
+    """
+
+    PREVIOUS_YEAR_PAPERS = "PREVIOUS_YEAR_PAPERS"
+
+    PRACTICE = "PRACTICE"
+
+    SUBJECT_PRACTICE = "SUBJECT_PRACTICE"
+
+    EXAM_PRACTICE = "EXAM_PRACTICE"
+
+    MOCK_TEST = "MOCK_TEST"
+
+    RESOURCE = "RESOURCE"
+
+
 class WatermarkStatusEnum(str, Enum):
 
     NOT_NEEDED = "NOT_NEEDED"

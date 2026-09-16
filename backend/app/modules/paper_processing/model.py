@@ -27,8 +27,10 @@ from sqlalchemy import Float
 from app.core.base import BaseModel
 from app.core.enums import ExtractionConfidenceEnum
 from app.core.enums import ImageSourceType
+from app.core.enums import PaperTypeEnum
 from app.core.enums import PdfTypeEnum
 from app.core.enums import ProcessingStatusEnum
+from app.core.enums import QuestionType
 from app.core.enums import WatermarkStatusEnum
 
 if TYPE_CHECKING:
@@ -66,6 +68,13 @@ class PaperProcessingJob(BaseModel):
     year: Mapped[int] = mapped_column(
         Integer,
         nullable=False
+    )
+
+    # Set by the admin on the "new job" form, carried through unchanged to
+    # the published Paper.paper_type at publish time.
+    paper_type: Mapped["PaperTypeEnum | None"] = mapped_column(
+        Enum(PaperTypeEnum, name="papertypeenum"),
+        nullable=True
     )
 
     source_url: Mapped[str | None] = mapped_column(
@@ -172,6 +181,21 @@ class PaperProcessingJob(BaseModel):
         index=True
     )
 
+    # What the admin picked in the "Use This Paper For" section - a
+    # comma-separated list of PaperUsageEnum values (a real ARRAY type would
+    # need a Postgres-only column; this stays portable and is only ever
+    # read/written through usage_flags_list/set_usage_flags below, never by
+    # hand). Applied to real rows (Resource/MockTest) by
+    # PaperProcessingService.apply_usage, once at publish and again any
+    # time the admin changes the selection afterward.
+    usage_flags: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    def usage_flags_list(self) -> list[str]:
+        return [flag for flag in (self.usage_flags or "").split(",") if flag]
+
+    def set_usage_flags(self, flags: list[str]) -> None:
+        self.usage_flags = ",".join(dict.fromkeys(flags)) or None
+
     # Denormalized counters, resynced whenever extracted questions change,
     # mirroring how Paper.total_questions is kept in step.
     questions_extracted: Mapped[int] = mapped_column(
@@ -253,10 +277,27 @@ class ExtractedQuestion(BaseModel):
         nullable=False
     )
 
-    # ONLY ever set by explicit admin input in the review screen. The
-    # pipeline never infers an answer from the source PDF. NULL means
-    # "Answer Key: Not Available".
+    # Admin input in the review screen, same as always - OR filled in
+    # automatically when the admin also uploaded a separate "Answer Key" PDF
+    # that could be parsed and matched to this question by number (see
+    # `answer_key_parser.py` / `PaperProcessingService.apply_answer_key`).
+    # Either way it is NULL until something concrete sets it - the pipeline
+    # never fabricates an answer from the question paper's own text.
     correct_answer: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
+    # The following three are NULL unless a matched answer-key row supplied
+    # them (see `apply_answer_key`); `publish_job` falls back to its own
+    # DEFAULT_* constants when NULL, exactly as it always has. Never set by
+    # question-paper text extraction itself - only a literal answer-key
+    # table is a reliable enough source for these.
+    question_type: Mapped[QuestionType | None] = mapped_column(
+        Enum(QuestionType, name="questiontype"),
+        nullable=True
+    )
+
+    marks: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    negative_marks: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     # Relationships
 

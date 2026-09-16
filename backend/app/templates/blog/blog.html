@@ -2,6 +2,7 @@
 {% from "components/breadcrumbs.html" import render_breadcrumbs %}
 {% from "components/blog_card.html" import render_blog_card_grid %}
 {% from "components/pagination.html" import render_pagination %}
+{% from "components/seo_sections.html" import render_seo_intro, render_seo_outro %}
 
 {% block title %}Blog | LearnIn{% endblock %}
 {% block description %}Exam tips, strategy and study guidance from LearnIn.{% endblock %}
@@ -21,11 +22,15 @@
         <img class="page-hero-illustration" src="/static/img/illustrations/blog.webp" alt="" aria-hidden="true">
     </section>
 
+    {{ render_seo_intro(seo_intro_paragraphs) }}
+
     <section class="section">
         {{ render_blog_card_grid(blog_cards) }}
 
         {{ render_pagination(page, has_previous, has_next, "/blogs", extra_query) }}
     </section>
+
+    {{ render_seo_outro(seo_outro_heading, seo_outro_text, seo_outro_ctas) }}
 
 </div>
 {% endblock %}

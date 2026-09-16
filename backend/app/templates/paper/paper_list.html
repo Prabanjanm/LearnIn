@@ -1,6 +1,7 @@
 {% extends "layouts/base.html" %}
 {% from "components/breadcrumbs.html" import render_breadcrumbs %}
 {% from "components/pagination.html" import render_pagination %}
+{% from "components/seo_sections.html" import render_seo_intro, render_seo_outro %}
 
 {% block title %}Previous Year Question Papers | LearnIn{% endblock %}
 {% block description %}Browse and download previous-year question papers and answer keys, filterable by exam, department, subject, and year.{% endblock %}
@@ -19,6 +20,8 @@
         </div>
         <img class="page-hero-illustration" src="/static/img/illustrations/paper.webp" alt="" aria-hidden="true">
     </section>
+
+    {{ render_seo_intro(seo_intro_paragraphs) }}
 
     <form method="get" action="/papers" class="paper-filters" data-paper-filters>
         <input type="text" name="q" value="{{ filters.q }}" placeholder="Search paper title...">
@@ -100,6 +103,8 @@
 
         {{ render_pagination(page, has_previous, has_next, "/papers", extra_query) }}
     </section>
+
+    {{ render_seo_outro(seo_outro_heading, seo_outro_text, seo_outro_ctas) }}
 
 </div>
 {% endblock %}

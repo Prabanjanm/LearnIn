@@ -19,6 +19,10 @@ class GoogleDriveConfigError(LearnInException):
     pass
 
 
+class GeminiConfigError(LearnInException):
+    pass
+
+
 class InvalidStateException(LearnInException):
     """Request is well-formed and authorized, but not valid given the
     current state of the resource - e.g. saving an answer to an attempt

@@ -16,6 +16,7 @@ from app.common.rate_limit import rate_limit
 from app.common.utils.category_illustration import resolve_category_illustration
 from app.common.utils.drive_urls import drive_thumbnail_url
 from app.common.utils.markdown_render import render_markdown
+from app.common.utils import seo_copy
 from app.core.google_drive import get_drive_client
 from app.core.security import create_access_token
 from app.core.upload_policy import UploadValidationError, sanitize_filename, validate_upload
@@ -430,6 +431,7 @@ def blog_list_page(
     ]
 
     extra_query = f"&category={category}" if category else ""
+    seo_outro_heading, seo_outro_text, seo_outro_ctas = seo_copy.blog_list_outro()
 
     return templates.TemplateResponse(
         request=request,
@@ -442,6 +444,10 @@ def blog_list_page(
             "has_next": total > page * 12,
             "extra_query": extra_query,
             "category": category,
+            "seo_intro_paragraphs": seo_copy.blog_list_intro(total, category),
+            "seo_outro_heading": seo_outro_heading,
+            "seo_outro_text": seo_outro_text,
+            "seo_outro_ctas": seo_outro_ctas,
         },
     )
 
@@ -494,12 +500,18 @@ def exam_list_page(request: Request, db: Session = Depends(get_db)):
         for exam in exams
     ]
 
+    seo_outro_heading, seo_outro_text, seo_outro_ctas = seo_copy.exam_list_outro()
+
     return templates.TemplateResponse(
         request=request,
         name="exam/exam_list.html",
         context={
             "exam_cards": exam_cards,
             "breadcrumbs": [{"label": "Exams", "url": None}],
+            "seo_intro_paragraphs": seo_copy.exam_list_intro(len(exam_cards)),
+            "seo_outro_heading": seo_outro_heading,
+            "seo_outro_text": seo_outro_text,
+            "seo_outro_ctas": seo_outro_ctas,
         },
     )
 
@@ -563,6 +575,8 @@ def paper_list_page(
         "subject_id": subject_id, "year": year, "answer_key": answer_key,
     }
     extra_query = "".join(f"&{k}={v}" for k, v in query_params.items() if v not in (None, ""))
+    filters_active = any(v not in (None, "") for v in query_params.values())
+    seo_outro_heading, seo_outro_text, seo_outro_ctas = seo_copy.paper_list_outro()
 
     return templates.TemplateResponse(
         request=request,
@@ -583,6 +597,10 @@ def paper_list_page(
                 "subject_id": subject_id, "year": year, "answer_key": answer_key,
             },
             "breadcrumbs": [{"label": "Previous Year Papers", "url": None}],
+            "seo_intro_paragraphs": seo_copy.paper_list_intro(total, filters_active),
+            "seo_outro_heading": seo_outro_heading,
+            "seo_outro_text": seo_outro_text,
+            "seo_outro_ctas": seo_outro_ctas,
         },
     )
 
@@ -632,6 +650,8 @@ def mock_test_list_page(
 
     query_params = {"q": q, "exam_id": exam_id, "department_id": department_id, "subject_id": subject_id}
     extra_query = "".join(f"&{k}={v}" for k, v in query_params.items() if v not in (None, ""))
+    filters_active = any(v not in (None, "") for v in query_params.values())
+    seo_outro_heading, seo_outro_text, seo_outro_ctas = seo_copy.mock_test_list_outro()
 
     return templates.TemplateResponse(
         request=request,
@@ -648,6 +668,10 @@ def mock_test_list_page(
             "subjects": subjects,
             "filters": {"q": q, "exam_id": exam_id, "department_id": department_id, "subject_id": subject_id},
             "breadcrumbs": [{"label": "Mock Tests", "url": None}],
+            "seo_intro_paragraphs": seo_copy.mock_test_list_intro(total, filters_active),
+            "seo_outro_heading": seo_outro_heading,
+            "seo_outro_text": seo_outro_text,
+            "seo_outro_ctas": seo_outro_ctas,
         },
     )
 
@@ -697,6 +721,8 @@ def practice_list_page(
 
     query_params = {"q": q, "exam_id": exam_id, "department_id": department_id}
     extra_query = "".join(f"&{k}={v}" for k, v in query_params.items() if v not in (None, ""))
+    filters_active = any(v not in (None, "") for v in query_params.values())
+    seo_outro_heading, seo_outro_text, seo_outro_ctas = seo_copy.practice_list_outro()
 
     return templates.TemplateResponse(
         request=request,
@@ -712,6 +738,10 @@ def practice_list_page(
             "departments": departments,
             "filters": {"q": q, "exam_id": exam_id, "department_id": department_id},
             "breadcrumbs": [{"label": "Practice", "url": None}],
+            "seo_intro_paragraphs": seo_copy.practice_list_intro(total, filters_active),
+            "seo_outro_heading": seo_outro_heading,
+            "seo_outro_text": seo_outro_text,
+            "seo_outro_ctas": seo_outro_ctas,
         },
     )
 
@@ -738,6 +768,11 @@ def exam_page(exam_slug: str, request: Request, db: Session = Depends(get_db)):
         ctx.exam.name
     )
 
+    papers_count = paper_service.count_published_by_exam(db).get(ctx.exam.id, 0)
+    mock_tests_count = mock_test_service.count_published_by_exam(db).get(ctx.exam.id, 0)
+
+    seo_outro_heading, seo_outro_text, seo_outro_ctas = seo_copy.exam_outro(ctx.exam.name, len(department_cards))
+
     return templates.TemplateResponse(
         request=request,
         name="exam/exam.html",
@@ -745,9 +780,14 @@ def exam_page(exam_slug: str, request: Request, db: Session = Depends(get_db)):
             "exam": ctx.exam,
             "exam_hero_image": exam_hero_image,
             "department_cards": department_cards,
-            "papers_count": paper_service.count_published_by_exam(db).get(ctx.exam.id, 0),
-            "mock_tests_count": mock_test_service.count_published_by_exam(db).get(ctx.exam.id, 0),
+            "papers_count": papers_count,
+            "mock_tests_count": mock_tests_count,
             "breadcrumbs": ctx.breadcrumbs_with_current(ctx.exam.name),
+            "seo_last_updated": seo_copy.format_last_updated(ctx.exam.updated_at),
+            "seo_intro_paragraphs": seo_copy.exam_intro(ctx.exam.name, len(department_cards), papers_count, mock_tests_count),
+            "seo_outro_heading": seo_outro_heading,
+            "seo_outro_text": seo_outro_text,
+            "seo_outro_ctas": seo_outro_ctas,
         },
     )
 
@@ -779,6 +819,8 @@ def department_page(
         ctx.department.icon_file_id
     ) or resolve_category_illustration(ctx.department.name, ctx.exam.name)
 
+    seo_outro_heading, seo_outro_text, seo_outro_ctas = seo_copy.department_outro(ctx.department.name, len(subject_cards))
+
     return templates.TemplateResponse(
         request=request,
         name="department/department.html",
@@ -788,6 +830,11 @@ def department_page(
             "department_hero_image": department_hero_image,
             "subject_cards": subject_cards,
             "breadcrumbs": ctx.breadcrumbs_with_current(ctx.department.name),
+            "seo_last_updated": seo_copy.format_last_updated(ctx.department.updated_at),
+            "seo_intro_paragraphs": seo_copy.department_intro(ctx.department.name, ctx.exam.name, len(subject_cards)),
+            "seo_outro_heading": seo_outro_heading,
+            "seo_outro_text": seo_outro_text,
+            "seo_outro_ctas": seo_outro_ctas,
         },
     )
 
@@ -834,6 +881,22 @@ def subject_page(
         ctx.subject.icon_file_id
     ) or resolve_category_illustration(ctx.subject.name, ctx.department.name, ctx.exam.name)
 
+    sibling_subjects = [
+        s for s in subject_service.get_published_by_department(db, ctx.department.id)
+        if s.id != ctx.subject.id
+    ][:6]
+    related_subject_cards = [
+        {
+            "title": s.name,
+            "url": f"/{ctx.exam.slug}/{ctx.department.slug}/{s.slug}",
+            "meta": ctx.department.name,
+            "icon": "subject",
+        }
+        for s in sibling_subjects
+    ]
+
+    seo_outro_heading, seo_outro_text, seo_outro_ctas = seo_copy.subject_outro(ctx.subject.name, len(paper_cards))
+
     return templates.TemplateResponse(
         request=request,
         name="subject/subject.html",
@@ -844,7 +907,15 @@ def subject_page(
             "subject_hero_image": subject_hero_image,
             "paper_cards": paper_cards,
             "resource_cards": resource_cards,
+            "related_subject_cards": related_subject_cards,
             "breadcrumbs": ctx.breadcrumbs_with_current(ctx.subject.name),
+            "seo_last_updated": seo_copy.format_last_updated(ctx.subject.updated_at),
+            "seo_intro_paragraphs": seo_copy.subject_intro(
+                ctx.subject.name, ctx.department.name, ctx.exam.name, len(paper_cards), len(resource_cards)
+            ),
+            "seo_outro_heading": seo_outro_heading,
+            "seo_outro_text": seo_outro_text,
+            "seo_outro_ctas": seo_outro_ctas,
         },
     )
 
@@ -873,6 +944,26 @@ def paper_page(
         for mt in mock_tests
     ]
 
+    subject_url = f"/{ctx.exam.slug}/{ctx.department.slug}/{ctx.subject.slug}"
+
+    sibling_papers = [
+        p for p in paper_service.get_published_by_subject(db, ctx.subject.id)
+        if p.id != ctx.paper.id
+    ][:6]
+    related_paper_cards = [
+        {
+            "title": p.title,
+            "url": f"{subject_url}/{p.year}",
+            "meta": f"{p.year} · {p.total_questions} questions",
+            "icon": "paper",
+        }
+        for p in sibling_papers
+    ]
+
+    seo_outro_heading, seo_outro_text, seo_outro_ctas = seo_copy.paper_outro(
+        ctx.paper.year, ctx.subject.name, len(mock_test_cards), ctx.paper_url(), subject_url
+    )
+
     return templates.TemplateResponse(
         request=request,
         name="paper/paper.html",
@@ -882,7 +973,16 @@ def paper_page(
             "subject": ctx.subject,
             "paper": ctx.paper,
             "mock_test_cards": mock_test_cards,
+            "related_paper_cards": related_paper_cards,
             "breadcrumbs": ctx.breadcrumbs_with_current(ctx.paper.year),
+            "seo_last_updated": seo_copy.format_last_updated(ctx.paper.updated_at),
+            "seo_intro_paragraphs": seo_copy.paper_intro(
+                ctx.paper.title, ctx.paper.year, ctx.subject.name, ctx.department.name, ctx.exam.name,
+                ctx.paper.total_questions, ctx.paper.duration, bool(ctx.paper.answer_file_id),
+            ),
+            "seo_outro_heading": seo_outro_heading,
+            "seo_outro_text": seo_outro_text,
+            "seo_outro_ctas": seo_outro_ctas,
         },
     )
 
@@ -1018,6 +1118,25 @@ def mock_test_result_page(
             weak_subject = entry["subject"]
             entry["url"] = f"/{weak_subject.department.exam.slug}/{weak_subject.department.slug}/{weak_subject.slug}"
 
+    sibling_mock_tests = [
+        mt for mt in mock_test_service.get_published_by_paper(db, ctx.paper.id)
+        if mt.id != mock_test.id
+    ]
+    related_mock_test_cards = [
+        {
+            "title": mt.title,
+            "url": f"{ctx.paper_url()}/mock-test/{mt.id}",
+            "meta": f"{mt.total_questions} questions · {mt.duration} min",
+            "icon": "mock_test",
+        }
+        for mt in sibling_mock_tests
+    ]
+
+    total_questions = attempt.correct_count + attempt.incorrect_count + attempt.unanswered_count
+    result_intro_paragraphs = seo_copy.mock_test_result_intro(
+        mock_test.title, ctx.subject.name, accuracy, attempt.correct_count, total_questions
+    )
+
     return templates.TemplateResponse(
         request=request,
         name="mock_test/result.html",
@@ -1031,6 +1150,8 @@ def mock_test_result_page(
             "accuracy": accuracy,
             "student": student,
             "weak_subjects": weak_subjects,
+            "related_mock_test_cards": related_mock_test_cards,
+            "result_intro_paragraphs": result_intro_paragraphs,
             "breadcrumbs": breadcrumbs,
         },
     )

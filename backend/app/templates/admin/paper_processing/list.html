@@ -3,7 +3,7 @@
 
 {% block title %}Paper Processing - LearnIn Admin{% endblock %}
 
-{% block css %}<link rel="stylesheet" href="/static/css/paper-processing.css">{% endblock %}
+{% block css %}<link rel="stylesheet" href="/static/css/paper-processing.css?v=5">{% endblock %}
 
 {% block breadcrumb %}
 <span class="admin-breadcrumb-sep">/</span>
@@ -19,7 +19,10 @@
             {{ jobs|length }} job{{ '' if jobs|length == 1 else 's' }}.
         </p>
     </div>
-    <a class="admin-btn admin-btn-primary" href="{{ base_path }}/new">{{ icon('plus', 16) }} New</a>
+    <div class="admin-page-header-actions">
+        <a class="admin-btn admin-btn-secondary" href="{{ base_path }}/papers">Manage usage for existing papers</a>
+        <a class="admin-btn admin-btn-primary" href="{{ base_path }}/new">{{ icon('plus', 16) }} New</a>
+    </div>
 </div>
 
 <div class="admin-table-wrapper">

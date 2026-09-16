@@ -19,7 +19,7 @@ from app.common.rate_limit import rate_limit
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.enums import StatusEnum
-from app.core.google_drive import get_drive_client
+from app.core.google_drive import category_is_public, get_drive_client
 from app.core.security import create_access_token
 from app.core.upload_policy import UploadValidationError, sanitize_filename, validate_upload
 from app.modules.blog.model import Blog
@@ -1376,6 +1376,7 @@ async def upload_file(
             filename=filename,
             mime_type=mime_type,
             category=category,
+            public=category_is_public(category),
         )
     except GoogleDriveConfigError as exc:
         return JSONResponse({"error": str(exc)}, status_code=503)

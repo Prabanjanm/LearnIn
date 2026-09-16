@@ -37,6 +37,11 @@ class Settings:
 
     GOOGLE_OAUTH_REFRESH_TOKEN = os.getenv("GOOGLE_OAUTH_REFRESH_TOKEN")
 
+    # Scanned-PDF OCR engine for Question Paper Processing (see
+    # app/core/gemini_client.py / app/modules/paper_processing/extraction.py).
+    # Optional - unset falls back to the Tesseract/pytesseract path.
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
     # Pre-created per-category folders (Drive UI), so the admin never has to
     # paste a folder or file link - see core/google_drive.py CATEGORY_FOLDER_SETTINGS.
     GOOGLE_DRIVE_EXAMS_FOLDER_ID = os.getenv("GOOGLE_DRIVE_EXAMS_FOLDER_ID")

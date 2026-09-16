@@ -27,6 +27,23 @@ class MockTestRepository(BaseRepository):
             .all()
         )
 
+    def get_by_paper_and_title(
+        self,
+        db: Session,
+        paper_id: int,
+        title: str,
+    ):
+        """Idempotency lookup for the Paper Processing "Use as Mock Test"
+        automation (see paper_processing/service.py apply_usage) - the
+        auto-created mock test for a given paper always uses the same
+        title convention, so re-applying that usage flag finds and reuses
+        it instead of creating a second one."""
+        return (
+            db.query(MockTest)
+            .filter(MockTest.paper_id == paper_id, MockTest.title == title)
+            .first()
+        )
+
     def get_published_by_paper(
         self,
         db: Session,

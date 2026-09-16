@@ -1,6 +1,7 @@
 {% extends "layouts/base.html" %}
 {% from "components/breadcrumbs.html" import render_breadcrumbs %}
 {% from "components/card_grid.html" import render_card_grid %}
+{% from "components/seo_sections.html" import render_seo_intro, render_seo_outro %}
 
 {% block title %}{{ exam.meta_title or exam.name }} | LearnIn{% endblock %}
 {% block description %}{{ exam.meta_description or (exam.description or "") }}{% endblock %}
@@ -24,6 +25,8 @@
             <img class="page-hero-illustration" src="{{ exam_hero_image }}" alt="" aria-hidden="true">
         </span>
     </section>
+
+    {{ render_seo_intro(seo_intro_paragraphs, seo_last_updated) }}
 
     <section class="section reveal">
         <div class="stat-row">
@@ -49,6 +52,8 @@
         <p class="section-subtitle">Pick a department to see its subjects, papers, and mock tests.</p>
         {{ render_card_grid(department_cards, "No departments published yet.") }}
     </section>
+
+    {{ render_seo_outro(seo_outro_heading, seo_outro_text, seo_outro_ctas) }}
 
 </div>
 {% endblock %}

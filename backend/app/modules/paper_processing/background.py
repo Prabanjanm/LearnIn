@@ -26,6 +26,7 @@ from app.core.database import SessionLocal
 from app.core.enums import PdfTypeEnum, ProcessingStatusEnum, WatermarkStatusEnum
 from app.core.google_drive import get_drive_client
 
+from .answer_key_parser import parse_answer_key
 from .extraction import ExtractionError, OcrUnavailableError, extract_text_with_positions
 from .model import PaperProcessingJob
 from .pdf_analysis import analyze_pdf
@@ -220,8 +221,17 @@ def run_pipeline(db: Session, job_id: int) -> PaperProcessingJob:
         # parsed text itself - a failure here must never lose the questions
         # that were already successfully parsed, so it is logged and
         # treated as "no visuals found" rather than failing the whole job.
+        # This is also, by a wide margin, the slowest stage on a long paper
+        # (rendering candidate diagram crops page by page) - should_stop
+        # lets a requested cancellation break out of it after the page
+        # currently being rendered, rather than waiting for every remaining
+        # page, and whatever was already found for earlier pages is kept,
+        # not thrown away.
         try:
-            visuals = detect_question_visuals(working_content, parsed, blocks)
+            visuals = detect_question_visuals(
+                working_content, parsed, blocks,
+                should_stop=lambda: service.is_cancel_requested(db, job),
+            )
         except Exception:
             logger.exception("Job %s: visual/diagram detection failed", job.id)
             visuals = {}
@@ -231,14 +241,34 @@ def run_pipeline(db: Session, job_id: int) -> PaperProcessingJob:
             job.id, total_visuals, len(visuals),
         )
 
-        _checkpoint(db, job, "before saving detected questions")
-
+        # Deliberately NOT a _checkpoint() here: the questions above are
+        # already fully parsed (a fast, in-memory step) by this point, so a
+        # stop request must never discard them - they are saved first, and
+        # only then does a pending cancellation decide the job's final
+        # status. Losing real, already-detected questions to a cancel that
+        # happened to land during the (much slower) visuals pass was exactly
+        # the "cancel throws away everything" behavior this replaces.
         try:
             service.replace_extracted_questions(db, job, parsed, ocr_used=ocr_used, visuals=visuals)
         except Exception:
             logger.exception("Job %s: could not store extracted questions", job.id)
             db.rollback()
             return service.fail_job(db, job, GENERIC_FAILURE_MESSAGE)
+
+        if service.is_cancel_requested(db, job):
+            if parsed:
+                logger.info(
+                    "Job %s: stop requested - %d question(s) already detected are saved for review",
+                    job.id, len(parsed),
+                )
+                return service.set_status(
+                    db, job, ProcessingStatusEnum.READY_FOR_REVIEW,
+                    f"Stopped as requested before finishing. {len(parsed)} question(s) "
+                    "detected so far were saved - review them below, or re-run processing "
+                    "to pick up where this left off.",
+                )
+            logger.info("Job %s: stop requested, halting - nothing was detected yet", job.id)
+            return service.fail_job(db, job, CANCELLED_MESSAGE)
 
         if not parsed:
             # A real, reportable outcome - the admin can still add questions
@@ -251,8 +281,30 @@ def run_pipeline(db: Session, job_id: int) -> PaperProcessingJob:
                 "You can add them manually on the review screen.",
             )
 
+        # -------------------------------------------- 5.5 answer key (optional) --
+        # Enrichment only, never a blocker: a job with no answer key uploaded,
+        # or one that fails to download/parse, simply publishes with the same
+        # DEFAULT_* placeholders it always has (see service.publish_job).
+        review_message = None
+        if job.answer_file_id:
+            try:
+                key_content = client.download_file(job.answer_file_id)
+                key_analysis = analyze_pdf(key_content)
+                key_text, _, _ = extract_text_with_positions(
+                    key_content, key_analysis["pdf_type"] or PdfTypeEnum.UNKNOWN
+                )
+                entries = parse_answer_key(key_text)
+                if entries:
+                    matched, total = service.apply_answer_key(db, job, entries)
+                    review_message = f"Answer key matched {matched} of {total} question(s)."
+                    logger.info("Job %s: %s", job.id, review_message)
+                else:
+                    logger.info("Job %s: answer key uploaded but no rows could be parsed from it", job.id)
+            except Exception:
+                logger.exception("Job %s: answer key parsing failed, continuing without it", job.id)
+
         logger.info("Job %s: pipeline finished, ready for review", job.id)
-        return service.set_status(db, job, ProcessingStatusEnum.READY_FOR_REVIEW)
+        return service.set_status(db, job, ProcessingStatusEnum.READY_FOR_REVIEW, review_message)
 
     except _Cancelled:
         return service.fail_job(db, job, CANCELLED_MESSAGE)

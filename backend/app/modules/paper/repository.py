@@ -43,6 +43,38 @@ class PaperRepository(BaseRepository):
             .first()
         )
 
+    def list_all_with_hierarchy(self, db: Session):
+        """Every paper regardless of status, with its subject/department/
+        exam eager-loaded - powers the Paper Processing "manage usage"
+        list, which must cover papers created outside this pipeline too
+        (generic admin CRUD, an older import), not only ones with a job."""
+        return (
+            db.query(Paper)
+            .options(
+                selectinload(Paper.subject)
+                .selectinload(Subject.department)
+                .selectinload(Department.exam)
+            )
+            .order_by(Paper.created_at.desc())
+            .all()
+        )
+
+    def get_by_subject_and_year(
+        self,
+        db: Session,
+        subject_id: int,
+        year: int
+    ):
+        """Any status, not just PUBLISHED - the duplicate-prevention check
+        in Paper Processing's "new job" form must catch an existing DRAFT
+        paper too, not just a live one (uq_subject_year covers every
+        status)."""
+        return (
+            db.query(Paper)
+            .filter(Paper.subject_id == subject_id, Paper.year == year)
+            .first()
+        )
+
     def get_published_by_year(
         self,
         db: Session,

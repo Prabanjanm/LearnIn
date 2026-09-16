@@ -99,3 +99,56 @@ def test_whole_page_scan_is_not_treated_as_one_questions_diagram():
     visuals = detect_question_visuals(content, parsed, blocks)
 
     assert visuals == {}
+
+
+def test_should_stop_halts_before_rendering_further_pages():
+    """
+    should_stop is checked once per page, before that page's (expensive)
+    rendering work starts - a stop requested up front must skip every page,
+    and one that flips True partway through must still keep whatever was
+    already found for earlier pages.
+    """
+    import pymupdf
+
+    document = pymupdf.open()
+    for i in range(3):
+        page = document.new_page()
+        page.insert_textbox(
+            pymupdf.Rect(40, 40, 555, 90),
+            f"{i + 1}. Refer to the diagram below. What shape is shown?",
+            fontsize=11, fontname="helv",
+        )
+        pixmap = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 100, 100))
+        pixmap.set_rect(pixmap.irect, (10, 10, 200))
+        page.insert_image(pymupdf.Rect(220, 110, 340, 230), pixmap=pixmap)
+        page.insert_textbox(
+            pymupdf.Rect(40, 260, 555, 340),
+            "A) circle\nB) square\nC) triangle\nD) hexagon",
+            fontsize=11, fontname="helv",
+        )
+    content = document.tobytes()
+    document.close()
+
+    parsed, blocks = _parse(content)
+    assert len(parsed) == 3
+
+    # Stops before any page is processed - nothing found at all.
+    visuals_none = detect_question_visuals(content, parsed, blocks, should_stop=lambda: True)
+    assert visuals_none == {}
+
+    # Never asked to stop - every question gets its diagram.
+    visuals_all = detect_question_visuals(content, parsed, blocks, should_stop=lambda: False)
+    assert set(visuals_all.keys()) == {0, 1, 2}
+
+    # Stops after the first page - only question 0's diagram (page 0) is
+    # found, questions 1 and 2 (later pages) are not reached.
+    calls = {"n": 0}
+
+    def stop_after_one_page():
+        calls["n"] += 1
+        return calls["n"] > 1
+
+    visuals_partial = detect_question_visuals(content, parsed, blocks, should_stop=stop_after_one_page)
+    assert 0 in visuals_partial
+    assert 1 not in visuals_partial
+    assert 2 not in visuals_partial

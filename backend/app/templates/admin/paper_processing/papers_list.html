@@ -1,0 +1,63 @@
+{% extends "admin/_layout.html" %}
+
+{% block title %}Manage Paper Usage - LearnIn Admin{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/paper-processing.css?v=5">{% endblock %}
+
+{% block breadcrumb %}
+<span class="admin-breadcrumb-sep">/</span>
+<a href="{{ base_path }}">Paper Processing</a>
+<span class="admin-breadcrumb-sep">/</span>
+<span>Papers</span>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <div>
+        <h1>Manage Usage</h1>
+        <p class="admin-page-subtitle">
+            Every paper on LearnIn - including ones created before this feature existed, or
+            through the generic Papers screen rather than this pipeline. Set "Use this paper
+            for" on any of them here.
+        </p>
+    </div>
+</div>
+
+<div class="admin-table-wrapper">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Year</th>
+                <th>Exam / Department / Subject</th>
+                <th>Status</th>
+                <th>Use this paper for</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for paper in papers %}
+            <tr>
+                <td>{{ paper.id }}</td>
+                <td>{{ paper.title }}</td>
+                <td>{{ paper.year }}</td>
+                <td>
+                    {% if paper.subject %}
+                    {{ paper.subject.department.exam.name }} / {{ paper.subject.department.name }} / {{ paper.subject.name }}
+                    {% endif %}
+                </td>
+                <td>{{ paper.status.value }}</td>
+                <td>
+                    {% set flags = paper.usage_flags_list() %}
+                    {% if flags %}{{ flags|length }} selected{% else %}<span class="admin-field-hint">None set</span>{% endif %}
+                </td>
+                <td><a class="admin-btn admin-btn-secondary admin-btn-sm" href="{{ base_path }}/papers/{{ paper.id }}/usage">Manage usage</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="admin-table-empty">No papers yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,8 +1,9 @@
 {% extends "admin/_layout.html" %}
+{% from "components/upload_field.html" import render_upload_field %}
 
 {% block title %}Review #{{ job.id }} - LearnIn Admin{% endblock %}
 
-{% block css %}<link rel="stylesheet" href="/static/css/paper-processing.css">{% endblock %}
+{% block css %}<link rel="stylesheet" href="/static/css/paper-processing.css?v=5">{% endblock %}
 
 {% block breadcrumb %}
 <span class="admin-breadcrumb-sep">/</span>
@@ -23,10 +24,39 @@
             {{ job.questions_low_confidence }} low confidence
         </p>
     </div>
-    <a class="admin-btn admin-btn-secondary" href="{{ base_path }}/{{ job.id }}">Back to status</a>
+    <div class="admin-page-header-actions">
+        <a class="admin-btn admin-btn-secondary" href="{{ base_path }}/{{ job.id }}">Back to status</a>
+        <button type="submit" form="pp-save-review-form" class="admin-btn admin-btn-primary" data-pp-save-review>
+            Save review and continue
+        </button>
+    </div>
 </div>
 
 {% if error %}<p class="admin-error">{{ error }}</p>{% endif %}
+{% if message %}<div class="admin-toast admin-toast--success">{{ message }}</div>{% endif %}
+
+<details class="pp-answer-key" {% if not job.answer_file_id %}open{% endif %}>
+    <summary>
+        {% if job.answer_file_id %}Answer key attached &middot; replace it{% else %}No answer key attached yet - add one{% endif %}
+    </summary>
+    <form method="post" action="{{ base_path }}/{{ job.id }}/answer-key" class="admin-form" enctype="multipart/form-data">
+        {{ render_upload_field({
+            "name": "answer_file_id",
+            "label": "Answer key PDF",
+            "category": "paper_processing_sources",
+            "accept": ".pdf",
+            "required": True,
+        }) }}
+        <p class="admin-field-hint">
+            Matched to the questions above by question number, filling in each question's
+            type, marks and correct answer. Uploading a new key here replaces the one
+            currently attached to this job.
+        </p>
+        <button type="submit" class="admin-btn admin-btn-secondary">
+            {% if job.answer_file_id %}Replace answer key{% else %}Attach answer key{% endif %}
+        </button>
+    </form>
+</details>
 
 <p class="pp-note">
     Everything below was extracted from the uploaded PDF. Nothing here has been
@@ -112,12 +142,17 @@
 
         <div class="admin-field pp-answer">
             <label>Correct answer (leave blank if the source does not state one)</label>
-            <select data-pp-answer>
-                <option value="" {% if not question.correct_answer %}selected{% endif %}>Not available</option>
-                {% for label in ['A', 'B', 'C', 'D'] %}
-                <option value="{{ label }}" {% if question.correct_answer == label %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
+            <input type="text" data-pp-answer value="{{ question.correct_answer or '' }}"
+                placeholder="e.g. A, B;D for multiple correct options, or 21 to 21 for a numeric range"
+                maxlength="50">
+            {% if question.question_type or question.marks %}
+            <p class="admin-field-hint">
+                From the answer key:
+                {% if question.question_type %}{{ question.question_type.value }}{% endif %}
+                {% if question.marks %}&middot; {{ question.marks }} mark{{ 's' if question.marks != 1 else '' }}{% endif %}
+                {% if question.negative_marks %}&middot; {{ question.negative_marks }} negative{% endif %}
+            </p>
+            {% endif %}
         </div>
 
         {% if question.raw_source_text %}
@@ -146,8 +181,8 @@
         + Add question
     </button>
 
-    <form method="post" action="{{ base_path }}/{{ job.id }}/save">
-        <button type="submit" class="admin-btn admin-btn-primary">Save review and continue</button>
+    <form method="post" action="{{ base_path }}/{{ job.id }}/save" id="pp-save-review-form">
+        <button type="submit" class="admin-btn admin-btn-primary" data-pp-save-review>Save review and continue</button>
     </form>
 </div>
 {% endblock %}

@@ -1,6 +1,7 @@
 {% extends "layouts/base.html" %}
 {% from "components/breadcrumbs.html" import render_breadcrumbs %}
 {% from "components/card_grid.html" import render_card_grid %}
+{% from "components/seo_sections.html" import render_seo_intro, render_seo_outro %}
 
 {% block title %}{{ department.meta_title or (department.name ~ " - " ~ exam.name) }} | LearnIn{% endblock %}
 {% block description %}{{ department.meta_description or "" }}{% endblock %}
@@ -20,6 +21,8 @@
         </span>
     </section>
 
+    {{ render_seo_intro(seo_intro_paragraphs, seo_last_updated) }}
+
     <section class="section">
         <div class="section-head">
             <h2>Subjects</h2>
@@ -27,6 +30,8 @@
         <p class="section-subtitle">Practice questions, previous year papers, and study materials by subject.</p>
         {{ render_card_grid(subject_cards, "No subjects published yet.") }}
     </section>
+
+    {{ render_seo_outro(seo_outro_heading, seo_outro_text, seo_outro_ctas) }}
 
 </div>
 {% endblock %}

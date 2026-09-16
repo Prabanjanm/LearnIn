@@ -25,6 +25,7 @@ class PaperService(BaseService):
             subject_id=data.subject_id,
             title=data.title,
             year=data.year,
+            paper_type=data.paper_type,
             question_file_id=data.question_file_id,
             question_file_mime_type=data.question_file_mime_type,
             question_file_size=data.question_file_file_size,

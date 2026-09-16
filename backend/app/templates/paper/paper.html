@@ -1,6 +1,7 @@
 {% extends "layouts/base.html" %}
 {% from "components/breadcrumbs.html" import render_breadcrumbs %}
 {% from "components/card_grid.html" import render_card_grid %}
+{% from "components/seo_sections.html" import render_seo_intro, render_seo_outro %}
 
 {% block title %}{{ paper.title }} ({{ paper.year }}) - {{ subject.name }} | LearnIn{% endblock %}
 {% block description %}{{ paper.title }} previous year question paper for {{ subject.name }}, {{ department.name }}, {{ exam.name }}.{% endblock %}
@@ -54,6 +55,8 @@
         {% endif %}
     </section>
 
+    {{ render_seo_intro(seo_intro_paragraphs, seo_last_updated) }}
+
     <section class="section">
         <div class="section-head">
             <h2>Mock Tests</h2>
@@ -61,6 +64,18 @@
         <p class="section-subtitle">Simulate the real exam with a timed mock test based on this paper.</p>
         {{ render_card_grid(mock_test_cards, "No mock tests published yet for this paper.") }}
     </section>
+
+    {% if related_paper_cards %}
+    <section class="section">
+        <div class="section-head">
+            <h2>More {{ subject.name }} Papers</h2>
+        </div>
+        <p class="section-subtitle">Other previous-year papers available for {{ subject.name }}.</p>
+        {{ render_card_grid(related_paper_cards) }}
+    </section>
+    {% endif %}
+
+    {{ render_seo_outro(seo_outro_heading, seo_outro_text, seo_outro_ctas) }}
 
 </div>
 {% endblock %}

@@ -1,6 +1,7 @@
 {% extends "layouts/base.html" %}
 {% from "components/breadcrumbs.html" import render_breadcrumbs %}
 {% from "components/pagination.html" import render_pagination %}
+{% from "components/seo_sections.html" import render_seo_intro, render_seo_outro %}
 
 {% block title %}Practice Questions | LearnIn{% endblock %}
 {% block description %}Find a subject to practice questions from real previous-year papers, filterable by exam and department.{% endblock %}
@@ -19,6 +20,8 @@
         </div>
         <img class="page-hero-illustration" src="/static/img/illustrations/practice.webp" alt="" aria-hidden="true">
     </section>
+
+    {{ render_seo_intro(seo_intro_paragraphs) }}
 
     <form method="get" action="/practice" class="paper-filters" data-paper-filters>
         <input type="text" name="q" value="{{ filters.q }}" placeholder="Search subject...">
@@ -66,6 +69,8 @@
 
         {{ render_pagination(page, has_previous, has_next, "/practice", extra_query) }}
     </section>
+
+    {{ render_seo_outro(seo_outro_heading, seo_outro_text, seo_outro_ctas) }}
 
 </div>
 {% endblock %}
