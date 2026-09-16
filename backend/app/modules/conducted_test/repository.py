@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.orm import Session, selectinload
 
 from app.common.repositories.base_repository import BaseRepository
@@ -23,7 +24,7 @@ class ConductedTestRepository(BaseRepository):
     def code_exists(self, db: Session, test_code: str) -> bool:
         return db.query(ConductedTest).filter(ConductedTest.test_code == test_code).first() is not None
 
-    def get_by_institution(self, db: Session, institution_id: int) -> list[ConductedTest]:
+    def get_by_institution(self, db: Session, institution_id: uuid.UUID) -> list[ConductedTest]:
         """The multi-tenant scoping query - every listing/lookup an
         institution portal route uses ultimately goes through this or
         get_by_id_for_institution, never an unscoped get_by_id."""
@@ -37,7 +38,7 @@ class ConductedTestRepository(BaseRepository):
             .all()
         )
 
-    def get_by_id_for_institution(self, db: Session, conducted_test_id: int, institution_id: int) -> ConductedTest | None:
+    def get_by_id_for_institution(self, db: Session, conducted_test_id: uuid.UUID, institution_id: uuid.UUID) -> ConductedTest | None:
         return (
             db.query(ConductedTest)
             .filter(

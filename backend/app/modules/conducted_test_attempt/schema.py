@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, Field
@@ -12,7 +13,7 @@ class JoinTestResponse(BaseModel):
     answers, only enough to render the security-warning + accept-rules
     screen before the student has actually started the timed window."""
 
-    conducted_test_id: int
+    conducted_test_id: uuid.UUID
     title: str
     instructions: str | None
     duration_minutes: int
@@ -22,15 +23,15 @@ class JoinTestResponse(BaseModel):
 
 
 class StartAttemptResponse(BaseModel):
-    attempt_id: int
+    attempt_id: uuid.UUID
     remaining_seconds: int
     window_ends_at: datetime
     questions: list[dict]
-    answers: dict[int, str]
+    answers: dict[uuid.UUID, str]
 
 
 class SaveAnswerRequest(BaseModel):
-    question_id: int
+    question_id: uuid.UUID
     answer: str = ""
 
 
@@ -39,7 +40,7 @@ class ViolationRequest(BaseModel):
 
 
 class SubmitResponse(BaseModel):
-    attempt_id: int
+    attempt_id: uuid.UUID
     result_code: str
     status: str
     termination_reason: str | None

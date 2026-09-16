@@ -24,13 +24,49 @@
             </p>
         </div>
         <div class="admin-table-actions">
-            {% if institution.status.value == "ARCHIVED" %}
+            {% if institution.status.value == "DRAFT" %}
+            <button type="button" class="admin-btn admin-btn-primary" data-action="activate">Approve</button>
+            <button type="button" class="admin-btn admin-btn-danger" data-action="archive" data-confirm="Reject this institution signup request?">Reject</button>
+            {% elif institution.status.value == "ARCHIVED" %}
             <button type="button" class="admin-btn admin-btn-primary" data-action="activate">Reactivate</button>
             {% else %}
             <button type="button" class="admin-btn admin-btn-danger" data-action="archive" data-confirm="Archive this institution? Its users will no longer be able to log in.">Archive</button>
             {% endif %}
         </div>
     </div>
+
+    {% if requesting_user %}
+    <h2>Requesting Details</h2>
+    <p class="admin-page-subtitle">
+        {% if institution.status.value == "DRAFT" %}
+        Verify these details (call the number below) before approving this institution.
+        {% else %}
+        Submitted when this institution signed up.
+        {% endif %}
+    </p>
+    <div class="admin-table-wrapper" style="margin-bottom:24px;">
+        <table class="admin-table">
+            <tbody>
+                <tr>
+                    <th style="width:160px;">Contact name</th>
+                    <td>{{ requesting_user.full_name or "—" }}</td>
+                </tr>
+                <tr>
+                    <th>Email</th>
+                    <td>{{ requesting_user.email }}</td>
+                </tr>
+                <tr>
+                    <th>Mobile number</th>
+                    <td>{{ requesting_user.phone or "—" }}</td>
+                </tr>
+                <tr>
+                    <th>Requested on</th>
+                    <td>{{ requesting_user.created_at.strftime("%d %b %Y, %H:%M") }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
 
     <h2>Conducted Test Feature</h2>
     <p class="admin-page-subtitle">Controls whether this institution's portal can create/manage Conducted Tests. Enforced server-side, not just a UI toggle.</p>
@@ -40,7 +76,7 @@
     </label>
 
     <h2>Institution Users</h2>
-    <p class="admin-page-subtitle">Login accounts for this institution's own portal (<code>/institution/login</code>).</p>
+    <p class="admin-page-subtitle">Login accounts for this institution's own portal (<code>/login</code>, same form as students).</p>
 
     <div class="admin-table-wrapper">
         <table class="admin-table">
@@ -48,6 +84,7 @@
                 <tr>
                     <th>Email</th>
                     <th>Name</th>
+                    <th>Phone</th>
                     <th>Status</th>
                     <th></th>
                 </tr>
@@ -67,6 +104,10 @@
         <div class="admin-field">
             <label for="user_full_name">Full name</label>
             <input type="text" id="user_full_name" name="full_name">
+        </div>
+        <div class="admin-field">
+            <label for="user_phone">Phone</label>
+            <input type="tel" id="user_phone" name="phone">
         </div>
         <div class="admin-field">
             <label for="user_password">Temporary password</label>

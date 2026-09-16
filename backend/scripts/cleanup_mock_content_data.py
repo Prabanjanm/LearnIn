@@ -56,13 +56,14 @@ Usage:
 """
 import argparse
 import sys
+import uuid
 from dataclasses import dataclass, field
 
 sys.path.insert(0, ".")
 
 import app.models  # noqa: E402, F401 - registers every model so relationship() strings resolve
 
-from sqlalchemy import inspect, text  # noqa: E402
+from sqlalchemy import bindparam, inspect, text  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
 from app.common.utils.file_tracking import cleanup_drive_files  # noqa: E402
@@ -94,25 +95,25 @@ _EXTRACTION_TABLES = ("extracted_question_images", "extracted_options", "extract
 
 @dataclass
 class CleanupPlan:
-    real_exam_id: int
+    real_exam_id: uuid.UUID
     real_exam_code: str
     real_exam_name: str
 
-    exam_ids: list[int] = field(default_factory=list)
-    department_ids: list[int] = field(default_factory=list)
-    subject_ids: list[int] = field(default_factory=list)
-    paper_ids: list[int] = field(default_factory=list)
-    question_ids: list[int] = field(default_factory=list)
-    option_ids: list[int] = field(default_factory=list)
-    mock_test_ids: list[int] = field(default_factory=list)
-    mock_test_question_ids: list[int] = field(default_factory=list)
-    session_ids: list[int] = field(default_factory=list)
-    session_answer_ids: list[int] = field(default_factory=list)
-    attempt_ids: list[int] = field(default_factory=list)
-    attempt_answer_ids: list[int] = field(default_factory=list)
-    conducted_test_ids: list[int] = field(default_factory=list)
-    conducted_attempt_ids: list[int] = field(default_factory=list)
-    conducted_attempt_answer_ids: list[int] = field(default_factory=list)
+    exam_ids: list[uuid.UUID] = field(default_factory=list)
+    department_ids: list[uuid.UUID] = field(default_factory=list)
+    subject_ids: list[uuid.UUID] = field(default_factory=list)
+    paper_ids: list[uuid.UUID] = field(default_factory=list)
+    question_ids: list[uuid.UUID] = field(default_factory=list)
+    option_ids: list[uuid.UUID] = field(default_factory=list)
+    mock_test_ids: list[uuid.UUID] = field(default_factory=list)
+    mock_test_question_ids: list[uuid.UUID] = field(default_factory=list)
+    session_ids: list[uuid.UUID] = field(default_factory=list)
+    session_answer_ids: list[uuid.UUID] = field(default_factory=list)
+    attempt_ids: list[uuid.UUID] = field(default_factory=list)
+    attempt_answer_ids: list[uuid.UUID] = field(default_factory=list)
+    conducted_test_ids: list[uuid.UUID] = field(default_factory=list)
+    conducted_attempt_ids: list[uuid.UUID] = field(default_factory=list)
+    conducted_attempt_answer_ids: list[uuid.UUID] = field(default_factory=list)
     file_ids: list[str] = field(default_factory=list)
 
     # (table_name, id) pairs from the unrelated extraction feature, in
@@ -189,18 +190,33 @@ def build_plan(db: Session, preserve_exam_code: str = PRESERVE_EXAM_CODE) -> Cle
     # if the tables don't exist (e.g. the test DB never creates them).
     inspector = inspect(db.bind)
     if inspector.has_table("paper_processing_jobs") and (plan.paper_ids or plan.subject_ids):
-        job_ids = _ids(db.execute(
-            text("select id from paper_processing_jobs where paper_id in :paper_ids or subject_id in :subject_ids")
-            .bindparams(paper_ids=tuple(plan.paper_ids or [-1]), subject_ids=tuple(plan.subject_ids or [-1])),
-        ))
+        conditions = []
+        params: dict = {}
+        # Raw text() SQL bypasses the ORM's Uuid type processing, which on
+        # sqlite/most backends stores UUIDs as their 32-char .hex digest (no
+        # dashes) - so ids crossing into raw SQL here must be normalized to
+        # that same .hex form to actually match stored rows.
+        if plan.paper_ids:
+            conditions.append("paper_id in :paper_ids")
+            params["paper_ids"] = [i.hex for i in plan.paper_ids]
+        if plan.subject_ids:
+            conditions.append("subject_id in :subject_ids")
+            params["subject_ids"] = [i.hex for i in plan.subject_ids]
+        stmt = text(f"select id from paper_processing_jobs where {' or '.join(conditions)}")
+        stmt = stmt.bindparams(*(bindparam(name, expanding=True) for name in params))
+        job_ids = _ids(db.execute(stmt, params))
+
         extracted_question_ids = _ids(db.execute(
-            text("select id from extracted_questions where job_id in :ids").bindparams(ids=tuple(job_ids or [-1]))
+            text("select id from extracted_questions where job_id in :ids").bindparams(bindparam("ids", expanding=True)),
+            {"ids": list(job_ids)},
         )) if job_ids else []
         extracted_option_ids = _ids(db.execute(
-            text("select id from extracted_options where extracted_question_id in :ids").bindparams(ids=tuple(extracted_question_ids or [-1]))
+            text("select id from extracted_options where extracted_question_id in :ids").bindparams(bindparam("ids", expanding=True)),
+            {"ids": list(extracted_question_ids)},
         )) if extracted_question_ids else []
         extracted_image_ids = _ids(db.execute(
-            text("select id from extracted_question_images where extracted_question_id in :ids").bindparams(ids=tuple(extracted_question_ids or [-1]))
+            text("select id from extracted_question_images where extracted_question_id in :ids").bindparams(bindparam("ids", expanding=True)),
+            {"ids": list(extracted_question_ids)},
         )) if extracted_question_ids else []
 
         plan.extraction_rows = (

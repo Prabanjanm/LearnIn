@@ -1,13 +1,15 @@
+import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.base import BaseModel
 from app.core.mixins import StatusMixin
 
 if TYPE_CHECKING:
+    from app.modules.conducted_test_paper.model import ConductedTestPaper
     from app.modules.institution.model import Institution, InstitutionUser
     from app.modules.mock_test.model import MockTest
 
@@ -17,14 +19,17 @@ class ConductedTest(
     StatusMixin
 ):
     """
-    An institution-scheduled sitting of an existing MockTest: a fixed
+    An institution-scheduled sitting of a fixed question set: a fixed
     server-side time window (scheduled_start_at -> +duration_minutes) that
     every joining student shares, reached only via a shared test_code
-    rather than this row's own id. Deliberately does not duplicate the
-    question engine - it always points at an existing, already-published
-    MockTest (see mock_test_id); "upload a new paper" is the existing
-    admin Paper/Question/MockTest creation flow, done first, with the
-    resulting MockTest then selected here.
+    rather than this row's own id. The question set comes from exactly one
+    of two sources (see the CheckConstraint below):
+      - mock_test_id: an existing, already-published platform MockTest.
+      - conducted_test_paper_id: one of this institution's own uploaded
+        and confirmed papers (conducted_test_paper/model.py -
+        ConductedTestPaper), built via the upload -> process -> review ->
+        confirm flow under /institution/conducted-test-papers. That
+        content is never mixed into the public Paper/Question tables.
 
     Owned by an Institution (a tenant), not by LearnIn Admin -
     institution_id is the multi-tenant scoping key every query in
@@ -43,19 +48,43 @@ class ConductedTest(
 
     __tablename__ = "conducted_tests"
 
-    mock_test_id: Mapped[int] = mapped_column(
+    __table_args__ = (
+        # Exactly one question source: either an existing platform
+        # MockTest, or one of this institution's own uploaded/confirmed
+        # ConductedTestPaper (see conducted_test_paper/model.py) - never
+        # both, never neither. Enforced at the DB level, not just in
+        # service.py, since this is the one invariant every downstream
+        # reader (conducted_test_attempt/service.py) depends on to know
+        # which question source to load.
+        CheckConstraint(
+            "(mock_test_id IS NOT NULL) != (conducted_test_paper_id IS NOT NULL)",
+            name="ck_conducted_test_exactly_one_source",
+        ),
+    )
+
+    mock_test_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("mock_tests.id"),
-        nullable=False,
+        nullable=True,
         index=True
     )
 
-    institution_id: Mapped[int] = mapped_column(
+    conducted_test_paper_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("conducted_test_papers.id"),
+        nullable=True,
+        index=True
+    )
+
+    institution_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("institutions.id"),
         nullable=False,
         index=True
     )
 
-    created_by_institution_user_id: Mapped[int] = mapped_column(
+    created_by_institution_user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("institution_users.id"),
         nullable=False,
         index=True
@@ -93,7 +122,9 @@ class ConductedTest(
         index=True
     )
 
-    mock_test: Mapped["MockTest"] = relationship()
+    mock_test: Mapped["MockTest | None"] = relationship()
+
+    conducted_test_paper: Mapped["ConductedTestPaper | None"] = relationship()
 
     institution: Mapped["Institution"] = relationship()
 

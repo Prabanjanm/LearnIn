@@ -12,7 +12,7 @@
 <div class="admin-field upload-field">
     <label>{{ field.label }}{% if field.required %} *{% endif %}</label>
 
-    <div class="upload-dropzone" data-upload-category="{{ field.category or '' }}">
+    <div class="upload-dropzone" data-upload-category="{{ field.category or '' }}"{% if field.endpoint %} data-upload-endpoint="{{ field.endpoint }}"{% endif %}>
         <input type="file" class="upload-input" accept="{{ field.accept or '*/*' }}" hidden>
 
         <div class="upload-preview" data-upload-preview>

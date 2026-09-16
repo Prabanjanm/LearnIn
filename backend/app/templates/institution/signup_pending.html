@@ -1,0 +1,25 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Request Received | LearnIn{% endblock %}
+{% block description %}Your institution signup request has been received and is awaiting admin approval.{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/account.css?v=2">{% endblock %}
+
+{% block content %}
+<section class="split-hero">
+    <div class="split-hero-content">
+        <div class="account-card account-card--split">
+            <h1>Request received</h1>
+            <p class="section-subtitle">
+                Thanks, {{ contact_name }}. We've received your request to register
+                <strong>{{ institution_name }}</strong>. Our team will verify the details
+                (including the mobile number you provided) and approve your account shortly.
+            </p>
+            <p class="section-subtitle">You'll be able to log in at <a href="/login">/login</a> once it's approved.</p>
+        </div>
+    </div>
+    <div class="split-hero-panel">
+        <img class="split-hero-illustration" src="/static/img/illustrations/signup.webp" alt="">
+    </div>
+</section>
+{% endblock %}

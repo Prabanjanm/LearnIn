@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from app.common.utils.drive_urls import drive_thumbnail_url, drive_view_url
@@ -11,7 +13,7 @@ from app.core.enums import (
 
 
 class PaperProcessingJobCreate(BaseModel):
-    subject_id: int
+    subject_id: uuid.UUID
     title: str = Field(min_length=1, max_length=255)
     year: int = Field(ge=1900, le=2200)
     source_url: str | None = Field(default=None, max_length=1000)
@@ -26,6 +28,14 @@ class PaperProcessingJobCreate(BaseModel):
     answer_mime_type: str | None = None
     answer_file_size: int | None = None
     answer_filename: str | None = None
+
+    # Optional destination: when a mock_test_title is supplied, publish_job
+    # creates a MockTest (with these details) out of the published Paper's
+    # questions, in addition to the Paper itself.
+    mock_test_title: str | None = Field(default=None, max_length=255)
+    mock_test_description: str | None = None
+    mock_test_duration: int | None = Field(default=None, gt=0)
+    mock_test_total_marks: int | None = Field(default=None, gt=0)
 
 
 class ExtractedOptionIn(BaseModel):
@@ -47,7 +57,7 @@ class ExtractedQuestionIn(BaseModel):
 
 
 class ExtractedOptionResponse(BaseModel):
-    id: int
+    id: uuid.UUID
     label: str
     option_text: str
 
@@ -55,7 +65,7 @@ class ExtractedOptionResponse(BaseModel):
 
 
 class ExtractedQuestionImageResponse(BaseModel):
-    id: int
+    id: uuid.UUID
     order_index: int
     file_id: str
     mime_type: str | None = None
@@ -78,7 +88,7 @@ class ExtractedQuestionImageResponse(BaseModel):
 
 
 class ExtractedQuestionResponse(BaseModel):
-    id: int
+    id: uuid.UUID
     order_index: int
     question_number: int | None = None
     question_text: str
@@ -95,7 +105,7 @@ class ExtractedQuestionResponse(BaseModel):
 class PaperProcessingJobStatusResponse(BaseModel):
     """Polled by the review page while the pipeline runs."""
 
-    id: int
+    id: uuid.UUID
     status: ProcessingStatusEnum
     pdf_type: PdfTypeEnum | None = None
     ocr_used: bool
@@ -103,7 +113,7 @@ class PaperProcessingJobStatusResponse(BaseModel):
     error_message: str | None = None
     questions_extracted: int
     questions_low_confidence: int
-    paper_id: int | None = None
+    paper_id: uuid.UUID | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -135,4 +145,4 @@ class ExtractedQuestionImageAttach(BaseModel):
 
 
 class ReassignImageRequest(BaseModel):
-    target_question_id: int
+    target_question_id: uuid.UUID

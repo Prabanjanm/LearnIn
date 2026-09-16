@@ -30,6 +30,7 @@
                 <th>Title</th>
                 <th>Year</th>
                 <th>Subject</th>
+                <th>Destination</th>
                 <th>Status</th>
                 <th>Questions</th>
                 <th>Created</th>
@@ -43,13 +44,14 @@
                 <td>{{ job.title }}</td>
                 <td>{{ job.year }}</td>
                 <td>{{ job.subject.name if job.subject else job.subject_id }}</td>
+                <td>{{ 'Mock Test - ' + job.mock_test_title if job.mock_test_title else 'Paper only' }}</td>
                 <td><span class="pp-status pp-status--{{ job.status.value|lower }}">{{ status_labels.get(job.status, job.status.value) }}</span></td>
                 <td>{{ job.questions_extracted }}</td>
                 <td>{{ job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at else '' }}</td>
                 <td><a class="admin-btn admin-btn-secondary admin-btn-sm" href="{{ base_path }}/{{ job.id }}">Open</a></td>
             </tr>
             {% else %}
-            <tr><td colspan="8" class="admin-table-empty">No processing jobs yet.</td></tr>
+            <tr><td colspan="9" class="admin-table-empty">No processing jobs yet.</td></tr>
             {% endfor %}
         </tbody>
     </table>

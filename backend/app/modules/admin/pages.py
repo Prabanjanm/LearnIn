@@ -1,5 +1,6 @@
 import json
 import logging
+import uuid
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -468,7 +469,7 @@ async def question_create(
 
     try:
         data = QuestionCreate(
-            paper_id=int(form_data.get("paper_id")),
+            paper_id=uuid.UUID(form_data.get("paper_id")),
             question_number=int(form_data.get("question_number")),
             question_type=form_data.get("question_type"),
             difficulty=form_data.get("difficulty"),
@@ -569,7 +570,7 @@ def _edit_success_response(request: Request, entity_key: str, embed: bool):
 
 @router.get("/admin/manage/questions/{question_id}/view")
 def question_view(
-    question_id: int,
+    question_id: uuid.UUID,
     request: Request,
     admin: Admin | None = Depends(get_optional_admin),
     db: Session = Depends(get_db),
@@ -597,7 +598,7 @@ def question_view(
 
 @router.get("/admin/manage/questions/{question_id}/edit")
 def question_edit_form(
-    question_id: int,
+    question_id: uuid.UUID,
     request: Request,
     embed: bool = False,
     admin: Admin | None = Depends(get_optional_admin),
@@ -632,7 +633,7 @@ def question_edit_form(
 
 @router.post("/admin/manage/questions/{question_id}/edit")
 async def question_edit_submit(
-    question_id: int,
+    question_id: uuid.UUID,
     request: Request,
     admin: Admin | None = Depends(get_optional_admin),
     db: Session = Depends(get_db),
@@ -785,10 +786,10 @@ async def mock_test_create(
 
     try:
         raw_ids = form_data.get("question_ids", "")
-        question_ids = [int(part.strip()) for part in raw_ids.split(",") if part.strip()]
+        question_ids = [uuid.UUID(part.strip()) for part in raw_ids.split(",") if part.strip()]
 
         data = MockTestCreate(
-            paper_id=int(form_data.get("paper_id")),
+            paper_id=uuid.UUID(form_data.get("paper_id")),
             title=form_data.get("title"),
             description=form_data.get("description") or None,
             duration=int(form_data.get("duration") or 180),
@@ -830,7 +831,7 @@ async def mock_test_create(
 
 @router.get("/admin/manage/mock_tests/{mock_test_id}/view")
 def mock_test_view(
-    mock_test_id: int,
+    mock_test_id: uuid.UUID,
     request: Request,
     admin: Admin | None = Depends(get_optional_admin),
     db: Session = Depends(get_db),
@@ -860,7 +861,7 @@ def mock_test_view(
 
 @router.get("/admin/manage/mock_tests/{mock_test_id}/edit")
 def mock_test_edit_form(
-    mock_test_id: int,
+    mock_test_id: uuid.UUID,
     request: Request,
     embed: bool = False,
     admin: Admin | None = Depends(get_optional_admin),
@@ -896,7 +897,7 @@ def mock_test_edit_form(
 
 @router.post("/admin/manage/mock_tests/{mock_test_id}/edit")
 async def mock_test_edit_submit(
-    mock_test_id: int,
+    mock_test_id: uuid.UUID,
     request: Request,
     admin: Admin | None = Depends(get_optional_admin),
     db: Session = Depends(get_db),
@@ -942,7 +943,7 @@ async def mock_test_edit_submit(
         mock_test_service.update_mock_test(db, mock_test, data)
 
         raw_ids = form_data.get("question_ids", "")
-        question_ids = [int(part.strip()) for part in raw_ids.split(",") if part.strip()]
+        question_ids = [uuid.UUID(part.strip()) for part in raw_ids.split(",") if part.strip()]
         mock_test_question_service.set_questions(db, mock_test_id, question_ids)
     except IntegrityError:
         db.rollback()
@@ -1138,7 +1139,7 @@ async def entity_create(
 @router.get("/admin/manage/{entity_key}/{obj_id}/view")
 def entity_view(
     entity_key: str,
-    obj_id: int,
+    obj_id: uuid.UUID,
     request: Request,
     admin: Admin | None = Depends(get_optional_admin),
     db: Session = Depends(get_db),
@@ -1172,7 +1173,7 @@ def entity_view(
 @router.get("/admin/manage/{entity_key}/{obj_id}/edit")
 def entity_edit_form(
     entity_key: str,
-    obj_id: int,
+    obj_id: uuid.UUID,
     request: Request,
     embed: bool = False,
     admin: Admin | None = Depends(get_optional_admin),
@@ -1212,7 +1213,7 @@ def entity_edit_form(
 @router.post("/admin/manage/{entity_key}/{obj_id}/edit")
 async def entity_edit_submit(
     entity_key: str,
-    obj_id: int,
+    obj_id: uuid.UUID,
     request: Request,
     admin: Admin | None = Depends(get_optional_admin),
     db: Session = Depends(get_db),
@@ -1307,7 +1308,7 @@ async def entity_bulk_action(
 
     form_data = await request.form()
     action = form_data.get("action")
-    ids = [int(raw_id) for raw_id in form_data.getlist("ids") if raw_id]
+    ids = [uuid.UUID(raw_id) for raw_id in form_data.getlist("ids") if raw_id]
 
     failed = 0
     for obj_id in ids:

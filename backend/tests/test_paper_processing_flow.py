@@ -98,7 +98,7 @@ def drive(monkeypatch):
     return fake
 
 
-def _make_subject(admin_auth_headers, suffix: str) -> int:
+def _make_subject(admin_auth_headers, suffix: str) -> uuid.UUID:
     exam = client.post(
         "/api/exams/",
         json={"name": f"PP Exam {suffix}", "code": f"QPP{suffix}"},
@@ -117,7 +117,7 @@ def _make_subject(admin_auth_headers, suffix: str) -> int:
         headers=admin_auth_headers,
     ).json()
 
-    return subject["id"]
+    return uuid.UUID(subject["id"])
 
 
 def _upload_blob(file_id: str, filename="source.pdf") -> str:
@@ -133,13 +133,13 @@ def _create_job(
     admin_auth_headers,
     drive,
     monkeypatch,
-    subject_id: int,
+    subject_id,
     content: bytes,
     title="GATE CSE",
     year=2024,
-) -> int:
+) -> uuid.UUID:
     """Posts the real step-1 form, with the background task stubbed out."""
-    started: list[int] = []
+    started: list[str] = []
     monkeypatch.setattr(
         "app.modules.paper_processing.pages.run_pipeline_in_background",
         lambda job_id: started.append(job_id),
@@ -163,10 +163,11 @@ def _create_job(
     )
 
     assert response.status_code == 303
-    job_id = int(response.headers["location"].rsplit("/", 1)[1])
+    job_id_str = response.headers["location"].rsplit("/", 1)[1]
+    job_id = uuid.UUID(job_id_str)
 
     # The route really did schedule the pipeline; the test just runs it itself.
-    assert started == [job_id]
+    assert [str(s) for s in started] == [job_id_str]
 
     return job_id
 

@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel, ConfigDict, computed_field
 
 from app.common.utils.drive_urls import drive_view_url
@@ -9,7 +11,7 @@ class SubjectBase(BaseModel):
 
 
 class SubjectCreate(SubjectBase):
-    department_id: int
+    department_id: uuid.UUID
     display_order: int = 0
     icon_file_id: str | None = None
     icon_mime_type: str | None = None
@@ -19,7 +21,7 @@ class SubjectCreate(SubjectBase):
 
 
 class SubjectUpdate(BaseModel):
-    department_id: int | None = None
+    department_id: uuid.UUID | None = None
     name: str | None = None
     display_order: int | None = None
     icon_file_id: str | None = None
@@ -31,8 +33,8 @@ class SubjectUpdate(BaseModel):
 
 class SubjectResponse(SubjectBase):
 
-    id: int
-    department_id: int
+    id: uuid.UUID
+    department_id: uuid.UUID
     slug: str
     display_order: int
     icon_file_id: str | None = None

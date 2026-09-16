@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -419,7 +421,7 @@ def test_bulk_delete_on_exam_archives_instead_of_hard_deleting(admin_auth_header
     assert response.status_code == 303
     assert "bulk_failed" not in response.headers["location"]
 
-    row = db_session.query(Exam).filter(Exam.id == exam["id"]).first()
+    row = db_session.query(Exam).filter(Exam.id == uuid.UUID(exam["id"])).first()
     assert row is not None, "row must still exist - only archived, never hard-deleted"
     assert row.status.value == "ARCHIVED"
 

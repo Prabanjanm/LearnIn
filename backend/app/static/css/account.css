@@ -117,6 +117,15 @@
     margin-top: 14px;
 }
 
+.account-success {
+    background: var(--color-success-bg);
+    color: var(--color-success-text);
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    margin-top: 14px;
+}
+
 .account-switch {
     margin-top: 18px;
     font-size: 14px;

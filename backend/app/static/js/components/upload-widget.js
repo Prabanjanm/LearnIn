@@ -28,6 +28,7 @@ function wireDropzone(dropzone) {
     const statusEl = dropzone.querySelector("[data-upload-status]");
     const hiddenInput = dropzone.parentElement.querySelector("[data-upload-hidden]");
     const category = dropzone.dataset.uploadCategory || "";
+    const endpoint = dropzone.dataset.uploadEndpoint || "/admin/upload";
 
     dropzone.addEventListener("click", () => fileInput.click());
 
@@ -85,7 +86,7 @@ function wireDropzone(dropzone) {
         formData.append("category", category);
 
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", "/admin/upload");
+        xhr.open("POST", endpoint);
 
         xhr.upload.addEventListener("progress", (event) => {
             if (event.lengthComputable) {

@@ -8,6 +8,7 @@ row by hand, and only the explicit publish step creates real
 `Question`/`Option` rows. That separation is the whole point of these
 tables - do not shortcut it.
 """
+import uuid
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean
@@ -17,6 +18,7 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import UniqueConstraint
+from sqlalchemy import Uuid
 
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -46,13 +48,15 @@ class PaperProcessingJob(BaseModel):
 
     __tablename__ = "paper_processing_jobs"
 
-    admin_id: Mapped[int] = mapped_column(
+    admin_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("admins.id"),
         nullable=False,
         index=True
     )
 
-    subject_id: Mapped[int] = mapped_column(
+    subject_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("subjects.id"),
         nullable=False,
         index=True
@@ -166,7 +170,8 @@ class PaperProcessingJob(BaseModel):
     # than mid-stage. Reset to False whenever a fresh run starts.
     cancel_requested: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    paper_id: Mapped[int | None] = mapped_column(
+    paper_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("papers.id"),
         nullable=True,
         index=True
@@ -185,6 +190,18 @@ class PaperProcessingJob(BaseModel):
         default=0,
         nullable=False
     )
+
+    # Where this paper is headed once published: a Mock Test. Left NULL
+    # (mock_test_title) when the admin only wants the Paper/Questions
+    # published without a mock test - publish_job only creates a MockTest
+    # when a title was supplied here.
+    mock_test_title: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    mock_test_description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    mock_test_duration: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    mock_test_total_marks: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Relationships
 
@@ -213,7 +230,8 @@ class ExtractedQuestion(BaseModel):
 
     __tablename__ = "extracted_questions"
 
-    job_id: Mapped[int] = mapped_column(
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("paper_processing_jobs.id"),
         nullable=False,
         index=True
@@ -293,7 +311,8 @@ class ExtractedOption(BaseModel):
 
     __tablename__ = "extracted_options"
 
-    extracted_question_id: Mapped[int] = mapped_column(
+    extracted_question_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("extracted_questions.id"),
         nullable=False,
         index=True
@@ -342,7 +361,8 @@ class ExtractedQuestionImage(BaseModel):
 
     __tablename__ = "extracted_question_images"
 
-    extracted_question_id: Mapped[int] = mapped_column(
+    extracted_question_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("extracted_questions.id"),
         nullable=False,
         index=True

@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel, ConfigDict, computed_field
 
 from app.common.utils.drive_urls import drive_download_url, drive_view_url
@@ -11,7 +13,7 @@ class ResourceBase(BaseModel):
 
 
 class ResourceCreate(ResourceBase):
-    subject_id: int
+    subject_id: uuid.UUID
     google_drive_file_id: str
     google_drive_mime_type: str | None = None
     google_drive_file_size: int | None = None
@@ -32,8 +34,8 @@ class ResourceUpdate(BaseModel):
 
 class ResourceResponse(ResourceBase):
 
-    id: int
-    subject_id: int
+    id: uuid.UUID
+    subject_id: uuid.UUID
     google_drive_file_id: str
     google_drive_filename: str | None = None
     status: StatusEnum

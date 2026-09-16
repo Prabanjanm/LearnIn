@@ -81,6 +81,33 @@
         <textarea id="source_notes" name="source_notes"></textarea>
     </div>
 
+    <h2>Destination - Mock Test (optional)</h2>
+    <p class="admin-page-subtitle">
+        Fill this in if this paper's questions should also become a Mock
+        Test once published. Leave the title blank to only publish the
+        paper's questions, without creating a mock test.
+    </p>
+
+    <div class="admin-field">
+        <label for="mock_test_title">Mock test title</label>
+        <input type="text" id="mock_test_title" name="mock_test_title" maxlength="255">
+    </div>
+
+    <div class="admin-field">
+        <label for="mock_test_description">Mock test description</label>
+        <textarea id="mock_test_description" name="mock_test_description"></textarea>
+    </div>
+
+    <div class="admin-field">
+        <label for="mock_test_duration">Duration (minutes)</label>
+        <input type="number" id="mock_test_duration" name="mock_test_duration" min="1">
+    </div>
+
+    <div class="admin-field">
+        <label for="mock_test_total_marks">Total marks</label>
+        <input type="number" id="mock_test_total_marks" name="mock_test_total_marks" min="1">
+    </div>
+
     <button type="submit" class="admin-btn admin-btn-primary">Upload and start processing</button>
 </form>
 {% endblock %}

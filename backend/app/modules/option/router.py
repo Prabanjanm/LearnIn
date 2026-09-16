@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -15,7 +17,7 @@ router = APIRouter(
 
 @router.get("/", response_model=list[OptionResponse])
 def get_all(
-    question_id: int,
+    question_id: uuid.UUID,
     db: Session = Depends(get_db)
 ):
     return option_service.get_by_question(db, question_id)
@@ -32,7 +34,7 @@ def create(
 
 @router.patch("/{option_id}", response_model=OptionResponse)
 def update(
-    option_id: int,
+    option_id: uuid.UUID,
     data: OptionUpdate,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
@@ -43,7 +45,7 @@ def update(
 
 @router.delete("/{option_id}", status_code=204)
 def delete(
-    option_id: int,
+    option_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):

@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -48,7 +50,7 @@ def list_institutions(
 
 @router.get("/{institution_id}", response_model=InstitutionResponse)
 def get_institution(
-    institution_id: int,
+    institution_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
 ):
@@ -57,7 +59,7 @@ def get_institution(
 
 @router.patch("/{institution_id}", response_model=InstitutionResponse)
 def update_institution(
-    institution_id: int,
+    institution_id: uuid.UUID,
     data: InstitutionUpdate,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
@@ -68,7 +70,7 @@ def update_institution(
 
 @router.post("/{institution_id}/conducted-test-feature")
 def set_conducted_test_feature(
-    institution_id: int,
+    institution_id: uuid.UUID,
     enabled: bool,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
@@ -84,7 +86,7 @@ def set_conducted_test_feature(
 
 @router.post("/{institution_id}/archive", response_model=InstitutionResponse)
 def archive_institution(
-    institution_id: int,
+    institution_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
 ):
@@ -94,7 +96,7 @@ def archive_institution(
 
 @router.post("/{institution_id}/activate", response_model=InstitutionResponse)
 def activate_institution(
-    institution_id: int,
+    institution_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
 ):
@@ -104,7 +106,7 @@ def activate_institution(
 
 @router.get("/{institution_id}/users", response_model=list[InstitutionUserResponse])
 def list_institution_users(
-    institution_id: int,
+    institution_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
 ):
@@ -114,21 +116,21 @@ def list_institution_users(
 
 @router.post("/{institution_id}/users", response_model=InstitutionUserResponse)
 def create_institution_user(
-    institution_id: int,
+    institution_id: uuid.UUID,
     data: InstitutionUserCreate,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
 ):
     institution_service.get_or_404(db, institution_id, "Institution not found")
     return institution_user_service.create_institution_user(
-        db, institution_id, data.email, data.password, data.full_name
+        db, institution_id, data.email, data.password, data.full_name, data.phone
     )
 
 
 @router.post("/{institution_id}/users/{user_id}/deactivate", response_model=InstitutionUserResponse)
 def deactivate_institution_user(
-    institution_id: int,
-    user_id: int,
+    institution_id: uuid.UUID,
+    user_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
 ):

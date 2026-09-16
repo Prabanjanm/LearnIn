@@ -5,6 +5,8 @@ Each one does a single focused mutation and returns the updated row (or the
 job's counters), so the vanilla-JS review page can update in place without a
 full form round-trip. Every route requires an authenticated admin.
 """
+import uuid
+
 from fastapi import APIRouter, Body, Depends
 from sqlalchemy.orm import Session
 
@@ -31,7 +33,7 @@ router = APIRouter(
 
 @router.get("/{job_id}/status", response_model=PaperProcessingJobStatusResponse)
 def job_status(
-    job_id: int,
+    job_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
 ):
@@ -41,7 +43,7 @@ def job_status(
 
 @router.get("/{job_id}/questions", response_model=list[ExtractedQuestionResponse])
 def list_questions(
-    job_id: int,
+    job_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
 ):
@@ -51,7 +53,7 @@ def list_questions(
 
 @router.post("/{job_id}/questions", response_model=ExtractedQuestionResponse)
 def add_question(
-    job_id: int,
+    job_id: uuid.UUID,
     data: ExtractedQuestionIn,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
@@ -61,8 +63,8 @@ def add_question(
 
 @router.put("/{job_id}/questions/{question_id}", response_model=ExtractedQuestionResponse)
 def update_question(
-    job_id: int,
-    question_id: int,
+    job_id: uuid.UUID,
+    question_id: uuid.UUID,
     data: ExtractedQuestionIn,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
@@ -72,8 +74,8 @@ def update_question(
 
 @router.delete("/{job_id}/questions/{question_id}")
 def delete_question(
-    job_id: int,
-    question_id: int,
+    job_id: uuid.UUID,
+    question_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
 ):
@@ -83,8 +85,8 @@ def delete_question(
 
 @router.post("/{job_id}/questions/{question_id}/move")
 def move_question(
-    job_id: int,
-    question_id: int,
+    job_id: uuid.UUID,
+    question_id: uuid.UUID,
     direction: str = Body(embed=True),
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
@@ -95,8 +97,8 @@ def move_question(
 
 @router.post("/{job_id}/questions/{question_id}/needs-review", response_model=ExtractedQuestionResponse)
 def set_needs_review(
-    job_id: int,
-    question_id: int,
+    job_id: uuid.UUID,
+    question_id: uuid.UUID,
     needs_review: bool = Body(embed=True),
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
@@ -106,8 +108,8 @@ def set_needs_review(
 
 @router.post("/{job_id}/questions/{question_id}/split", response_model=list[ExtractedQuestionResponse])
 def split_question(
-    job_id: int,
-    question_id: int,
+    job_id: uuid.UUID,
+    question_id: uuid.UUID,
     data: SplitRequest | None = None,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
@@ -119,8 +121,8 @@ def split_question(
 
 @router.post("/{job_id}/questions/{question_id}/merge", response_model=ExtractedQuestionResponse)
 def merge_question(
-    job_id: int,
-    question_id: int,
+    job_id: uuid.UUID,
+    question_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
 ):
@@ -140,8 +142,8 @@ def merge_question(
     response_model=ExtractedQuestionImageResponse,
 )
 def add_question_image(
-    job_id: int,
-    question_id: int,
+    job_id: uuid.UUID,
+    question_id: uuid.UUID,
     data: ExtractedQuestionImageAttach,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
@@ -157,9 +159,9 @@ def add_question_image(
     response_model=ExtractedQuestionImageResponse,
 )
 def replace_question_image(
-    job_id: int,
-    question_id: int,
-    image_id: int,
+    job_id: uuid.UUID,
+    question_id: uuid.UUID,
+    image_id: uuid.UUID,
     data: ExtractedQuestionImageAttach,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
@@ -172,9 +174,9 @@ def replace_question_image(
 
 @router.delete("/{job_id}/questions/{question_id}/images/{image_id}")
 def delete_question_image(
-    job_id: int,
-    question_id: int,
-    image_id: int,
+    job_id: uuid.UUID,
+    question_id: uuid.UUID,
+    image_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
 ):
@@ -187,9 +189,9 @@ def delete_question_image(
     response_model=ExtractedQuestionImageResponse,
 )
 def reassign_question_image(
-    job_id: int,
-    question_id: int,
-    image_id: int,
+    job_id: uuid.UUID,
+    question_id: uuid.UUID,
+    image_id: uuid.UUID,
     data: ReassignImageRequest,
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),
@@ -201,9 +203,9 @@ def reassign_question_image(
 
 @router.post("/{job_id}/questions/{question_id}/images/{image_id}/move")
 def move_question_image(
-    job_id: int,
-    question_id: int,
-    image_id: int,
+    job_id: uuid.UUID,
+    question_id: uuid.UUID,
+    image_id: uuid.UUID,
     direction: str = Body(embed=True),
     db: Session = Depends(get_db),
     _admin: Admin = Depends(get_current_admin),

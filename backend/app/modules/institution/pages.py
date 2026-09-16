@@ -1,17 +1,21 @@
-from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+import logging
+
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from app.common.exceptions.exceptions import InvalidCredentialsException
+from app.common.exceptions.exceptions import AlreadyExistsException, GoogleDriveConfigError
 from app.common.rate_limit import rate_limit
-from app.core.config import settings
 from app.core.database import get_db
-from app.core.security import create_access_token
+from app.core.google_drive import get_drive_client
+from app.core.upload_policy import UploadValidationError, sanitize_filename, validate_upload
 
-from .dependencies import INSTITUTION_ACCESS_TOKEN_COOKIE_NAME, get_optional_institution_user
+from .dependencies import INSTITUTION_ACCESS_TOKEN_COOKIE_NAME, get_current_institution_user, get_optional_institution_user
 from .model import InstitutionUser
-from .service import institution_user_service
+from .service import request_institution_signup
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Institution Pages"])
 
@@ -19,55 +23,53 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/institution/login", response_class=HTMLResponse)
-def login_page(request: Request, user: InstitutionUser | None = Depends(get_optional_institution_user)):
+def login_page():
+    """
+    Institution users log in through the same form as students at /login -
+    this old URL is kept working as a redirect so existing links/bookmarks
+    (and the reference in admin_detail.html) don't 404.
+    """
+    return RedirectResponse("/login", status_code=307)
+
+
+@router.get("/institution/signup", response_class=HTMLResponse)
+def signup_page(request: Request, user: InstitutionUser | None = Depends(get_optional_institution_user)):
     if user is not None:
         return RedirectResponse("/institution/dashboard", status_code=303)
 
-    return templates.TemplateResponse(
-        request=request,
-        name="institution/login.html",
-        context={"error": None},
-    )
+    return templates.TemplateResponse(request=request, name="institution/signup.html", context={"error": None})
 
 
-@router.post("/institution/login", dependencies=[Depends(rate_limit(10, 60))])
-def login_submit(
+@router.post("/institution/signup", response_class=HTMLResponse, dependencies=[Depends(rate_limit(10, 60))])
+def signup_submit(
     request: Request,
+    institution_name: str = Form(...),
+    contact_name: str = Form(...),
     email: str = Form(...),
+    phone: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_db),
 ):
     try:
-        user = institution_user_service.authenticate(db, email, password)
-    except InvalidCredentialsException:
+        request_institution_signup(db, institution_name, contact_name, email, phone, password)
+    except AlreadyExistsException as exc:
         return templates.TemplateResponse(
             request=request,
-            name="institution/login.html",
-            context={"error": "Invalid email or password"},
-            status_code=401,
+            name="institution/signup.html",
+            context={"error": str(exc)},
+            status_code=409,
         )
 
-    token = create_access_token(
-        subject=str(user.id),
-        token_type="institution_user",
-        token_version=user.token_version,
+    return templates.TemplateResponse(
+        request=request,
+        name="institution/signup_pending.html",
+        context={"institution_name": institution_name, "contact_name": contact_name},
     )
-
-    response = RedirectResponse("/institution/dashboard", status_code=303)
-    response.set_cookie(
-        key=INSTITUTION_ACCESS_TOKEN_COOKIE_NAME,
-        value=token,
-        httponly=True,
-        samesite="lax",
-        secure=not settings.DEBUG,
-        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-    )
-    return response
 
 
 @router.get("/institution/logout")
 def logout():
-    response = RedirectResponse("/institution/login", status_code=303)
+    response = RedirectResponse("/login", status_code=303)
     response.delete_cookie(INSTITUTION_ACCESS_TOKEN_COOKIE_NAME)
     return response
 
@@ -79,7 +81,7 @@ def dashboard(
     user: InstitutionUser | None = Depends(get_optional_institution_user),
 ):
     if user is None:
-        return RedirectResponse("/institution/login", status_code=303)
+        return RedirectResponse("/login", status_code=303)
 
     from app.modules.conducted_test.repository import ConductedTestRepository
     from app.core.enums import StatusEnum
@@ -96,3 +98,44 @@ def dashboard(
         name="institution/dashboard.html",
         context={"user": user, "stats": stats},
     )
+
+
+# --------------------------------------------------------- file uploads --
+
+@router.post("/institution/upload")
+async def upload_file(
+    file: UploadFile = File(...),
+    category: str | None = Form(None),
+    _user: InstitutionUser = Depends(get_current_institution_user),
+):
+    """
+    Institution-side equivalent of /admin/upload (app.modules.admin.pages)
+    - same validation/Drive-upload path, just gated by an institution
+    session instead of an admin one, for upload-widget.js's institution
+    forms (e.g. the conducted-test paper upload).
+    """
+    content = await file.read()
+    filename = sanitize_filename(file.filename or "upload")
+    mime_type = file.content_type or "application/octet-stream"
+
+    try:
+        validate_upload(category, filename, mime_type, len(content), content)
+    except UploadValidationError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
+    client = get_drive_client()
+
+    try:
+        result = client.upload_file(content, filename=filename, mime_type=mime_type, category=category)
+    except GoogleDriveConfigError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=503)
+    except Exception:
+        logger.exception("Google Drive upload failed for category=%s filename=%s", category, filename)
+        return JSONResponse({"error": "File upload failed. Please try again."}, status_code=502)
+
+    return {
+        "file_id": result.file_id,
+        "mime_type": result.mime_type,
+        "file_size": result.file_size,
+        "filename": result.name,
+    }

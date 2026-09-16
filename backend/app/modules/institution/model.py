@@ -1,6 +1,7 @@
+import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, ForeignKey, Integer, String, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.base import BaseModel
@@ -70,7 +71,8 @@ class InstitutionUser(BaseModel):
 
     __tablename__ = "institution_users"
 
-    institution_id: Mapped[int] = mapped_column(
+    institution_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("institutions.id"),
         nullable=False,
         index=True
@@ -90,6 +92,11 @@ class InstitutionUser(BaseModel):
 
     full_name: Mapped[str | None] = mapped_column(
         String(150),
+        nullable=True
+    )
+
+    phone: Mapped[str | None] = mapped_column(
+        String(20),
         nullable=True
     )
 

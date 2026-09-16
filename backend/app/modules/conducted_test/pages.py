@@ -17,7 +17,7 @@ templates = Jinja2Templates(directory="app/templates")
 @router.get("/institution/conducted-tests", response_class=HTMLResponse)
 def list_page(request: Request, user: InstitutionUser | None = Depends(get_optional_institution_user)):
     if user is None:
-        return RedirectResponse("/institution/login", status_code=303)
+        return RedirectResponse("/login", status_code=303)
 
     return templates.TemplateResponse(
         request=request,
@@ -29,7 +29,7 @@ def list_page(request: Request, user: InstitutionUser | None = Depends(get_optio
 @router.get("/institution/conducted-tests/new", response_class=HTMLResponse)
 def new_page(request: Request, user: InstitutionUser | None = Depends(get_optional_institution_user)):
     if user is None:
-        return RedirectResponse("/institution/login", status_code=303)
+        return RedirectResponse("/login", status_code=303)
     if not user.institution.conducted_test_enabled:
         return RedirectResponse("/institution/conducted-tests", status_code=303)
 
@@ -48,7 +48,7 @@ def detail_page(
     user: InstitutionUser | None = Depends(get_optional_institution_user),
 ):
     if user is None:
-        return RedirectResponse("/institution/login", status_code=303)
+        return RedirectResponse("/login", status_code=303)
 
     conducted_test = conducted_test_service.get_for_manage(db, conducted_test_id, user)
 
@@ -68,7 +68,7 @@ def institution_result_page(
     user: InstitutionUser | None = Depends(get_optional_institution_user),
 ):
     if user is None:
-        return RedirectResponse("/institution/login", status_code=303)
+        return RedirectResponse("/login", status_code=303)
 
     from app.modules.conducted_test_attempt.service import conducted_test_attempt_service
 

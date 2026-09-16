@@ -1,9 +1,11 @@
+import uuid
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
+from sqlalchemy import Uuid
 
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -24,7 +26,8 @@ class MockTest(
 
     __tablename__ = "mock_tests"
 
-    paper_id: Mapped[int] = mapped_column(
+    paper_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("papers.id"),
         nullable=False,
         index=True

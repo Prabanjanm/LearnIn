@@ -1,8 +1,10 @@
+import uuid
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import UniqueConstraint
+from sqlalchemy import Uuid
 
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -22,13 +24,15 @@ class MockTestQuestion(BaseModel):
         UniqueConstraint("mock_test_id", "question_id", name="uq_mock_test_question"),
     )
 
-    mock_test_id: Mapped[int] = mapped_column(
+    mock_test_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("mock_tests.id"),
         nullable=False,
         index=True
     )
 
-    question_id: Mapped[int] = mapped_column(
+    question_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("questions.id"),
         nullable=False,
         index=True

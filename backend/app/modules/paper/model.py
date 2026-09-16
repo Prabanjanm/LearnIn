@@ -1,9 +1,11 @@
+import uuid
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import UniqueConstraint
+from sqlalchemy import Uuid
 
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -29,7 +31,8 @@ class Paper(
         UniqueConstraint("subject_id", "year", name="uq_subject_year"),
     )
 
-    subject_id: Mapped[int] = mapped_column(
+    subject_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("subjects.id"),
         nullable=False,
         index=True

@@ -2,6 +2,8 @@
 Every new route must be closed to anonymous callers: HTML pages redirect to
 the login screen, JSON endpoints answer 401.
 """
+import uuid
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -10,21 +12,23 @@ from app.main import app
 
 client = TestClient(app)
 
+_FAKE_JOB_ID = str(uuid.uuid4())
+
 HTML_GET_ROUTES = [
     "/admin/paper-processing",
     "/admin/paper-processing/new",
-    "/admin/paper-processing/1",
-    "/admin/paper-processing/1/review",
-    "/admin/paper-processing/1/preview",
+    f"/admin/paper-processing/{_FAKE_JOB_ID}",
+    f"/admin/paper-processing/{_FAKE_JOB_ID}/review",
+    f"/admin/paper-processing/{_FAKE_JOB_ID}/preview",
 ]
 
 HTML_POST_ROUTES = [
     "/admin/paper-processing/new",
-    "/admin/paper-processing/1/reprocess",
-    "/admin/paper-processing/1/stop",
-    "/admin/paper-processing/1/save",
-    "/admin/paper-processing/1/generate-pdf",
-    "/admin/paper-processing/1/publish",
+    f"/admin/paper-processing/{_FAKE_JOB_ID}/reprocess",
+    f"/admin/paper-processing/{_FAKE_JOB_ID}/stop",
+    f"/admin/paper-processing/{_FAKE_JOB_ID}/save",
+    f"/admin/paper-processing/{_FAKE_JOB_ID}/generate-pdf",
+    f"/admin/paper-processing/{_FAKE_JOB_ID}/publish",
 ]
 
 
@@ -91,7 +95,7 @@ def test_authenticated_admin_sees_the_paper_processing_pages(admin_auth_headers)
 
 def test_unknown_job_redirects_back_to_the_list(admin_auth_headers):
     response = client.get(
-        "/admin/paper-processing/999999", headers=admin_auth_headers, follow_redirects=False
+        f"/admin/paper-processing/{_FAKE_JOB_ID}", headers=admin_auth_headers, follow_redirects=False
     )
     assert response.status_code == 303
     assert response.headers["location"] == "/admin/paper-processing"

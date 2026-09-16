@@ -43,6 +43,8 @@ from app.modules.conducted_test.router import router as conducted_test_router
 from app.modules.conducted_test.pages import router as conducted_test_pages_router
 from app.modules.conducted_test_attempt.router import router as conducted_test_attempt_router
 from app.modules.conducted_test_attempt.pages import router as conducted_test_attempt_pages_router
+from app.modules.conducted_test_paper.router import router as conducted_test_paper_router
+from app.modules.conducted_test_paper.pages import router as conducted_test_paper_pages_router
 from app.modules.search.router import router as search_router
 from app.modules.paper_processing.router import router as paper_processing_router
 from app.modules.paper_processing.pages import router as paper_processing_pages_router
@@ -97,6 +99,8 @@ app.include_router(conducted_test_router)
 app.include_router(conducted_test_pages_router)
 app.include_router(conducted_test_attempt_router)
 app.include_router(conducted_test_attempt_pages_router)
+app.include_router(conducted_test_paper_router)
+app.include_router(conducted_test_paper_pages_router)
 
 # Must be last: /{exam_slug} etc. are dynamic single/multi-segment catch-alls
 # that would shadow every route above if registered earlier.

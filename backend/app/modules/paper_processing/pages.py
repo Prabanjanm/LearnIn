@@ -8,6 +8,7 @@ functions stay thin; the work lives in service.py / background.py.
 """
 import json
 import logging
+import uuid
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from fastapi.responses import RedirectResponse
@@ -191,7 +192,7 @@ async def new_job_submit(
 
     try:
         data = PaperProcessingJobCreate(
-            subject_id=int(form_data.get("subject_id") or 0),
+            subject_id=uuid.UUID(str(form_data.get("subject_id") or "")),
             title=(form_data.get("title") or "").strip(),
             year=int(form_data.get("year") or 0),
             source_url=(form_data.get("source_url") or "").strip() or None,
@@ -204,6 +205,18 @@ async def new_job_submit(
             answer_mime_type=answer.get("mime_type"),
             answer_file_size=answer.get("file_size"),
             answer_filename=answer.get("filename"),
+            mock_test_title=(form_data.get("mock_test_title") or "").strip() or None,
+            mock_test_description=(form_data.get("mock_test_description") or "").strip() or None,
+            mock_test_duration=(
+                int(form_data["mock_test_duration"])
+                if (form_data.get("mock_test_duration") or "").strip()
+                else None
+            ),
+            mock_test_total_marks=(
+                int(form_data["mock_test_total_marks"])
+                if (form_data.get("mock_test_total_marks") or "").strip()
+                else None
+            ),
         )
 
         job = paper_processing_service.create_job(db, admin.id, data)
@@ -234,7 +247,7 @@ async def new_job_submit(
 
 @router.get(BASE_PATH + "/{job_id}")
 def job_status_page(
-    job_id: int,
+    job_id: uuid.UUID,
     request: Request,
     admin: Admin | None = Depends(get_optional_admin),
     db: Session = Depends(get_db),
@@ -256,7 +269,7 @@ def job_status_page(
 
 @router.post(BASE_PATH + "/{job_id}/reprocess")
 def reprocess_job(
-    job_id: int,
+    job_id: uuid.UUID,
     background_tasks: BackgroundTasks,
     admin: Admin | None = Depends(get_optional_admin),
     db: Session = Depends(get_db),
@@ -287,7 +300,7 @@ def reprocess_job(
 
 @router.post(BASE_PATH + "/{job_id}/stop")
 def stop_job(
-    job_id: int,
+    job_id: uuid.UUID,
     admin: Admin | None = Depends(get_optional_admin),
     db: Session = Depends(get_db),
     _throttle: None = Depends(rate_limit(10, 60)),
@@ -315,7 +328,7 @@ def stop_job(
 
 @router.get(BASE_PATH + "/{job_id}/review")
 def review_page(
-    job_id: int,
+    job_id: uuid.UUID,
     request: Request,
     admin: Admin | None = Depends(get_optional_admin),
     db: Session = Depends(get_db),
@@ -347,7 +360,7 @@ def review_page(
 
 @router.post(BASE_PATH + "/{job_id}/save")
 def save_review(
-    job_id: int,
+    job_id: uuid.UUID,
     admin: Admin | None = Depends(get_optional_admin),
     db: Session = Depends(get_db),
 ):
@@ -377,7 +390,7 @@ def save_review(
 
 @router.post(BASE_PATH + "/{job_id}/generate-pdf")
 def generate_pdf(
-    job_id: int,
+    job_id: uuid.UUID,
     admin: Admin | None = Depends(get_optional_admin),
     db: Session = Depends(get_db),
     _throttle: None = Depends(rate_limit(10, 60)),
@@ -409,7 +422,7 @@ def generate_pdf(
 
 @router.get(BASE_PATH + "/{job_id}/preview")
 def preview_page(
-    job_id: int,
+    job_id: uuid.UUID,
     request: Request,
     admin: Admin | None = Depends(get_optional_admin),
     db: Session = Depends(get_db),
@@ -443,7 +456,7 @@ def preview_page(
 
 @router.post(BASE_PATH + "/{job_id}/publish")
 def publish(
-    job_id: int,
+    job_id: uuid.UUID,
     admin: Admin | None = Depends(get_optional_admin),
     db: Session = Depends(get_db),
     _throttle: None = Depends(rate_limit(5, 60)),

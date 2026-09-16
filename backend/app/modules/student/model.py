@@ -1,4 +1,6 @@
-from sqlalchemy import Boolean, Integer, String
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.base import BaseModel
@@ -53,6 +55,27 @@ class Student(BaseModel):
         Integer,
         default=0,
         nullable=False
+    )
+
+    # Signup sends an OTP by email; nothing currently gates login on this
+    # (see StudentService.signup/verify_otp) - it just tracks whether the
+    # address has been confirmed.
+    email_verified: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False
+    )
+
+    # Only ever a bcrypt hash of the current 6-digit code, never the code
+    # itself - same reasoning as hashed_password. NULL once verified/unused.
+    otp_hash: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True
+    )
+
+    otp_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True
     )
 
     @property

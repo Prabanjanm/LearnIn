@@ -1,6 +1,7 @@
+import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.common.validators import validate_full_name, validate_password_strength
 
@@ -17,6 +18,15 @@ class StudentSignup(BaseModel):
 class StudentLogin(BaseModel):
     email: EmailStr
     password: str
+
+
+class StudentVerifyOtp(BaseModel):
+    email: EmailStr
+    otp: str = Field(min_length=6, max_length=6)
+
+
+class StudentResendOtp(BaseModel):
+    email: EmailStr
 
 
 class Token(BaseModel):
@@ -39,10 +49,11 @@ class ChangePasswordRequest(BaseModel):
 
 class StudentResponse(BaseModel):
 
-    id: int
+    id: uuid.UUID
     email: EmailStr
     full_name: str | None = None
     avatar_url: str | None = None
+    email_verified: bool
     created_at: datetime
 
     model_config = ConfigDict(

@@ -1,4 +1,5 @@
-.venv\Scripts\activatepython -m venv .venv
+.venv\Scripts\activate
+py -m venv .venv
 uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 
 Tester@123 

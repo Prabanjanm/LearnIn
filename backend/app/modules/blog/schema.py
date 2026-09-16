@@ -1,3 +1,4 @@
+import uuid
 from datetime import date
 
 from pydantic import BaseModel, ConfigDict, computed_field
@@ -41,7 +42,7 @@ class BlogUpdate(BaseModel):
 
 class BlogResponse(BlogBase):
 
-    id: int
+    id: uuid.UUID
     slug: str
     category: str | None = None
     tags: str | None = None

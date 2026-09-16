@@ -1,7 +1,10 @@
+import uuid
+
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
+from sqlalchemy import Uuid
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -13,7 +16,8 @@ class Option(BaseModel):
 
     __tablename__ = "options"
 
-    question_id: Mapped[int] = mapped_column(
+    question_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("questions.id"),
         nullable=False,
         index=True

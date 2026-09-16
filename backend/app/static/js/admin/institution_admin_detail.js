@@ -15,14 +15,14 @@
     async function loadUsers() {
         const response = await fetch(`/api/admin/institutions/${institutionId}/users`);
         if (!response.ok) {
-            userRowsEl.innerHTML = '<tr><td colspan="4" class="admin-table-empty">Could not load users.</td></tr>';
+            userRowsEl.innerHTML = '<tr><td colspan="5" class="admin-table-empty">Could not load users.</td></tr>';
             return;
         }
 
         const users = await response.json();
 
         if (users.length === 0) {
-            userRowsEl.innerHTML = '<tr><td colspan="4" class="admin-table-empty">No users yet.</td></tr>';
+            userRowsEl.innerHTML = '<tr><td colspan="5" class="admin-table-empty">No users yet.</td></tr>';
             return;
         }
 
@@ -30,6 +30,7 @@
             <tr>
                 <td>${escapeHtml(user.email)}</td>
                 <td>${escapeHtml(user.full_name || "—")}</td>
+                <td>${escapeHtml(user.phone || "—")}</td>
                 <td>${user.is_active ? "Active" : "Deactivated"}</td>
                 <td>
                     ${user.is_active ? `<button type="button" class="admin-btn admin-btn-danger admin-btn-sm" data-deactivate="${user.id}">Deactivate</button>` : ""}
@@ -86,6 +87,7 @@
             const payload = {
                 email: document.getElementById("user_email").value.trim(),
                 full_name: document.getElementById("user_full_name").value.trim() || null,
+                phone: document.getElementById("user_phone").value.trim() || null,
                 password: document.getElementById("user_password").value,
             };
 

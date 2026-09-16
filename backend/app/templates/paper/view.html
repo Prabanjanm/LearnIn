@@ -1,0 +1,29 @@
+{% extends "layouts/base.html" %}
+{% from "components/breadcrumbs.html" import render_breadcrumbs %}
+
+{% block title %}View - {{ paper.title }} ({{ paper.year }}) | LearnIn{% endblock %}
+{% block description %}View the {{ paper.title }} ({{ paper.year }}) question paper for {{ subject.name }}, {{ department.name }}, {{ exam.name }}.{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/paper_view.css">{% endblock %}
+
+{% block breadcrumbs %}{{ render_breadcrumbs(breadcrumbs) }}{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <section class="page-hero">
+        <h1>{{ paper.title }} ({{ paper.year }})</h1>
+        <a class="btn btn-secondary" href="https://drive.google.com/uc?export=download&id={{ paper.question_file_id }}">
+            Download PDF
+        </a>
+    </section>
+
+    <div class="paper-viewer">
+        <iframe
+            src="/api/papers/files/{{ paper.question_file_id }}/stream"
+            title="{{ paper.title }} ({{ paper.year }}) question paper"
+        ></iframe>
+    </div>
+
+</div>
+{% endblock %}

@@ -7,7 +7,7 @@ class BaseRepository:
         return db.query(self.model).all()
 
     def get_all_paginated(self, db, page: int = 1, page_size: int = 20):
-        query = db.query(self.model).order_by(self.model.id.desc())
+        query = db.query(self.model).order_by(self.model.created_at.desc())
         total = query.count()
         items = query.offset((page - 1) * page_size).limit(page_size).all()
         return items, total

@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel, ConfigDict, computed_field
 
 from app.common.utils.drive_urls import drive_view_url
@@ -10,7 +12,7 @@ class DepartmentBase(BaseModel):
 
 
 class DepartmentCreate(DepartmentBase):
-    exam_id: int
+    exam_id: uuid.UUID
     display_order: int = 0
     icon_file_id: str | None = None
     icon_mime_type: str | None = None
@@ -20,7 +22,7 @@ class DepartmentCreate(DepartmentBase):
 
 
 class DepartmentUpdate(BaseModel):
-    exam_id: int | None = None
+    exam_id: uuid.UUID | None = None
     name: str | None = None
     code: str | None = None
     display_order: int | None = None
@@ -33,8 +35,8 @@ class DepartmentUpdate(BaseModel):
 
 class DepartmentResponse(DepartmentBase):
 
-    id: int
-    exam_id: int
+    id: uuid.UUID
+    exam_id: uuid.UUID
     slug: str
     display_order: int
     icon_file_id: str | None = None

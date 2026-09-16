@@ -1,3 +1,4 @@
+import uuid
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Enum
@@ -7,6 +8,7 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import UniqueConstraint
+from sqlalchemy import Uuid
 
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
@@ -37,7 +39,8 @@ class Question(
         ),
     )
 
-    paper_id: Mapped[int] = mapped_column(
+    paper_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("papers.id"),
         nullable=False,
         index=True

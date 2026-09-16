@@ -7,7 +7,18 @@
     when the in-process pipeline finished".
 */
 
-const PP_API = "/api/admin/paper-processing";
+/*
+    The status panel and the review root both carry a `data-pp-api`
+    attribute naming which JSON API to talk to - the admin's own Paper
+    Processing pages leave it unset and get the admin API by default; the
+    institution's conducted-test paper pages (same DOM contract, same
+    field names, a separate institution-scoped table underneath) set it
+    to their own endpoint instead of forking this whole file.
+*/
+function ppApiBase() {
+    const root = document.querySelector("[data-pp-status], [data-pp-review]");
+    return (root && root.dataset.ppApi) || "/api/admin/paper-processing";
+}
 
 const PP_BUSY_STATUSES = [
     "UPLOADED",
@@ -91,7 +102,7 @@ function initStatusPolling() {
     const timer = setInterval(async () => {
         let data;
         try {
-            data = await ppRequest(`${PP_API}/${jobId}/status`);
+            data = await ppRequest(`${ppApiBase()}/${jobId}/status`);
         } catch (err) {
             // A transient failure should not kill the poll loop; a repeated
             // one just means the admin refreshes.
@@ -190,7 +201,7 @@ async function ppSaveQuestion(jobId, card) {
     }
 
     try {
-        await ppRequest(`${PP_API}/${jobId}/questions/${questionId}`, {
+        await ppRequest(`${ppApiBase()}/${jobId}/questions/${questionId}`, {
             method: "PUT",
             body: JSON.stringify(payload),
         });
@@ -241,13 +252,13 @@ function initReview() {
                 if (!window.confirm("Delete this question? This cannot be undone.")) {
                     return;
                 }
-                await ppRequest(`${PP_API}/${jobId}/questions/${questionId}`, { method: "DELETE" });
+                await ppRequest(`${ppApiBase()}/${jobId}/questions/${questionId}`, { method: "DELETE" });
                 card.remove();
                 return;
             }
 
             if (event.target.matches("[data-pp-move]")) {
-                await ppRequest(`${PP_API}/${jobId}/questions/${questionId}/move`, {
+                await ppRequest(`${ppApiBase()}/${jobId}/questions/${questionId}/move`, {
                     method: "POST",
                     body: JSON.stringify({ direction: event.target.dataset.ppMove }),
                 });
@@ -263,7 +274,7 @@ function initReview() {
                 )) {
                     return;
                 }
-                await ppRequest(`${PP_API}/${jobId}/questions/${questionId}/split`, {
+                await ppRequest(`${ppApiBase()}/${jobId}/questions/${questionId}/split`, {
                     method: "POST",
                     body: JSON.stringify({ split_at: null }),
                 });
@@ -275,7 +286,7 @@ function initReview() {
                 if (!window.confirm("Merge this question with the next one into a single editable block?")) {
                     return;
                 }
-                await ppRequest(`${PP_API}/${jobId}/questions/${questionId}/merge`, { method: "POST" });
+                await ppRequest(`${ppApiBase()}/${jobId}/questions/${questionId}/merge`, { method: "POST" });
                 window.location.reload();
                 return;
             }
@@ -287,7 +298,7 @@ function initReview() {
                     return;
                 }
                 await ppRequest(
-                    `${PP_API}/${jobId}/questions/${questionId}/images/${imageItem.dataset.imageId}`,
+                    `${ppApiBase()}/${jobId}/questions/${questionId}/images/${imageItem.dataset.imageId}`,
                     { method: "DELETE" },
                 );
                 window.location.reload();
@@ -296,7 +307,7 @@ function initReview() {
 
             if (event.target.matches("[data-pp-image-move]")) {
                 await ppRequest(
-                    `${PP_API}/${jobId}/questions/${questionId}/images/${imageItem.dataset.imageId}/move`,
+                    `${ppApiBase()}/${jobId}/questions/${questionId}/images/${imageItem.dataset.imageId}/move`,
                     { method: "POST", body: JSON.stringify({ direction: event.target.dataset.ppImageMove }) },
                 );
                 window.location.reload();
@@ -316,7 +327,7 @@ function initReview() {
                     return;
                 }
                 await ppRequest(
-                    `${PP_API}/${jobId}/questions/${questionId}/images/${imageItem.dataset.imageId}/reassign`,
+                    `${ppApiBase()}/${jobId}/questions/${questionId}/images/${imageItem.dataset.imageId}/reassign`,
                     { method: "POST", body: JSON.stringify({ target_question_id: targetQuestion.dataset.questionId }) },
                 );
                 window.location.reload();
@@ -351,7 +362,7 @@ function initReview() {
             const questionId = card.dataset.questionId;
 
             try {
-                await ppRequest(`${PP_API}/${jobId}/questions/${questionId}/needs-review`, {
+                await ppRequest(`${ppApiBase()}/${jobId}/questions/${questionId}/needs-review`, {
                     method: "POST",
                     body: JSON.stringify({ needs_review: event.target.checked }),
                 });
@@ -377,11 +388,11 @@ function initReview() {
 
                 if (event.target.matches("[data-pp-image-replace]")) {
                     await ppRequest(
-                        `${PP_API}/${jobId}/questions/${questionId}/images/${imageItem.dataset.imageId}`,
+                        `${ppApiBase()}/${jobId}/questions/${questionId}/images/${imageItem.dataset.imageId}`,
                         { method: "PUT", body: JSON.stringify(uploaded) },
                     );
                 } else {
-                    await ppRequest(`${PP_API}/${jobId}/questions/${questionId}/images`, {
+                    await ppRequest(`${ppApiBase()}/${jobId}/questions/${questionId}/images`, {
                         method: "POST",
                         body: JSON.stringify(uploaded),
                     });
@@ -401,7 +412,7 @@ function initReview() {
                 return;
             }
             try {
-                await ppRequest(`${PP_API}/${addButton.dataset.jobId}/questions`, {
+                await ppRequest(`${ppApiBase()}/${addButton.dataset.jobId}/questions`, {
                     method: "POST",
                     body: JSON.stringify({ question_text: text.trim(), options: [] }),
                 });

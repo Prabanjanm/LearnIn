@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
@@ -43,7 +45,7 @@ def create(
 
 @router.patch("/{blog_id}", response_model=BlogResponse)
 def update(
-    blog_id: int,
+    blog_id: uuid.UUID,
     data: BlogUpdate,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
@@ -54,7 +56,7 @@ def update(
 
 @router.delete("/{blog_id}", status_code=204)
 def delete(
-    blog_id: int,
+    blog_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):

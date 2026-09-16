@@ -13,17 +13,36 @@
 <div class="admin-page-header">
     <div>
         <h1>New Conducted Test</h1>
-        <p class="admin-page-subtitle">Select an existing published mock test and schedule a fixed test window for it.</p>
+        <p class="admin-page-subtitle">Choose a question source and schedule a fixed test window for it.</p>
     </div>
 </div>
 
 <form id="conducted-test-form" class="admin-form">
     <div class="admin-field">
+        <label>Question source</label>
+        <div class="admin-radio-row">
+            <label class="admin-radio"><input type="radio" name="source" value="mock_test" checked> An existing LearnIn Mock Test</label>
+            <label class="admin-radio"><input type="radio" name="source" value="paper"> A paper I've uploaded</label>
+        </div>
+    </div>
+
+    <div class="admin-field" data-source-panel="mock_test">
         <label for="mock_test_id">Mock Test</label>
-        <select id="mock_test_id" name="mock_test_id" required>
+        <select id="mock_test_id" name="mock_test_id">
             <option value="">Loading mock tests...</option>
         </select>
         <p class="admin-page-subtitle">Need a new paper? Ask LearnIn to add it via the existing Paper &rarr; Questions &rarr; Mock Test workflow, then return here to select it.</p>
+    </div>
+
+    <div class="admin-field" data-source-panel="paper" hidden>
+        <label for="conducted_test_paper_id">My Uploaded Paper</label>
+        <select id="conducted_test_paper_id" name="conducted_test_paper_id">
+            <option value="">Loading your papers...</option>
+        </select>
+        <p class="admin-page-subtitle">
+            Don't see it yet? <a href="/institution/conducted-test-papers/new">Upload a new paper</a> -
+            it must be confirmed before it appears here.
+        </p>
     </div>
 
     <div class="admin-field">

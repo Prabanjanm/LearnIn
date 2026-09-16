@@ -54,6 +54,13 @@ class Settings:
     MAX_IMAGE_UPLOAD_BYTES = int(os.getenv("MAX_IMAGE_UPLOAD_MB", "5")) * 1024 * 1024
     MAX_PDF_UPLOAD_BYTES = int(os.getenv("MAX_PDF_UPLOAD_MB", "20")) * 1024 * 1024
 
+    # Outbound transactional email (Brevo SMTP relay).
+    SMTP_HOST = os.getenv("SMTP_HOST")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER = os.getenv("SMTP_USER")
+    SMTP_PASS = os.getenv("SMTP_PASS")
+    SENDER_EMAIL = os.getenv("SENDER_EMAIL")
+
 
 settings = Settings()
 

@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel, ConfigDict, computed_field
 
 from app.common.utils.drive_urls import drive_view_url
@@ -13,7 +15,7 @@ class OptionBase(BaseModel):
 
 
 class OptionCreate(OptionBase):
-    question_id: int
+    question_id: uuid.UUID
 
 
 class OptionUpdate(BaseModel):
@@ -27,8 +29,8 @@ class OptionUpdate(BaseModel):
 
 class OptionResponse(OptionBase):
 
-    id: int
-    question_id: int
+    id: uuid.UUID
+    question_id: uuid.UUID
 
     model_config = ConfigDict(
         from_attributes=True

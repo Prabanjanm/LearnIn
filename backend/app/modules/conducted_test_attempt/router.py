@@ -1,9 +1,13 @@
+import uuid
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.common.rate_limit import rate_limit
 from app.core.database import get_db
 from app.core.enums import TerminationReason
+from app.modules.conducted_test_paper.model import ConductedTestQuestion
+from app.modules.conducted_test_paper.schema import ConductedTestQuestionPublicResponse
 from app.modules.question.schema import QuestionPublicResponse
 from app.modules.student.dependencies import get_current_student
 from app.modules.student.model import Student
@@ -50,7 +54,7 @@ def join(
 
 @router.post("/{conducted_test_id}/start", response_model=StartAttemptResponse)
 def start(
-    conducted_test_id: int,
+    conducted_test_id: uuid.UUID,
     db: Session = Depends(get_db),
     student: Student = Depends(get_current_student),
 ):
@@ -61,16 +65,27 @@ def start(
         remaining_seconds=result["remaining_seconds"],
         window_ends_at=result["window_ends_at"],
         questions=[
-            {"question": QuestionPublicResponse.model_validate(question).model_dump()}
+            {"question": _serialize_question(question).model_dump()}
             for question in result["questions"]
         ],
         answers=result["answers"],
     )
 
 
+def _serialize_question(question):
+    """result["questions"] holds either platform Questions (a MockTest-
+    sourced ConductedTest) or ConductedTestQuestions (an institution's
+    own uploaded-paper-sourced one) - see
+    ConductedTestAttemptService._get_questions. Each gets its own
+    student-facing schema (both omit correct_answer)."""
+    if isinstance(question, ConductedTestQuestion):
+        return ConductedTestQuestionPublicResponse.model_validate(question)
+    return QuestionPublicResponse.model_validate(question)
+
+
 @router.post("/{conducted_test_id}/answer", status_code=204, dependencies=[Depends(rate_limit(120, 60))])
 def save_answer(
-    conducted_test_id: int,
+    conducted_test_id: uuid.UUID,
     data: SaveAnswerRequest,
     db: Session = Depends(get_db),
     student: Student = Depends(get_current_student),
@@ -82,7 +97,7 @@ def save_answer(
 
 @router.post("/{conducted_test_id}/violation", response_model=SubmitResponse)
 def report_violation(
-    conducted_test_id: int,
+    conducted_test_id: uuid.UUID,
     data: ViolationRequest,
     db: Session = Depends(get_db),
     student: Student = Depends(get_current_student),
@@ -95,7 +110,7 @@ def report_violation(
 
 @router.post("/{conducted_test_id}/submit", response_model=SubmitResponse, dependencies=[Depends(rate_limit(20, 60))])
 def submit(
-    conducted_test_id: int,
+    conducted_test_id: uuid.UUID,
     db: Session = Depends(get_db),
     student: Student = Depends(get_current_student),
 ):

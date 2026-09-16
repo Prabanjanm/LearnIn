@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -16,7 +18,7 @@ router = APIRouter(
 
 @router.get("/", response_model=list[ResourceResponse])
 def get_all(
-    subject_id: int,
+    subject_id: uuid.UUID,
     db: Session = Depends(get_db)
 ):
     return resource_service.get_published_by_subject(db, subject_id)
@@ -24,7 +26,7 @@ def get_all(
 
 @router.get("/{resource_id}", response_model=ResourceResponse)
 def get_one(
-    resource_id: int,
+    resource_id: uuid.UUID,
     db: Session = Depends(get_db)
 ):
     return resource_service.get_published_by_id(db, resource_id)
@@ -41,7 +43,7 @@ def create(
 
 @router.patch("/{resource_id}", response_model=ResourceResponse)
 def update(
-    resource_id: int,
+    resource_id: uuid.UUID,
     data: ResourceUpdate,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
@@ -52,7 +54,7 @@ def update(
 
 @router.post("/{resource_id}/publish", response_model=ResourceResponse)
 def publish(
-    resource_id: int,
+    resource_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):
@@ -62,7 +64,7 @@ def publish(
 
 @router.post("/{resource_id}/archive", response_model=ResourceResponse)
 def archive(
-    resource_id: int,
+    resource_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):
@@ -72,7 +74,7 @@ def archive(
 
 @router.delete("/{resource_id}", status_code=204)
 def delete(
-    resource_id: int,
+    resource_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):

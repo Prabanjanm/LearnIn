@@ -48,10 +48,15 @@
             </a>
             {% endfor %}
             {% if user.institution.conducted_test_enabled %}
-            {% set is_ct_active = request.url.path == "/institution/conducted-tests" or request.url.path.startswith("/institution/conducted-tests/") %}
+            {% set is_ct_active = (request.url.path == "/institution/conducted-tests" or request.url.path.startswith("/institution/conducted-tests/")) and not request.url.path.startswith("/institution/conducted-test-papers") %}
             <a href="/institution/conducted-tests" class="admin-nav-link {% if is_ct_active %}admin-nav-link--active{% endif %}" data-nav-label="conducted tests">
                 <span class="admin-nav-icon">{{ icon('mocktest') }}</span>
                 <span class="admin-nav-label">Conducted Tests</span>
+            </a>
+            {% set is_papers_active = request.url.path.startswith("/institution/conducted-test-papers") %}
+            <a href="/institution/conducted-test-papers" class="admin-nav-link {% if is_papers_active %}admin-nav-link--active{% endif %}" data-nav-label="upload paper">
+                <span class="admin-nav-icon">{{ icon('paper') }}</span>
+                <span class="admin-nav-label">Upload Paper</span>
             </a>
             {% endif %}
         </nav>

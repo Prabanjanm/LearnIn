@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
@@ -8,6 +10,7 @@ from app.common.exceptions.exceptions import (
     AlreadyExistsException,
     GoogleDriveConfigError,
     InvalidCredentialsException,
+    InvalidStateException,
     NotFoundException,
 )
 from app.core.config import settings
@@ -22,6 +25,12 @@ from app.core.upload_policy import UploadValidationError, sanitize_filename, val
 from app.modules.blog.service import blog_service
 from app.modules.department.service import department_service
 from app.modules.exam.service import exam_service
+from app.modules.institution.dependencies import (
+    INSTITUTION_ACCESS_TOKEN_COOKIE_NAME,
+    get_optional_institution_user,
+)
+from app.modules.institution.model import InstitutionUser
+from app.modules.institution.service import institution_user_service
 from app.modules.mock_test.service import mock_test_service
 from app.modules.mock_test_attempt.service import mock_test_attempt_service
 from app.modules.mock_test_question.service import mock_test_question_service
@@ -78,13 +87,87 @@ def signup_submit(
             status_code=409,
         )
 
-    return _login_response(student, "/dashboard")
+    return _login_response(student, "/verify-email")
+
+
+@router.get("/verify-email", response_class=HTMLResponse)
+def verify_email_page(
+    request: Request,
+    student: Student | None = Depends(get_optional_student),
+):
+    if student is None:
+        return RedirectResponse("/login", status_code=303)
+
+    if student.email_verified:
+        return RedirectResponse("/dashboard", status_code=303)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="account/verify_email.html",
+        context={"email": student.email, "error": None, "sent": False},
+    )
+
+
+@router.post("/verify-email", response_class=HTMLResponse, dependencies=[Depends(rate_limit(10, 60))])
+def verify_email_submit(
+    request: Request,
+    otp: str = Form(...),
+    student: Student | None = Depends(get_optional_student),
+    db: Session = Depends(get_db),
+):
+    if student is None:
+        return RedirectResponse("/login", status_code=303)
+
+    try:
+        student_service.verify_otp(db, student.email, otp)
+    except (InvalidStateException, InvalidCredentialsException, NotFoundException) as exc:
+        return templates.TemplateResponse(
+            request=request,
+            name="account/verify_email.html",
+            context={"email": student.email, "error": str(exc), "sent": False},
+            status_code=400,
+        )
+
+    return RedirectResponse("/dashboard", status_code=303)
+
+
+@router.post("/verify-email/resend", response_class=HTMLResponse, dependencies=[Depends(rate_limit(3, 60))])
+def verify_email_resend(
+    request: Request,
+    student: Student | None = Depends(get_optional_student),
+    db: Session = Depends(get_db),
+):
+    if student is None:
+        return RedirectResponse("/login", status_code=303)
+
+    try:
+        student_service.resend_otp(db, student.email)
+    except InvalidStateException as exc:
+        return templates.TemplateResponse(
+            request=request,
+            name="account/verify_email.html",
+            context={"email": student.email, "error": str(exc), "sent": False},
+            status_code=400,
+        )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="account/verify_email.html",
+        context={"email": student.email, "error": None, "sent": True},
+    )
 
 
 @router.get("/login", response_class=HTMLResponse)
-def login_page(request: Request, student: Student | None = Depends(get_optional_student)):
+def login_page(
+    request: Request,
+    student: Student | None = Depends(get_optional_student),
+    institution_user: InstitutionUser | None = Depends(get_optional_institution_user),
+):
     if student is not None:
         return RedirectResponse("/dashboard", status_code=303)
+
+    if institution_user is not None:
+        return RedirectResponse("/institution/dashboard", status_code=303)
 
     return templates.TemplateResponse(request=request, name="account/login.html", context={"error": None})
 
@@ -96,17 +179,44 @@ def login_submit(
     password: str = Form(...),
     db: Session = Depends(get_db),
 ):
+    """
+    One form, two account tables: a student and an institution user can
+    never share an email (each table enforces uniqueness independently, but
+    nothing stops the two colliding across tables), so this tries student
+    auth first and only falls back to institution auth on failure - never
+    both silently succeeding for the same submission.
+    """
     try:
         student = student_service.authenticate(db, email, password)
+        return _login_response(student, "/dashboard")
     except InvalidCredentialsException:
+        pass
+
+    try:
+        institution_user = institution_user_service.authenticate(db, email, password)
+    except InvalidCredentialsException as exc:
         return templates.TemplateResponse(
             request=request,
             name="account/login.html",
-            context={"error": "Invalid email or password"},
+            context={"error": str(exc)},
             status_code=401,
         )
 
-    return _login_response(student, "/dashboard")
+    token = create_access_token(
+        subject=str(institution_user.id),
+        token_type="institution_user",
+        token_version=institution_user.token_version,
+    )
+    response = RedirectResponse("/institution/dashboard", status_code=303)
+    response.set_cookie(
+        key=INSTITUTION_ACCESS_TOKEN_COOKIE_NAME,
+        value=token,
+        httponly=True,
+        samesite="lax",
+        secure=not settings.DEBUG,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    return response
 
 
 def _login_response(student: Student, redirect_to: str) -> RedirectResponse:
@@ -358,6 +468,7 @@ def robots_txt(request: Request):
         "Disallow: /change-password\n"
         "Disallow: /login\n"
         "Disallow: /signup\n"
+        "Disallow: /verify-email\n"
         "Disallow: /logout\n"
         "Disallow: */mock-test/*/result/*\n"
         f"Sitemap: {base_url}/sitemap.xml\n"
@@ -511,9 +622,9 @@ PAPER_LIST_PAGE_SIZE = 20
 def paper_list_page(
     request: Request,
     q: str = "",
-    exam_id: int | None = None,
-    department_id: int | None = None,
-    subject_id: int | None = None,
+    exam_id: uuid.UUID | None = None,
+    department_id: uuid.UUID | None = None,
+    subject_id: uuid.UUID | None = None,
     year: int | None = None,
     answer_key: str | None = None,
     page: int = Query(1, ge=1),
@@ -594,9 +705,9 @@ MOCK_TEST_LIST_PAGE_SIZE = 20
 def mock_test_list_page(
     request: Request,
     q: str = "",
-    exam_id: int | None = None,
-    department_id: int | None = None,
-    subject_id: int | None = None,
+    exam_id: uuid.UUID | None = None,
+    department_id: uuid.UUID | None = None,
+    subject_id: uuid.UUID | None = None,
     page: int = Query(1, ge=1),
     db: Session = Depends(get_db),
 ):
@@ -659,8 +770,8 @@ PRACTICE_LIST_PAGE_SIZE = 24
 def practice_list_page(
     request: Request,
     q: str = "",
-    exam_id: int | None = None,
-    department_id: int | None = None,
+    exam_id: uuid.UUID | None = None,
+    department_id: uuid.UUID | None = None,
     page: int = Query(1, ge=1),
     db: Session = Depends(get_db),
 ):
@@ -887,6 +998,38 @@ def paper_page(
     )
 
 
+@router.get("/{exam_slug}/{department_slug}/{subject_slug}/{year}/view", response_class=HTMLResponse)
+def paper_view_page(
+    exam_slug: str,
+    department_slug: str,
+    subject_slug: str,
+    year: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    try:
+        ctx = resolve_paper(db, exam_slug, department_slug, subject_slug, year)
+    except NotFoundException:
+        return _not_found(request)
+
+    breadcrumbs = ctx.breadcrumb_trail() + [
+        {"label": ctx.paper.year, "url": ctx.paper_url()},
+        {"label": "View", "url": None},
+    ]
+
+    return templates.TemplateResponse(
+        request=request,
+        name="paper/view.html",
+        context={
+            "exam": ctx.exam,
+            "department": ctx.department,
+            "subject": ctx.subject,
+            "paper": ctx.paper,
+            "breadcrumbs": breadcrumbs,
+        },
+    )
+
+
 @router.get("/{exam_slug}/{department_slug}/{subject_slug}/{year}/practice", response_class=HTMLResponse)
 def practice_page(
     exam_slug: str,
@@ -928,7 +1071,7 @@ def mock_test_page(
     department_slug: str,
     subject_slug: str,
     year: int,
-    mock_test_id: int,
+    mock_test_id: uuid.UUID,
     request: Request,
     db: Session = Depends(get_db),
 ):
@@ -972,8 +1115,8 @@ def mock_test_result_page(
     department_slug: str,
     subject_slug: str,
     year: int,
-    mock_test_id: int,
-    attempt_id: int,
+    mock_test_id: uuid.UUID,
+    attempt_id: uuid.UUID,
     request: Request,
     db: Session = Depends(get_db),
     student: Student | None = Depends(get_optional_student),

@@ -1,0 +1,38 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Verify your email | LearnIn{% endblock %}
+{% block description %}Verify your LearnIn account email address.{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/account.css?v=2">{% endblock %}
+
+{% block content %}
+<section class="split-hero">
+    <div class="split-hero-content">
+        <div class="account-card account-card--split">
+            <h1>Verify your email</h1>
+            <p class="section-subtitle">
+                We've sent a 6-digit code to <strong>{{ email }}</strong>. Enter it below to confirm your address.
+            </p>
+
+            {% if error %}<p class="account-error">{{ error }}</p>{% endif %}
+            {% if sent %}<p class="account-success">A new code has been sent.</p>{% endif %}
+
+            <form method="post" action="/verify-email" class="account-form" data-account-form>
+                <label for="otp">Verification code</label>
+                <input type="text" id="otp" name="otp" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autofocus>
+
+                <button type="submit" class="btn btn-lg" data-submit-label="Verify">Verify</button>
+            </form>
+
+            <form method="post" action="/verify-email/resend" class="account-form">
+                <button type="submit" class="btn btn-secondary btn-lg">Resend code</button>
+            </form>
+
+            <p class="account-switch"><a href="/dashboard">Skip for now</a></p>
+        </div>
+    </div>
+    <div class="split-hero-panel">
+        <img class="split-hero-illustration" src="/static/img/illustrations/signup.webp" alt="Student verifying their email">
+    </div>
+</section>
+{% endblock %}

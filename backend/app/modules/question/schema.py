@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel, ConfigDict, computed_field
 
 from app.common.utils.drive_urls import drive_view_url
@@ -33,7 +35,7 @@ class QuestionBase(BaseModel):
 
 
 class QuestionCreate(QuestionBase):
-    paper_id: int
+    paper_id: uuid.UUID
     image_file_id: str | None = None
     image_mime_type: str | None = None
     image_file_size: int | None = None
@@ -69,8 +71,8 @@ class QuestionUpdate(BaseModel):
 
 class QuestionResponse(QuestionBase):
 
-    id: int
-    paper_id: int
+    id: uuid.UUID
+    paper_id: uuid.UUID
     image_file_id: str | None = None
     image_mime_type: str | None = None
     image_file_size: int | None = None
@@ -114,7 +116,7 @@ class QuestionPublicResponse(BaseModel):
     shipped to the browser before the test is submitted.
     """
 
-    id: int
+    id: uuid.UUID
     question_number: int
     question_type: QuestionType
     question_text: str

@@ -1,9 +1,11 @@
+import uuid
+
 from pydantic import BaseModel
 
 
 class SearchResultItem(BaseModel):
     type: str
-    id: int
+    id: uuid.UUID
     title: str
     slug: str | None = None
     url: str

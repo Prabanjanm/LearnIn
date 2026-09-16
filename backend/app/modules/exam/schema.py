@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel, ConfigDict, computed_field
 
 from app.common.utils.drive_urls import drive_view_url
@@ -33,7 +35,7 @@ class ExamUpdate(BaseModel):
 
 class ExamResponse(ExamBase):
 
-    id: int
+    id: uuid.UUID
     slug: str
     display_order: int
     icon_file_id: str | None = None

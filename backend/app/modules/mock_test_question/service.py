@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import AlreadyExistsException
@@ -16,7 +17,7 @@ class MockTestQuestionService(BaseService):
     def get_by_mock_test(
         self,
         db: Session,
-        mock_test_id: int
+        mock_test_id: uuid.UUID
     ):
         return self.repository.get_by_mock_test(db, mock_test_id)
 
@@ -53,7 +54,7 @@ class MockTestQuestionService(BaseService):
     def reorder(
         self,
         db: Session,
-        mock_test_id: int,
+        mock_test_id: uuid.UUID,
         data: MockTestQuestionReorder
     ) -> list[MockTestQuestion]:
         """
@@ -85,8 +86,8 @@ class MockTestQuestionService(BaseService):
     def set_questions(
         self,
         db: Session,
-        mock_test_id: int,
-        question_ids: list[int]
+        mock_test_id: uuid.UUID,
+        question_ids: list[uuid.UUID]
     ) -> list[MockTestQuestion]:
         """
         Full replace of a mock test's question set from an ordered list of
@@ -99,7 +100,7 @@ class MockTestQuestionService(BaseService):
         existing_by_question_id = {link.question_id: link for link in existing_links}
 
         # De-dupe while preserving the admin's given order.
-        seen_ids: set[int] = set()
+        seen_ids: set[uuid.UUID] = set()
         ordered_ids = [qid for qid in question_ids if not (qid in seen_ids or seen_ids.add(qid))]
 
         for link in existing_links:
@@ -121,7 +122,7 @@ class MockTestQuestionService(BaseService):
         self._resync_total_questions(db, mock_test_id)
         return self.repository.get_by_mock_test(db, mock_test_id)
 
-    def _resync_total_questions(self, db: Session, mock_test_id: int) -> None:
+    def _resync_total_questions(self, db: Session, mock_test_id: uuid.UUID) -> None:
         from app.modules.mock_test.repository import MockTestRepository
 
         mock_test = MockTestRepository().get_by_id(db, mock_test_id)

@@ -1,7 +1,10 @@
+import uuid
 from datetime import datetime
 
 from sqlalchemy import DateTime
 from sqlalchemy import func
+from sqlalchemy import text
+from sqlalchemy import Uuid
 
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped
@@ -22,9 +25,11 @@ class BaseModel(Base):
 
     __abstract__ = True
 
-    id: Mapped[int] = mapped_column(
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         primary_key=True,
-        autoincrement=True,
+        default=uuid.uuid4,
+        server_default=text("gen_random_uuid()"),
         index=True
     )
 

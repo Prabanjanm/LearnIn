@@ -1,7 +1,8 @@
+import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import CheckConstraint, DateTime, Enum, Float, ForeignKey, Integer, String, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.base import BaseModel
@@ -9,6 +10,7 @@ from app.core.enums import ConductedTestAttemptStatus, TerminationReason
 
 if TYPE_CHECKING:
     from app.modules.conducted_test.model import ConductedTest
+    from app.modules.conducted_test_paper.model import ConductedTestQuestion
     from app.modules.question.model import Question
     from app.modules.student.model import Student
 
@@ -44,13 +46,15 @@ class ConductedTestAttempt(BaseModel):
         ),
     )
 
-    conducted_test_id: Mapped[int] = mapped_column(
+    conducted_test_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("conducted_tests.id"),
         nullable=False,
         index=True
     )
 
-    student_id: Mapped[int] = mapped_column(
+    student_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("students.id"),
         nullable=False,
         index=True
@@ -120,6 +124,13 @@ class ConductedTestAttemptAnswer(BaseModel):
     so autosave (is_correct/marks_awarded still NULL) and the final
     graded state (filled in once, at submit) both live on this same row,
     with no separate "session" table needed.
+
+    question_id/conducted_test_question_id mirror ConductedTest's own
+    mock_test_id/conducted_test_paper_id split (see that model's
+    docstring) - exactly one is set, matching whichever source the
+    parent ConductedTest uses. Postgres allows both unique constraints
+    below to coexist safely since NULL is never considered equal to
+    another NULL, so rows using the other source never collide here.
     """
 
     __tablename__ = "conducted_test_attempt_answers"
@@ -128,17 +139,34 @@ class ConductedTestAttemptAnswer(BaseModel):
             "attempt_id", "question_id",
             name="uq_conducted_test_attempt_answer_question",
         ),
+        UniqueConstraint(
+            "attempt_id", "conducted_test_question_id",
+            name="uq_conducted_test_attempt_answer_ct_question",
+        ),
+        CheckConstraint(
+            "(question_id IS NOT NULL) != (conducted_test_question_id IS NOT NULL)",
+            name="ck_conducted_test_attempt_answer_exactly_one_question",
+        ),
     )
 
-    attempt_id: Mapped[int] = mapped_column(
+    attempt_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("conducted_test_attempts.id"),
         nullable=False,
         index=True
     )
 
-    question_id: Mapped[int] = mapped_column(
+    question_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("questions.id"),
-        nullable=False,
+        nullable=True,
+        index=True
+    )
+
+    conducted_test_question_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("conducted_test_questions.id"),
+        nullable=True,
         index=True
     )
 
@@ -152,4 +180,5 @@ class ConductedTestAttemptAnswer(BaseModel):
     marks_awarded: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     attempt: Mapped["ConductedTestAttempt"] = relationship(back_populates="answers")
-    question: Mapped["Question"] = relationship()
+    question: Mapped["Question | None"] = relationship()
+    conducted_test_question: Mapped["ConductedTestQuestion | None"] = relationship()

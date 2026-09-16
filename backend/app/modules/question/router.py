@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -29,7 +31,7 @@ router = APIRouter(
 
 @router.get("/", response_model=list[QuestionPublicResponse])
 def get_published_by_paper(
-    paper_id: int,
+    paper_id: uuid.UUID,
     db: Session = Depends(get_db),
 ):
     return question_service.get_published_by_paper(db, paper_id)
@@ -37,7 +39,7 @@ def get_published_by_paper(
 
 @router.post("/{question_id}/check", response_model=QuestionCheckResponse)
 def check_answer(
-    question_id: int,
+    question_id: uuid.UUID,
     data: QuestionCheckRequest,
     db: Session = Depends(get_db),
 ):
@@ -53,7 +55,7 @@ def check_answer(
 
 @router.get("/{question_id}")
 def get_one(
-    question_id: int,
+    question_id: uuid.UUID,
     db: Session = Depends(get_db),
     admin: Admin | None = Depends(get_optional_admin),
 ):
@@ -77,7 +79,7 @@ def get_one(
 
 @router.get("/{question_id}/admin", response_model=QuestionResponse)
 def get_one_admin(
-    question_id: int,
+    question_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):
@@ -98,7 +100,7 @@ def create(
 
 @router.patch("/{question_id}", response_model=QuestionResponse)
 def update(
-    question_id: int,
+    question_id: uuid.UUID,
     data: QuestionUpdate,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
@@ -109,7 +111,7 @@ def update(
 
 @router.post("/{question_id}/publish", response_model=QuestionResponse)
 def publish(
-    question_id: int,
+    question_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):
@@ -119,7 +121,7 @@ def publish(
 
 @router.post("/{question_id}/archive", response_model=QuestionResponse)
 def archive(
-    question_id: int,
+    question_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):
@@ -129,7 +131,7 @@ def archive(
 
 @router.delete("/{question_id}", status_code=204)
 def delete(
-    question_id: int,
+    question_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):

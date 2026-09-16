@@ -127,9 +127,9 @@ async function startMockTest(container) {
             delete answers[questionId];
         }
         if (entry.marked) {
-            marked.add(parseInt(questionId, 10));
+            marked.add(questionId);
         } else {
-            marked.delete(parseInt(questionId, 10));
+            marked.delete(questionId);
         }
     });
 
@@ -260,7 +260,7 @@ async function flushPending() {
 
     for (const questionId of pendingIds) {
         const entry = pending[questionId];
-        const ok = await saveAnswerToServer(parseInt(questionId, 10), entry.answer, entry.marked);
+        const ok = await saveAnswerToServer(questionId, entry.answer, entry.marked);
         if (ok) {
             delete pending[questionId];
         }

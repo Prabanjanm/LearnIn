@@ -1,10 +1,34 @@
+import logging
+
 from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import AlreadyExistsException, InvalidCredentialsException
 from app.common.services.base_service import BaseService
+from app.common.utils.email_templates import (
+    institution_request_confirmation_email,
+    institution_status_update_email,
+)
+from app.common.utils.mailer import send_email
 from app.common.utils.slug import generate_slug
 from app.core.enums import StatusEnum
 from app.core.security import hash_password, verify_password
+
+logger = logging.getLogger(__name__)
+
+
+def _primary_contact(institution: "Institution") -> "InstitutionUser | None":
+    """The user who submitted the self-signup request - same "earliest
+    user" convention already used by admin_pages.py's requesting_user."""
+    return min(institution.users, key=lambda u: u.created_at, default=None)
+
+
+def _notify(to: str, subject: str, body: str) -> None:
+    # Institution approval/rejection must never fail because the mail relay
+    # is down - log and move on, the status change itself already committed.
+    try:
+        send_email(to=to, subject=subject, body=body, html=True)
+    except Exception:
+        logger.exception("Failed to send notification email to %s", to)
 
 from .model import Institution, InstitutionUser
 from .repository import InstitutionRepository, InstitutionUserRepository
@@ -31,6 +55,22 @@ class InstitutionService(BaseService):
         )
         return self.create(db, institution)
 
+    def create_pending_institution(self, db: Session, name: str) -> Institution:
+        """
+        A self-signed-up institution starts DRAFT - the same "not visible/
+        usable yet" status every other publishable entity in this codebase
+        uses - rather than PUBLISHED like an admin-created one, so it can't
+        log in or appear anywhere until an admin reviews and activates it
+        (see InstitutionUserService.authenticate).
+        """
+        institution = Institution(
+            name=name,
+            slug=generate_slug(name),
+            conducted_test_enabled=False,
+            status=StatusEnum.DRAFT,
+        )
+        return self.create(db, institution)
+
     def update_institution(self, db: Session, institution: Institution, data: InstitutionUpdate) -> Institution:
         updates = data.model_dump(exclude_unset=True)
 
@@ -52,11 +92,29 @@ class InstitutionService(BaseService):
 
     def archive(self, db: Session, institution: Institution) -> Institution:
         institution.status = StatusEnum.ARCHIVED
-        return self.repository.update(db, institution)
+        updated = self.repository.update(db, institution)
+
+        contact = _primary_contact(updated)
+        if contact:
+            subject, body = institution_status_update_email(
+                updated.name, contact.full_name, approved=False
+            )
+            _notify(contact.email, subject, body)
+
+        return updated
 
     def activate(self, db: Session, institution: Institution) -> Institution:
         institution.status = StatusEnum.PUBLISHED
-        return self.repository.update(db, institution)
+        updated = self.repository.update(db, institution)
+
+        contact = _primary_contact(updated)
+        if contact:
+            subject, body = institution_status_update_email(
+                updated.name, contact.full_name, approved=True
+            )
+            _notify(contact.email, subject, body)
+
+        return updated
 
 
 class InstitutionUserService(BaseService):
@@ -78,6 +136,13 @@ class InstitutionUserService(BaseService):
         if not verify_password(password, user.hashed_password):
             raise InvalidCredentialsException("Invalid email or password")
 
+        # Checked only after the password is verified, so a wrong-password
+        # guess never reveals whether an institution is pending vs archived.
+        if user.institution.status == StatusEnum.DRAFT:
+            raise InvalidCredentialsException(
+                "This institution's signup request is still awaiting admin approval."
+            )
+
         return user
 
     def create_institution_user(
@@ -87,6 +152,7 @@ class InstitutionUserService(BaseService):
         email: str,
         password: str,
         full_name: str | None = None,
+        phone: str | None = None,
     ) -> InstitutionUser:
         if self.repository.get_by_email(db, email):
             raise AlreadyExistsException("An institution user with this email already exists")
@@ -96,6 +162,7 @@ class InstitutionUserService(BaseService):
             email=email,
             hashed_password=hash_password(password),
             full_name=full_name,
+            phone=phone,
         )
         return self.create(db, user)
 
@@ -107,3 +174,32 @@ class InstitutionUserService(BaseService):
 
 institution_service = InstitutionService()
 institution_user_service = InstitutionUserService()
+
+
+def request_institution_signup(
+    db: Session,
+    institution_name: str,
+    contact_name: str,
+    email: str,
+    phone: str,
+    password: str,
+) -> InstitutionUser:
+    """
+    Public self-signup entry point: creates a DRAFT (pending) Institution
+    plus its first user in one step. Checked here rather than only relying
+    on create_institution_user's own check, so a duplicate email fails
+    before a throwaway Institution row is created for nothing.
+    """
+    if institution_user_service.repository.get_by_email(db, email):
+        raise AlreadyExistsException("An account with this email already exists")
+
+    institution = institution_service.create_pending_institution(db, institution_name)
+
+    user = institution_user_service.create_institution_user(
+        db, institution.id, email, password, contact_name, phone
+    )
+
+    subject, body = institution_request_confirmation_email(institution_name, contact_name)
+    _notify(email, subject, body)
+
+    return user

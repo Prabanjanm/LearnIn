@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -31,7 +33,7 @@ def _resolve_institution_user(db: Session, token: str | None) -> InstitutionUser
         return None
 
     try:
-        user_id = int(payload["sub"])
+        user_id = uuid.UUID(payload["sub"])
     except (TypeError, ValueError):
         return None
 

@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.enums import StatusEnum
@@ -12,8 +14,8 @@ class MockTestBase(BaseModel):
 
 
 class MockTestCreate(MockTestBase):
-    paper_id: int
-    question_ids: list[int] = []
+    paper_id: uuid.UUID
+    question_ids: list[uuid.UUID] = []
     status: StatusEnum = StatusEnum.DRAFT
 
 
@@ -27,8 +29,8 @@ class MockTestUpdate(BaseModel):
 
 class MockTestResponse(MockTestBase):
 
-    id: int
-    paper_id: int
+    id: uuid.UUID
+    paper_id: uuid.UUID
     total_questions: int
     status: StatusEnum
 
@@ -46,7 +48,7 @@ class MockTestQuestionEntry(BaseModel):
 
 
 class MockTestSubmitAnswer(BaseModel):
-    question_id: int
+    question_id: uuid.UUID
     answer: str
 
 
@@ -70,20 +72,20 @@ class MockTestStartResponse(BaseModel):
     deadline: str
     remaining_seconds: int
     submitted: bool
-    attempt_id: int | None = None
-    answers: dict[int, str]
-    marked: list[int]
+    attempt_id: uuid.UUID | None = None
+    answers: dict[uuid.UUID, str]
+    marked: list[uuid.UUID]
 
 
 class MockTestAnswerRequest(BaseModel):
     client_token: str = Field(max_length=64)
-    question_id: int
+    question_id: uuid.UUID
     answer: str = ""
     marked: bool = False
 
 
 class MockTestSubmitResultItem(BaseModel):
-    question_id: int
+    question_id: uuid.UUID
     is_correct: bool | None
     correct_answer: str
     explanation: str | None = None
@@ -91,7 +93,7 @@ class MockTestSubmitResultItem(BaseModel):
 
 
 class MockTestSubmitResponse(BaseModel):
-    attempt_id: int
+    attempt_id: uuid.UUID
     scored_marks: float
     total_marks: float
     correct_count: int

@@ -11,8 +11,10 @@ from .schema import (
     ChangePasswordRequest,
     StudentLogin,
     StudentProfileUpdate,
+    StudentResendOtp,
     StudentResponse,
     StudentSignup,
+    StudentVerifyOtp,
     Token,
 )
 from .service import student_service
@@ -40,6 +42,23 @@ def signup(
 ):
     student = student_service.signup(db, data.email, data.password, data.full_name)
     return _token_for(student)
+
+
+@router.post("/verify-otp", response_model=StudentResponse, dependencies=[Depends(rate_limit(10, 60))])
+def verify_otp(
+    data: StudentVerifyOtp,
+    db: Session = Depends(get_db),
+):
+    return student_service.verify_otp(db, data.email, data.otp)
+
+
+@router.post("/resend-otp", dependencies=[Depends(rate_limit(3, 60))])
+def resend_otp(
+    data: StudentResendOtp,
+    db: Session = Depends(get_db),
+):
+    student_service.resend_otp(db, data.email)
+    return {"detail": "A new verification code has been sent."}
 
 
 @router.post("/login", response_model=Token, dependencies=[Depends(rate_limit(10, 60))])

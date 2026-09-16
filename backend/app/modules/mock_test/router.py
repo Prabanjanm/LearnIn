@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -31,7 +33,7 @@ router = APIRouter(
 
 @router.get("/", response_model=list[MockTestResponse])
 def get_all(
-    paper_id: int,
+    paper_id: uuid.UUID,
     db: Session = Depends(get_db)
 ):
     return mock_test_service.get_published_by_paper(db, paper_id)
@@ -39,7 +41,7 @@ def get_all(
 
 @router.get("/{mock_test_id}", response_model=MockTestResponse)
 def get_one(
-    mock_test_id: int,
+    mock_test_id: uuid.UUID,
     db: Session = Depends(get_db)
 ):
     return mock_test_service.get_published_by_id(db, mock_test_id)
@@ -47,7 +49,7 @@ def get_one(
 
 @router.get("/{mock_test_id}/questions", response_model=list[MockTestQuestionEntry])
 def get_questions(
-    mock_test_id: int,
+    mock_test_id: uuid.UUID,
     db: Session = Depends(get_db),
 ):
     questions = mock_test_service.get_questions_for_taking(db, mock_test_id)
@@ -56,7 +58,7 @@ def get_questions(
 
 @router.post("/{mock_test_id}/start", response_model=MockTestStartResponse)
 def start(
-    mock_test_id: int,
+    mock_test_id: uuid.UUID,
     data: MockTestStartRequest,
     db: Session = Depends(get_db),
     student: Student | None = Depends(get_optional_student),
@@ -78,7 +80,7 @@ def start(
 
 @router.post("/{mock_test_id}/answer", status_code=204, dependencies=[Depends(rate_limit(120, 60))])
 def save_answer(
-    mock_test_id: int,
+    mock_test_id: uuid.UUID,
     data: MockTestAnswerRequest,
     db: Session = Depends(get_db),
     student: Student | None = Depends(get_optional_student),
@@ -105,7 +107,7 @@ def save_answer(
 
 @router.post("/{mock_test_id}/submit", response_model=MockTestSubmitResponse, dependencies=[Depends(rate_limit(20, 60))])
 def submit(
-    mock_test_id: int,
+    mock_test_id: uuid.UUID,
     data: MockTestSubmitRequest,
     db: Session = Depends(get_db),
     student: Student | None = Depends(get_optional_student),
@@ -130,7 +132,7 @@ def create(
 
 @router.put("/{mock_test_id}/questions/reorder", response_model=list[MockTestQuestionResponse])
 def reorder_questions(
-    mock_test_id: int,
+    mock_test_id: uuid.UUID,
     data: MockTestQuestionReorder,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
@@ -141,7 +143,7 @@ def reorder_questions(
 
 @router.patch("/{mock_test_id}", response_model=MockTestResponse)
 def update(
-    mock_test_id: int,
+    mock_test_id: uuid.UUID,
     data: MockTestUpdate,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
@@ -152,7 +154,7 @@ def update(
 
 @router.post("/{mock_test_id}/publish", response_model=MockTestResponse)
 def publish(
-    mock_test_id: int,
+    mock_test_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):
@@ -162,7 +164,7 @@ def publish(
 
 @router.post("/{mock_test_id}/archive", response_model=MockTestResponse)
 def archive(
-    mock_test_id: int,
+    mock_test_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):
@@ -172,7 +174,7 @@ def archive(
 
 @router.delete("/{mock_test_id}", status_code=204)
 def delete(
-    mock_test_id: int,
+    mock_test_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):

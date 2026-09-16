@@ -1,0 +1,14 @@
+.paper-viewer {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    max-height: 85vh;
+    border-radius: var(--radius, 8px);
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.paper-viewer iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+}

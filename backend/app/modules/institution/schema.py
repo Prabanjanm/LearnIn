@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
@@ -17,7 +18,7 @@ class InstitutionUpdate(BaseModel):
 
 
 class InstitutionResponse(BaseModel):
-    id: int
+    id: uuid.UUID
     name: str
     slug: str
     conducted_test_enabled: bool
@@ -31,13 +32,15 @@ class InstitutionUserCreate(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     full_name: str | None = None
+    phone: str | None = None
 
 
 class InstitutionUserResponse(BaseModel):
-    id: int
-    institution_id: int
+    id: uuid.UUID
+    institution_id: uuid.UUID
     email: EmailStr
     full_name: str | None
+    phone: str | None
     is_active: bool
     created_at: datetime
 
@@ -47,6 +50,24 @@ class InstitutionUserResponse(BaseModel):
 class InstitutionLogin(BaseModel):
     email: EmailStr
     password: str
+
+
+class InstitutionSignupRequest(BaseModel):
+    """
+    Public self-signup for a new Institution. Unlike InstitutionUserCreate
+    (an admin adding a user to an institution that already exists and is
+    already approved), this creates BOTH a new Institution (status=DRAFT,
+    invisible/unusable until an admin approves it) and its first user.
+
+    phone is required (unlike InstitutionUserCreate's optional one) - it's
+    the anti-spam signal that lets the reviewing admin actually verify a
+    new tenant request is a real institution before approving it.
+    """
+    institution_name: str = Field(min_length=1, max_length=255)
+    contact_name: str = Field(min_length=1, max_length=150)
+    email: EmailStr
+    phone: str = Field(min_length=7, max_length=20)
+    password: str = Field(min_length=8, max_length=128)
 
 
 class Token(BaseModel):

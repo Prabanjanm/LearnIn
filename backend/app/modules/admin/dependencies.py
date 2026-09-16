@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -28,7 +30,7 @@ def _resolve_admin(db: Session, token: str | None) -> Admin | None:
         return None
 
     try:
-        admin_id = int(payload["sub"])
+        admin_id = uuid.UUID(payload["sub"])
     except (TypeError, ValueError):
         return None
 

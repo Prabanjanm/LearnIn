@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -16,7 +18,7 @@ router = APIRouter(
 
 @router.get("/", response_model=list[MockTestQuestionResponse])
 def get_all(
-    mock_test_id: int,
+    mock_test_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):
@@ -40,7 +42,7 @@ def add_question(
 
 @router.delete("/{link_id}", status_code=204)
 def remove_question(
-    link_id: int,
+    link_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):

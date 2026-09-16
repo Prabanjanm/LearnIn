@@ -1,3 +1,4 @@
+import uuid
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -6,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.common.exceptions.exceptions import ForbiddenException, InvalidStateException, NotFoundException
 from app.common.services.base_service import BaseService
 from app.core.enums import StatusEnum
+from app.modules.conducted_test_paper.service import conducted_test_paper_service
 from app.modules.institution.model import InstitutionUser
 from app.modules.mock_test.service import mock_test_service
 
@@ -53,15 +55,26 @@ class ConductedTestService(BaseService):
     def create(self, db: Session, institution_user: InstitutionUser, data: ConductedTestCreate) -> ConductedTest:
         self._require_can_create(institution_user)
 
-        # Must reference a real, already-published MockTest - raises
-        # NotFoundException otherwise. This is the "select an existing
-        # LearnIn Mock Test" path; a brand-new paper is created via the
-        # existing admin Paper/Question/MockTest flow first, then selected
-        # here by id, so this never duplicates the question engine.
-        mock_test_service.get_published_by_id(db, data.mock_test_id)
+        # Exactly one question source (see ConductedTestCreate's
+        # validator, which already rejects both-or-neither before this
+        # runs) - each existence/ownership check raises NotFoundException
+        # on its own if the reference is bad:
+        #   - mock_test_id: an existing, already-published platform
+        #     MockTest ("select an existing LearnIn Mock Test" path).
+        #   - conducted_test_paper_id: one of THIS institution's own
+        #     uploaded/confirmed papers - ownership is checked here so an
+        #     institution can never point a ConductedTest at another
+        #     institution's paper by guessing its id.
+        if data.mock_test_id is not None:
+            mock_test_service.get_published_by_id(db, data.mock_test_id)
+        else:
+            conducted_test_paper_service.get_for_institution(
+                db, data.conducted_test_paper_id, institution_user.institution_id
+            )
 
         conducted_test = ConductedTest(
             mock_test_id=data.mock_test_id,
+            conducted_test_paper_id=data.conducted_test_paper_id,
             institution_id=institution_user.institution_id,
             created_by_institution_user_id=institution_user.id,
             title=data.title,
@@ -75,7 +88,7 @@ class ConductedTestService(BaseService):
 
     # ------------------------------------------------------- retrieval --
 
-    def get_for_manage(self, db: Session, conducted_test_id: int, institution_user: InstitutionUser) -> ConductedTest:
+    def get_for_manage(self, db: Session, conducted_test_id: uuid.UUID, institution_user: InstitutionUser) -> ConductedTest:
         """Scoped at the query level (not just a Python-side id comparison
         after an unscoped fetch) - a conducted test belonging to a
         different institution is indistinguishable from one that doesn't
@@ -105,7 +118,7 @@ class ConductedTestService(BaseService):
         self,
         db: Session,
         institution_user: InstitutionUser,
-        conducted_test_id: int,
+        conducted_test_id: uuid.UUID,
         data: ConductedTestUpdate,
     ) -> ConductedTest:
         conducted_test = self.get_for_manage(db, conducted_test_id, institution_user)
@@ -116,17 +129,17 @@ class ConductedTestService(BaseService):
 
         return self.repository.update(db, conducted_test)
 
-    def activate(self, db: Session, institution_user: InstitutionUser, conducted_test_id: int) -> ConductedTest:
+    def activate(self, db: Session, institution_user: InstitutionUser, conducted_test_id: uuid.UUID) -> ConductedTest:
         conducted_test = self.get_for_manage(db, conducted_test_id, institution_user)
         conducted_test.status = StatusEnum.PUBLISHED
         return self.repository.update(db, conducted_test)
 
-    def deactivate(self, db: Session, institution_user: InstitutionUser, conducted_test_id: int) -> ConductedTest:
+    def deactivate(self, db: Session, institution_user: InstitutionUser, conducted_test_id: uuid.UUID) -> ConductedTest:
         conducted_test = self.get_for_manage(db, conducted_test_id, institution_user)
         conducted_test.status = StatusEnum.DRAFT
         return self.repository.update(db, conducted_test)
 
-    def soft_delete(self, db: Session, institution_user: InstitutionUser, conducted_test_id: int) -> ConductedTest:
+    def soft_delete(self, db: Session, institution_user: InstitutionUser, conducted_test_id: uuid.UUID) -> ConductedTest:
         """Archives rather than deletes - same lifecycle mechanism the rest
         of the admin panel already uses for exams/departments/subjects.
         Attempts/results already recorded are never touched, so historical

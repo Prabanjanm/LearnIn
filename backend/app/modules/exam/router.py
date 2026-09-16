@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -21,16 +23,16 @@ def get_all(
     return exam_service.get_published(db)
 
 
-@router.get("/{exam_id:int}", response_model=ExamResponse)
+@router.get("/{exam_id:uuid}", response_model=ExamResponse)
 def get_by_id(
-    exam_id: int,
+    exam_id: uuid.UUID,
     db: Session = Depends(get_db)
 ):
     """
-    Registered before the slug route below: Starlette's `:int` converter
-    only matches an all-digit segment, so a numeric path (e.g. "/5") is
-    routed here and a real slug (e.g. "/gate-2027", never all-digit)
-    falls through to get_one unaffected.
+    Registered before the slug route below: Starlette's `:uuid` converter
+    only matches a valid UUID segment, so a UUID path (e.g.
+    "/5b1e...-...") is routed here and a real slug (e.g. "/gate-2027",
+    never a valid UUID) falls through to get_one unaffected.
     """
     return exam_service.get_published_by_id(db, exam_id)
 
@@ -54,7 +56,7 @@ def create(
 
 @router.patch("/{exam_id}", response_model=ExamResponse)
 def update(
-    exam_id: int,
+    exam_id: uuid.UUID,
     data: ExamUpdate,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
@@ -65,7 +67,7 @@ def update(
 
 @router.post("/{exam_id}/publish", response_model=ExamResponse)
 def publish(
-    exam_id: int,
+    exam_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):
@@ -75,7 +77,7 @@ def publish(
 
 @router.post("/{exam_id}/archive", response_model=ExamResponse)
 def archive(
-    exam_id: int,
+    exam_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):
@@ -85,7 +87,7 @@ def archive(
 
 @router.delete("/{exam_id}", status_code=204)
 def delete(
-    exam_id: int,
+    exam_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):

@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timedelta, timezone
 
 from fastapi.testclient import TestClient
@@ -215,8 +216,8 @@ def test_institution_with_feature_enabled_can_create_with_unique_code(db_session
     assert conducted_test["test_code"].startswith("LIN-")
     assert len(conducted_test["test_code"]) == 9
     assert conducted_test["status"] == "DRAFT"
-    assert conducted_test["institution_id"] == institution.id
-    assert conducted_test["created_by_institution_user_id"] == user.id
+    assert conducted_test["institution_id"] == str(institution.id)
+    assert conducted_test["created_by_institution_user_id"] == str(user.id)
 
 
 def test_institution_user_can_only_access_own_institution_data(db_session):
@@ -454,7 +455,7 @@ def test_tab_switch_violation_auto_submits_and_locks(db_session):
     # Locked - no further answers accepted.
     blocked = client.post(
         f"/api/conducted-tests/{conducted_test['id']}/answer",
-        json={"question_id": 1, "answer": "A"},
+        json={"question_id": str(uuid.uuid4()), "answer": "A"},
         cookies=cookies,
     )
     assert blocked.status_code == 400
@@ -576,7 +577,7 @@ def test_audit_timestamps_present(db_session):
     assert conducted_test["created_at"] is not None
 
     from app.modules.conducted_test.repository import ConductedTestRepository
-    row = ConductedTestRepository().get_by_id(db_session, conducted_test["id"])
+    row = ConductedTestRepository().get_by_id(db_session, uuid.UUID(conducted_test["id"]))
     assert row.created_at is not None
     assert row.updated_at is not None
     assert row.institution_id == _institution.id

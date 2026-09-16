@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel, ConfigDict, EmailStr
 
 
@@ -13,7 +15,7 @@ class Token(BaseModel):
 
 class AdminResponse(BaseModel):
 
-    id: int
+    id: uuid.UUID
     email: EmailStr
     full_name: str | None = None
     is_active: bool

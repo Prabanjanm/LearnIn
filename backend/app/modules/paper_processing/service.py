@@ -27,6 +27,8 @@ from app.core.enums import (
     WatermarkStatusEnum,
 )
 from app.core.google_drive import get_drive_client
+from app.modules.mock_test.schema import MockTestCreate
+from app.modules.mock_test.service import mock_test_service
 from app.modules.paper.schema import PaperCreate
 from app.modules.paper.service import paper_service
 from app.modules.question.schema import OptionIn, QuestionCreate
@@ -131,6 +133,10 @@ class PaperProcessingService(BaseService):
             answer_mime_type=data.answer_mime_type,
             answer_file_size=data.answer_file_size,
             answer_filename=data.answer_filename,
+            mock_test_title=data.mock_test_title,
+            mock_test_description=data.mock_test_description,
+            mock_test_duration=data.mock_test_duration,
+            mock_test_total_marks=data.mock_test_total_marks,
             status=ProcessingStatusEnum.UPLOADED,
             watermark_status=WatermarkStatusEnum.NOT_NEEDED,
             ocr_used=False,
@@ -970,6 +976,8 @@ class PaperProcessingService(BaseService):
             status=StatusEnum.DRAFT,
         ))
 
+        created_question_ids = []
+
         for question in self._questions.list_for_job(db, job.id):
             # Question.image_file_id (the existing, real schema) is a single
             # slot - it did not change for this feature, since that would
@@ -981,7 +989,7 @@ class PaperProcessingService(BaseService):
             # published Question - see `publish_job`'s docstring note.
             primary_image = question.images[0] if question.images else None
 
-            question_service.create_question(db, QuestionCreate(
+            created_question = question_service.create_question(db, QuestionCreate(
                 paper_id=paper.id,
                 question_number=question.order_index,
                 question_type=DEFAULT_QUESTION_TYPE,
@@ -998,6 +1006,19 @@ class PaperProcessingService(BaseService):
                     OptionIn(label=option.label, option_text=option.option_text)
                     for option in question.options
                 ],
+                status=StatusEnum.DRAFT,
+            ))
+
+            created_question_ids.append(created_question.id)
+
+        if job.mock_test_title:
+            mock_test_service.create_mock_test(db, MockTestCreate(
+                paper_id=paper.id,
+                title=job.mock_test_title,
+                description=job.mock_test_description,
+                duration=job.mock_test_duration or MockTestCreate.model_fields["duration"].default,
+                total_marks=job.mock_test_total_marks or MockTestCreate.model_fields["total_marks"].default,
+                question_ids=created_question_ids,
                 status=StatusEnum.DRAFT,
             ))
 

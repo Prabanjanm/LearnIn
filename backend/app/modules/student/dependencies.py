@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -26,7 +28,7 @@ def _resolve_student(db: Session, token: str | None) -> Student | None:
         return None
 
     try:
-        student_id = int(payload["sub"])
+        student_id = uuid.UUID(payload["sub"])
     except (TypeError, ValueError):
         return None
 

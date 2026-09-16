@@ -1,0 +1,52 @@
+{% extends "layouts/base.html" %}
+{% from "components/icons.html" import icon %}
+
+{% block title %}Institution Signup | LearnIn{% endblock %}
+{% block description %}Request an institution account on LearnIn to run your own Conducted Tests.{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="/static/css/account.css?v=2">{% endblock %}
+
+{% block content %}
+<section class="split-hero">
+    <div class="split-hero-content">
+        <div class="account-card account-card--split">
+            <h1>Register your institution</h1>
+            <p class="section-subtitle">Submit your details for admin review. We'll approve genuine institutions before access is enabled.</p>
+
+            {% if error %}<p class="account-error">{{ error }}</p>{% endif %}
+
+            <form method="post" action="/institution/signup" class="account-form" data-account-form>
+                <label for="institution_name">Institution name</label>
+                <input type="text" id="institution_name" name="institution_name" required autofocus>
+
+                <label for="contact_name">Your name</label>
+                <input type="text" id="contact_name" name="contact_name" required>
+
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+
+                <label for="phone">Mobile number</label>
+                <input type="tel" id="phone" name="phone" required minlength="7" maxlength="20">
+                <span class="account-hint">Used by our team to verify the request before approving access.</span>
+
+                <label for="password">Password</label>
+                <div class="password-input-wrapper">
+                    <input type="password" id="password" name="password" required minlength="8">
+                    <button type="button" class="password-toggle" data-password-toggle aria-pressed="false" aria-label="Show password">
+                        <span class="password-toggle-icon password-toggle-icon--show">{{ icon('eye', 18) }}</span>
+                        <span class="password-toggle-icon password-toggle-icon--hide">{{ icon('eye-off', 18) }}</span>
+                    </button>
+                </div>
+                <span class="account-hint">At least 8 characters, with a mix of letters and numbers.</span>
+
+                <button type="submit" class="btn btn-lg" data-submit-label="Request Access">Request Access</button>
+            </form>
+
+            <p class="account-switch">Already approved? <a href="/login">Log in</a></p>
+        </div>
+    </div>
+    <div class="split-hero-panel">
+        <img class="split-hero-illustration" src="/static/img/illustrations/signup.webp" alt="Institution staff filling out a signup form">
+    </div>
+</section>
+{% endblock %}

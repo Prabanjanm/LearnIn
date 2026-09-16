@@ -1,7 +1,8 @@
+import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.base import BaseModel
@@ -35,13 +36,15 @@ class MockTestSession(BaseModel):
         ),
     )
 
-    mock_test_id: Mapped[int] = mapped_column(
+    mock_test_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("mock_tests.id"),
         nullable=False,
         index=True
     )
 
-    student_id: Mapped[int | None] = mapped_column(
+    student_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("students.id"),
         nullable=True,
         index=True
@@ -93,13 +96,15 @@ class MockTestSessionAnswer(BaseModel):
         ),
     )
 
-    session_id: Mapped[int] = mapped_column(
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("mock_test_sessions.id"),
         nullable=False,
         index=True
     )
 
-    question_id: Mapped[int] = mapped_column(
+    question_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("questions.id"),
         nullable=False,
         index=True
@@ -138,13 +143,15 @@ class MockTestAttempt(BaseModel):
         ),
     )
 
-    mock_test_id: Mapped[int] = mapped_column(
+    mock_test_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("mock_tests.id"),
         nullable=False,
         index=True
     )
 
-    student_id: Mapped[int | None] = mapped_column(
+    student_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("students.id"),
         nullable=True,
         index=True
@@ -181,13 +188,15 @@ class MockTestAttemptAnswer(BaseModel):
 
     __tablename__ = "mock_test_attempt_answers"
 
-    attempt_id: Mapped[int] = mapped_column(
+    attempt_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("mock_test_attempts.id"),
         nullable=False,
         index=True
     )
 
-    question_id: Mapped[int] = mapped_column(
+    question_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("questions.id"),
         nullable=False,
         index=True

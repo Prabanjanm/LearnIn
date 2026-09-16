@@ -1,4 +1,5 @@
 import secrets
+import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy.exc import IntegrityError
@@ -9,6 +10,7 @@ from app.common.services.base_service import BaseService
 from app.core.enums import ConductedTestAttemptStatus, StatusEnum, TerminationReason
 from app.modules.conducted_test.model import ConductedTest
 from app.modules.conducted_test.service import conducted_test_service
+from app.modules.conducted_test_paper.service import conducted_test_paper_service
 from app.modules.mock_test.service import mock_test_service
 from app.modules.question.service import question_service
 from app.modules.student.model import Student
@@ -31,6 +33,30 @@ class ConductedTestAttemptService(BaseService):
     def __init__(self):
         super().__init__(ConductedTestAttemptRepository())
 
+    # ----------------------------------------------------- source split --
+
+    @staticmethod
+    def _is_paper_sourced(conducted_test: ConductedTest) -> bool:
+        return conducted_test.conducted_test_paper_id is not None
+
+    @classmethod
+    def _get_questions(cls, db: Session, conducted_test: ConductedTest) -> list:
+        """The question set for this ConductedTest, from whichever of
+        its two sources is set (see ConductedTest's docstring) - a
+        MockTest's Questions or a ConductedTestPaper's
+        ConductedTestQuestions. Both shapes are graded identically by
+        question_service.evaluate_answer, which only reads
+        question_type/correct_answer/marks/negative_marks."""
+        if cls._is_paper_sourced(conducted_test):
+            return conducted_test_paper_service.get_questions_for_taking(db, conducted_test.conducted_test_paper_id)
+        return mock_test_service.get_questions_for_taking(db, conducted_test.mock_test_id)
+
+    @classmethod
+    def _answer_key(cls, conducted_test: ConductedTest, answer) -> uuid.UUID:
+        """Whichever of question_id/conducted_test_question_id this
+        answer row actually has set, matching the parent test's source."""
+        return answer.conducted_test_question_id if cls._is_paper_sourced(conducted_test) else answer.question_id
+
     # ----------------------------------------------------------- join --
 
     def join_for_instructions(self, db: Session, test_code: str, student: Student) -> dict:
@@ -45,7 +71,7 @@ class ConductedTestAttemptService(BaseService):
             "already_completed": existing is not None and existing.status in _TERMINAL_STATUSES,
         }
 
-    def start_or_resume(self, db: Session, conducted_test_id: int, student: Student) -> dict:
+    def start_or_resume(self, db: Session, conducted_test_id: uuid.UUID, student: Student) -> dict:
         conducted_test = conducted_test_service.get_or_404(db, conducted_test_id, "Conducted test not found")
         if conducted_test.status != StatusEnum.PUBLISHED:
             raise NotFoundException("This test is not currently active")
@@ -87,8 +113,11 @@ class ConductedTestAttemptService(BaseService):
             attempt = self._finalize(db, attempt, TerminationReason.TIME_EXPIRED)
             raise InvalidStateException("This test's scheduled window has closed")
 
-        questions = mock_test_service.get_questions_for_taking(db, conducted_test.mock_test_id)
-        answers = {a.question_id: a.selected_answer for a in attempt.answers if a.selected_answer}
+        questions = self._get_questions(db, conducted_test)
+        answers = {
+            self._answer_key(conducted_test, a): a.selected_answer
+            for a in attempt.answers if a.selected_answer
+        }
 
         return {
             "attempt": attempt,
@@ -103,9 +132,9 @@ class ConductedTestAttemptService(BaseService):
     def save_answer(
         self,
         db: Session,
-        conducted_test_id: int,
+        conducted_test_id: uuid.UUID,
         student: Student,
-        question_id: int,
+        question_id: uuid.UUID,
         answer: str | None,
     ) -> None:
         conducted_test = conducted_test_service.get_or_404(db, conducted_test_id, "Conducted test not found")
@@ -124,7 +153,7 @@ class ConductedTestAttemptService(BaseService):
         if attempt.status != ConductedTestAttemptStatus.IN_PROGRESS:
             raise InvalidStateException("This attempt has already been finalized")
 
-        questions = mock_test_service.get_questions_for_taking(db, conducted_test.mock_test_id)
+        questions = self._get_questions(db, conducted_test)
         question = next((q for q in questions if q.id == question_id), None)
         if question is None:
             raise NotFoundException("Question not found in this test")
@@ -135,11 +164,16 @@ class ConductedTestAttemptService(BaseService):
             if valid_labels and not submitted_labels.issubset(valid_labels):
                 raise InvalidStateException("Selected option does not belong to this question")
 
-        self.repository.upsert_answer(db, attempt.id, question_id, answer or None)
+        is_paper_sourced = self._is_paper_sourced(conducted_test)
+        self.repository.upsert_answer(
+            db, attempt.id, answer or None,
+            question_id=None if is_paper_sourced else question_id,
+            conducted_test_question_id=question_id if is_paper_sourced else None,
+        )
 
     # -------------------------------------------------------- finalize --
 
-    def submit(self, db: Session, conducted_test_id: int, student: Student) -> ConductedTestAttempt:
+    def submit(self, db: Session, conducted_test_id: uuid.UUID, student: Student) -> ConductedTestAttempt:
         """Manual submit or a client-detected time-expiry - the server
         never trusts which one the client claims; it decides purely from
         whether the real scheduled window has already closed."""
@@ -161,7 +195,7 @@ class ConductedTestAttemptService(BaseService):
     def record_violation(
         self,
         db: Session,
-        conducted_test_id: int,
+        conducted_test_id: uuid.UUID,
         student: Student,
         reason: TerminationReason,
     ) -> ConductedTestAttempt:
@@ -180,7 +214,7 @@ class ConductedTestAttemptService(BaseService):
 
         return self._finalize(db, attempt, reason)
 
-    def terminate_attempt(self, db: Session, conducted_test: ConductedTest, student_id: int) -> ConductedTestAttempt:
+    def terminate_attempt(self, db: Session, conducted_test: ConductedTest, student_id: uuid.UUID) -> ConductedTestAttempt:
         """Called only after the institution's ownership of `conducted_test`
         has already been verified upstream (see
         conducted_test_service.get_for_manage) - this method itself does
@@ -197,15 +231,18 @@ class ConductedTestAttemptService(BaseService):
 
     def _finalize(self, db: Session, attempt: ConductedTestAttempt, reason: TerminationReason) -> ConductedTestAttempt:
         now = datetime.now(timezone.utc)
-        questions = mock_test_service.get_questions_for_taking(db, attempt.conducted_test.mock_test_id)
-        submitted_by_question = {a.question_id: a.selected_answer for a in attempt.answers}
+        conducted_test = attempt.conducted_test
+        questions = self._get_questions(db, conducted_test)
+        submitted_by_question = {
+            self._answer_key(conducted_test, a): a.selected_answer for a in attempt.answers
+        }
 
         scored_marks = 0.0
         total_marks = 0.0
         correct_count = 0
         incorrect_count = 0
         unanswered_count = 0
-        graded_by_question: dict[int, tuple[bool | None, float]] = {}
+        graded_by_question: dict[uuid.UUID, tuple[bool | None, float]] = {}
 
         for question in questions:
             total_marks += question.marks
@@ -223,7 +260,7 @@ class ConductedTestAttemptService(BaseService):
             graded_by_question[question.id] = (is_correct, marks_awarded)
 
         for answer in attempt.answers:
-            is_correct, marks_awarded = graded_by_question.get(answer.question_id, (None, 0.0))
+            is_correct, marks_awarded = graded_by_question.get(self._answer_key(conducted_test, answer), (None, 0.0))
             answer.is_correct = is_correct
             answer.marks_awarded = marks_awarded
 
@@ -260,7 +297,7 @@ class ConductedTestAttemptService(BaseService):
             raise ForbiddenException("You are not authorized to view this result")
         return self._build_report(db, attempt)
 
-    def get_result_for_institution(self, db: Session, result_code: str, institution_id: int) -> dict:
+    def get_result_for_institution(self, db: Session, result_code: str, institution_id: uuid.UUID) -> dict:
         attempt = self.repository.get_by_result_code(db, result_code)
         if attempt is None:
             raise NotFoundException("Result not found")
@@ -291,7 +328,14 @@ class ConductedTestAttemptService(BaseService):
         ]
 
     def _build_report(self, db: Session, attempt: ConductedTestAttempt) -> dict:
-        breakdown = self.repository.get_subject_breakdown(db, attempt.id)
+        # Subject breakdown only applies to a MockTest-sourced attempt -
+        # see repository.get_subject_breakdown's docstring for why a
+        # paper-sourced one has no subject hierarchy to join through.
+        breakdown = (
+            []
+            if self._is_paper_sourced(attempt.conducted_test)
+            else self.repository.get_subject_breakdown(db, attempt.id)
+        )
         attempted = attempt.correct_count + attempt.incorrect_count if attempt.correct_count is not None else 0
 
         return {

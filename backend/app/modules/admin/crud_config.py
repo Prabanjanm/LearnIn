@@ -82,7 +82,7 @@ ENTITY_REGISTRY = {
         "update_method": "update_department",
         "list_columns": ["id", "exam_id", "name", "code", "slug", "status", "display_order"],
         "form_fields": [
-            {"name": "exam_id", "label": "Exam ID", "type": FIELD_NUMBER, "required": True},
+            {"name": "exam_id", "label": "Exam ID", "type": FIELD_TEXT, "required": True},
             {"name": "name", "label": "Name", "type": FIELD_TEXT, "required": True},
             {"name": "code", "label": "Code", "type": FIELD_TEXT, "required": True},
             {
@@ -107,7 +107,7 @@ ENTITY_REGISTRY = {
         "update_method": "update_subject",
         "list_columns": ["id", "department_id", "name", "slug", "status", "display_order"],
         "form_fields": [
-            {"name": "department_id", "label": "Department ID", "type": FIELD_NUMBER, "required": True},
+            {"name": "department_id", "label": "Department ID", "type": FIELD_TEXT, "required": True},
             {"name": "name", "label": "Name", "type": FIELD_TEXT, "required": True},
             {
                 "name": "icon_file_id",
@@ -131,7 +131,7 @@ ENTITY_REGISTRY = {
         "update_method": "update_paper",
         "list_columns": ["id", "subject_id", "title", "year", "status", "total_questions", "public_url"],
         "form_fields": [
-            {"name": "subject_id", "label": "Subject ID", "type": FIELD_NUMBER, "required": True},
+            {"name": "subject_id", "label": "Subject ID", "type": FIELD_TEXT, "required": True},
             {"name": "title", "label": "Title", "type": FIELD_TEXT, "required": True},
             {"name": "year", "label": "Year", "type": FIELD_NUMBER, "required": True},
             {
@@ -169,7 +169,7 @@ ENTITY_REGISTRY = {
         "update_method": "update_resource",
         "list_columns": ["id", "subject_id", "title", "resource_type", "status"],
         "form_fields": [
-            {"name": "subject_id", "label": "Subject ID", "type": FIELD_NUMBER, "required": True},
+            {"name": "subject_id", "label": "Subject ID", "type": FIELD_TEXT, "required": True},
             {"name": "title", "label": "Title", "type": FIELD_TEXT, "required": True},
             {"name": "description", "label": "Description", "type": FIELD_TEXTAREA, "required": False},
             {
@@ -200,7 +200,7 @@ ENTITY_REGISTRY = {
         "update_method": "update_option",
         "list_columns": ["id", "question_id", "label", "option_text"],
         "form_fields": [
-            {"name": "question_id", "label": "Question ID", "type": FIELD_NUMBER, "required": True},
+            {"name": "question_id", "label": "Question ID", "type": FIELD_TEXT, "required": True},
             {"name": "label", "label": "Label (A/B/C/D)", "type": FIELD_TEXT, "required": True},
             {"name": "option_text", "label": "Option text", "type": FIELD_TEXTAREA, "required": True},
             {

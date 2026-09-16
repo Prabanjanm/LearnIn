@@ -1,8 +1,11 @@
+import uuid
+
 from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Text
+from sqlalchemy import Uuid
 
 from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.orm import mapped_column
@@ -19,7 +22,8 @@ class Resource(
 
     __tablename__ = "resources"
 
-    subject_id: Mapped[int] = mapped_column(
+    subject_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
         ForeignKey("subjects.id"),
         nullable=False,
         index=True

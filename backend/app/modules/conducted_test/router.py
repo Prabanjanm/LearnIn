@@ -1,8 +1,11 @@
+import uuid
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.enums import StatusEnum
+from app.modules.conducted_test_paper.service import conducted_test_paper_service
 from app.modules.institution.dependencies import get_current_institution_user
 from app.modules.institution.model import InstitutionUser
 from app.modules.mock_test.repository import MockTestRepository
@@ -45,6 +48,22 @@ def available_mock_tests(
     ]
 
 
+@router.get("/available-papers")
+def available_papers(
+    db: Session = Depends(get_db),
+    institution_user: InstitutionUser = Depends(get_current_institution_user),
+):
+    """This institution's own confirmed conducted-test papers (uploaded
+    and processed via /institution/conducted-test-papers) - the "use my
+    own uploaded paper" step. Institution-scoped, unlike
+    available-mock-tests: one institution never sees another's papers."""
+    papers = conducted_test_paper_service.list_for_institution(db, institution_user.institution_id)
+    return [
+        {"id": paper.id, "title": paper.title, "total_questions": paper.total_questions}
+        for paper in papers
+    ]
+
+
 @router.post("/", response_model=ConductedTestResponse)
 def create(
     data: ConductedTestCreate,
@@ -64,7 +83,7 @@ def list_mine(
 
 @router.get("/{conducted_test_id}", response_model=ConductedTestResponse)
 def get_one(
-    conducted_test_id: int,
+    conducted_test_id: uuid.UUID,
     db: Session = Depends(get_db),
     institution_user: InstitutionUser = Depends(get_current_institution_user),
 ):
@@ -73,7 +92,7 @@ def get_one(
 
 @router.patch("/{conducted_test_id}", response_model=ConductedTestResponse)
 def update(
-    conducted_test_id: int,
+    conducted_test_id: uuid.UUID,
     data: ConductedTestUpdate,
     db: Session = Depends(get_db),
     institution_user: InstitutionUser = Depends(get_current_institution_user),
@@ -83,7 +102,7 @@ def update(
 
 @router.post("/{conducted_test_id}/activate", response_model=ConductedTestResponse)
 def activate(
-    conducted_test_id: int,
+    conducted_test_id: uuid.UUID,
     db: Session = Depends(get_db),
     institution_user: InstitutionUser = Depends(get_current_institution_user),
 ):
@@ -92,7 +111,7 @@ def activate(
 
 @router.post("/{conducted_test_id}/deactivate", response_model=ConductedTestResponse)
 def deactivate(
-    conducted_test_id: int,
+    conducted_test_id: uuid.UUID,
     db: Session = Depends(get_db),
     institution_user: InstitutionUser = Depends(get_current_institution_user),
 ):
@@ -101,7 +120,7 @@ def deactivate(
 
 @router.delete("/{conducted_test_id}", response_model=ConductedTestResponse)
 def soft_delete(
-    conducted_test_id: int,
+    conducted_test_id: uuid.UUID,
     db: Session = Depends(get_db),
     institution_user: InstitutionUser = Depends(get_current_institution_user),
 ):
@@ -110,7 +129,7 @@ def soft_delete(
 
 @router.get("/{conducted_test_id}/participants", response_model=list[ConductedTestParticipantResponse])
 def participants(
-    conducted_test_id: int,
+    conducted_test_id: uuid.UUID,
     db: Session = Depends(get_db),
     institution_user: InstitutionUser = Depends(get_current_institution_user),
 ):
@@ -122,7 +141,7 @@ def participants(
 
 @router.get("/{conducted_test_id}/results/{result_code}")
 def result_for_institution(
-    conducted_test_id: int,
+    conducted_test_id: uuid.UUID,
     result_code: str,
     db: Session = Depends(get_db),
     institution_user: InstitutionUser = Depends(get_current_institution_user),
@@ -137,8 +156,8 @@ def result_for_institution(
 
 @router.post("/{conducted_test_id}/attempts/{student_id}/terminate")
 def terminate_attempt(
-    conducted_test_id: int,
-    student_id: int,
+    conducted_test_id: uuid.UUID,
+    student_id: uuid.UUID,
     db: Session = Depends(get_db),
     institution_user: InstitutionUser = Depends(get_current_institution_user),
 ):

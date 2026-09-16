@@ -43,6 +43,16 @@
         <div><dt>Clean PDF</dt><dd>{{ 'Generated' if job.generated_file_id else 'Not generated yet' }}</dd></div>
         <div><dt>Questions</dt><dd>{{ 'Saved' if job.paper_id else 'Staged for review' }}</dd></div>
         <div><dt>Answer key</dt><dd>{{ 'Attached (unparsed)' if job.answer_file_id else 'Not supplied' }}</dd></div>
+        <div>
+            <dt>Destination</dt>
+            <dd>
+                {% if job.mock_test_title %}
+                Mock Test - "{{ job.mock_test_title }}"
+                {% else %}
+                Paper only (no mock test)
+                {% endif %}
+            </dd>
+        </div>
     </dl>
 
     {% if extra_images_count %}

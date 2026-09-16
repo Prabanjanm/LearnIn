@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -15,7 +17,7 @@ router = APIRouter(
 
 @router.get("/", response_model=list[SubjectResponse])
 def get_all(
-    department_id: int,
+    department_id: uuid.UUID,
     db: Session = Depends(get_db)
 ):
     return subject_service.get_published_by_department(db, department_id)
@@ -23,7 +25,7 @@ def get_all(
 
 @router.get("/{department_id}/{slug}", response_model=SubjectResponse)
 def get_one(
-    department_id: int,
+    department_id: uuid.UUID,
     slug: str,
     db: Session = Depends(get_db)
 ):
@@ -41,7 +43,7 @@ def create(
 
 @router.patch("/{subject_id}", response_model=SubjectResponse)
 def update(
-    subject_id: int,
+    subject_id: uuid.UUID,
     data: SubjectUpdate,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
@@ -52,7 +54,7 @@ def update(
 
 @router.delete("/{subject_id}", status_code=204)
 def delete(
-    subject_id: int,
+    subject_id: uuid.UUID,
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):
