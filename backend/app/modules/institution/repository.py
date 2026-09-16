@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy.orm import Session
 
 from app.common.repositories.base_repository import BaseRepository
@@ -31,7 +33,7 @@ class InstitutionUserRepository(BaseRepository):
     def get_by_email(self, db: Session, email: str) -> InstitutionUser | None:
         return db.query(InstitutionUser).filter(InstitutionUser.email == email).first()
 
-    def get_by_institution(self, db: Session, institution_id: int) -> list[InstitutionUser]:
+    def get_by_institution(self, db: Session, institution_id: uuid.UUID) -> list[InstitutionUser]:
         return (
             db.query(InstitutionUser)
             .filter(InstitutionUser.institution_id == institution_id)

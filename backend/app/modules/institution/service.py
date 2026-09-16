@@ -1,4 +1,5 @@
 import logging
+import uuid
 
 from sqlalchemy.orm import Session
 
@@ -148,7 +149,7 @@ class InstitutionUserService(BaseService):
     def create_institution_user(
         self,
         db: Session,
-        institution_id: int,
+        institution_id: uuid.UUID,
         email: str,
         password: str,
         full_name: str | None = None,

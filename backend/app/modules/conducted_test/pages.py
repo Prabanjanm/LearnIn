@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -42,7 +44,7 @@ def new_page(request: Request, user: InstitutionUser | None = Depends(get_option
 
 @router.get("/institution/conducted-tests/{conducted_test_id}", response_class=HTMLResponse)
 def detail_page(
-    conducted_test_id: int,
+    conducted_test_id: uuid.UUID,
     request: Request,
     db: Session = Depends(get_db),
     user: InstitutionUser | None = Depends(get_optional_institution_user),
@@ -61,7 +63,7 @@ def detail_page(
 
 @router.get("/institution/conducted-tests/{conducted_test_id}/results/{result_code}", response_class=HTMLResponse)
 def institution_result_page(
-    conducted_test_id: int,
+    conducted_test_id: uuid.UUID,
     result_code: str,
     request: Request,
     db: Session = Depends(get_db),
