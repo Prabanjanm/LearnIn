@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initTopbarSearch();
     initFlashToasts();
     initFormSubmitState();
+    initPasswordToggle();
 });
 
 /*
@@ -193,6 +194,28 @@ function initFormSubmitState() {
                 submitBtn.disabled = true;
                 submitBtn.querySelector("[data-btn-spinner]")?.removeAttribute("hidden");
             }
+        });
+    });
+}
+
+/*
+    Password show/hide toggle for the admin login form (same
+    .password-input-wrapper / [data-password-toggle] contract used on the
+    student and institution login pages - see static/js/app.js - kept as
+    its own copy here since admin pages load admin.js, not app.js).
+*/
+function initPasswordToggle() {
+    document.querySelectorAll("[data-password-toggle]").forEach((toggle) => {
+        const wrapper = toggle.closest(".password-input-wrapper");
+        const input = wrapper && wrapper.querySelector("input");
+        if (!input) return;
+
+        toggle.addEventListener("click", () => {
+            const isVisible = input.type === "text";
+
+            input.type = isVisible ? "password" : "text";
+            toggle.setAttribute("aria-pressed", String(!isVisible));
+            toggle.setAttribute("aria-label", isVisible ? "Show password" : "Hide password");
         });
     });
 }

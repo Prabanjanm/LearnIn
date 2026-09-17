@@ -21,7 +21,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.enums import StatusEnum
 from app.core.google_drive import category_is_public, get_drive_client
-from app.core.security import create_access_token
+from app.core.security import create_access_token, token_expire_minutes
 from app.core.upload_policy import UploadValidationError, sanitize_filename, validate_upload
 from app.modules.blog.model import Blog
 from app.modules.department.model import Department
@@ -190,7 +190,7 @@ def login_submit(
         httponly=True,
         samesite="lax",
         secure=not settings.DEBUG,
-        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        max_age=token_expire_minutes("admin") * 60,
     )
     return response
 

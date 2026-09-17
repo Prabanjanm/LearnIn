@@ -21,7 +21,7 @@ from app.common.utils.drive_urls import drive_thumbnail_url
 from app.common.utils.markdown_render import render_markdown
 from app.common.utils import seo_copy
 from app.core.google_drive import get_drive_client
-from app.core.security import create_access_token
+from app.core.security import create_access_token, token_expire_minutes
 from app.core.upload_policy import UploadValidationError, sanitize_filename, validate_upload
 from app.modules.blog.service import blog_service
 from app.modules.department.service import department_service
@@ -40,8 +40,9 @@ from app.modules.resource.service import resource_service
 from app.modules.search.service import search_service
 from app.modules.student.dependencies import STUDENT_ACCESS_TOKEN_COOKIE_NAME, get_optional_student
 from app.modules.student.model import Student
+from app.modules.student.pending_signup import PENDING_SIGNUP_COOKIE_NAME, decode_pending_signup
 from app.modules.student.schema import ChangePasswordRequest, StudentProfileUpdate
-from app.modules.student.service import student_service
+from app.modules.student.service import OTP_TTL_MINUTES, student_service
 from app.modules.subject.service import subject_service
 
 from .resolvers import resolve_department, resolve_exam, resolve_paper, resolve_subject
@@ -62,12 +63,28 @@ def _not_found(request: Request):
 
 # ----------------------------------------------------------- account -----
 
+def _set_pending_signup_cookie(response, token: str) -> None:
+    response.set_cookie(
+        key=PENDING_SIGNUP_COOKIE_NAME,
+        value=token,
+        httponly=True,
+        samesite="lax",
+        secure=not settings.DEBUG,
+        max_age=OTP_TTL_MINUTES * 60,
+        path="/signup",
+    )
+
+
 @router.get("/signup", response_class=HTMLResponse)
 def signup_page(request: Request, student: Student | None = Depends(get_optional_student)):
     if student is not None:
         return RedirectResponse("/dashboard", status_code=303)
 
-    return templates.TemplateResponse(request=request, name="account/signup.html", context={"error": None})
+    return templates.TemplateResponse(
+        request=request,
+        name="account/signup.html",
+        context={"error": None, "stage": "details"},
+    )
 
 
 @router.post("/signup", response_class=HTMLResponse, dependencies=[Depends(rate_limit(10, 60))])
@@ -78,17 +95,85 @@ def signup_submit(
     full_name: str = Form(""),
     db: Session = Depends(get_db),
 ):
+    """
+    Collects the signup details and sends the OTP, but does not create the
+    Student row yet - see StudentService.initiate_signup. The pending
+    signup (hashed password + full name + OTP hash) rides along as a
+    cookie until signup_verify below confirms the code.
+    """
     try:
-        student = student_service.signup(db, email, password, full_name or None)
+        token = student_service.initiate_signup(db, email, password, full_name or None)
     except AlreadyExistsException as exc:
         return templates.TemplateResponse(
             request=request,
             name="account/signup.html",
-            context={"error": str(exc)},
+            context={"error": str(exc), "stage": "details"},
             status_code=409,
         )
 
-    return _login_response(student, "/verify-email")
+    response = templates.TemplateResponse(
+        request=request,
+        name="account/signup.html",
+        context={"error": None, "stage": "otp", "email": email, "sent": False},
+    )
+    _set_pending_signup_cookie(response, token)
+    return response
+
+
+@router.post("/signup/verify", response_class=HTMLResponse, dependencies=[Depends(rate_limit(10, 60))])
+def signup_verify(
+    request: Request,
+    otp: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    token = request.cookies.get(PENDING_SIGNUP_COOKIE_NAME)
+    email = (decode_pending_signup(token) or {}).get("email")
+
+    try:
+        student = student_service.complete_signup(db, token, otp)
+    except (InvalidStateException, InvalidCredentialsException, AlreadyExistsException) as exc:
+        return templates.TemplateResponse(
+            request=request,
+            name="account/signup.html",
+            context={
+                "error": str(exc),
+                "stage": "otp" if email else "details",
+                "email": email,
+                "sent": False,
+            },
+            status_code=400,
+        )
+
+    response = _login_response(student, "/dashboard")
+    response.delete_cookie(PENDING_SIGNUP_COOKIE_NAME, path="/signup")
+    return response
+
+
+@router.post("/signup/resend", response_class=HTMLResponse, dependencies=[Depends(rate_limit(3, 60))])
+def signup_resend(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    token = request.cookies.get(PENDING_SIGNUP_COOKIE_NAME)
+
+    try:
+        new_token = student_service.resend_pending_signup_otp(db, token)
+    except (InvalidStateException, AlreadyExistsException) as exc:
+        return templates.TemplateResponse(
+            request=request,
+            name="account/signup.html",
+            context={"error": str(exc), "stage": "details"},
+            status_code=400,
+        )
+
+    email = decode_pending_signup(new_token)["email"]
+    response = templates.TemplateResponse(
+        request=request,
+        name="account/signup.html",
+        context={"error": None, "stage": "otp", "email": email, "sent": True},
+    )
+    _set_pending_signup_cookie(response, new_token)
+    return response
 
 
 @router.get("/verify-email", response_class=HTMLResponse)
@@ -170,7 +255,11 @@ def login_page(
     if institution_user is not None:
         return RedirectResponse("/institution/dashboard", status_code=303)
 
-    return templates.TemplateResponse(request=request, name="account/login.html", context={"error": None})
+    return templates.TemplateResponse(
+        request=request,
+        name="account/login.html",
+        context={"error": None, "role": None},
+    )
 
 
 @router.post("/login", response_class=HTMLResponse, dependencies=[Depends(rate_limit(10, 60))])
@@ -181,11 +270,13 @@ def login_submit(
     db: Session = Depends(get_db),
 ):
     """
-    One form, two account tables: a student and an institution user can
-    never share an email (each table enforces uniqueness independently, but
-    nothing stops the two colliding across tables), so this tries student
-    auth first and only falls back to institution auth on failure - never
-    both silently succeeding for the same submission.
+    Posted by the Student card on /login (see account/login.html). Still
+    falls back to institution auth on a student-auth miss - a student and
+    an institution user can never share an email (is_email_registered
+    enforces that across both tables), so this never silently succeeds for
+    both; it just means someone who mistakenly opened the Student card
+    with institution credentials still logs in instead of being told to
+    pick the other card.
     """
     try:
         student = student_service.authenticate(db, email, password)
@@ -199,7 +290,7 @@ def login_submit(
         return templates.TemplateResponse(
             request=request,
             name="account/login.html",
-            context={"error": str(exc)},
+            context={"error": str(exc), "role": "student"},
             status_code=401,
         )
 
@@ -215,7 +306,7 @@ def login_submit(
         httponly=True,
         samesite="lax",
         secure=not settings.DEBUG,
-        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        max_age=token_expire_minutes("institution_user") * 60,
     )
     return response
 
@@ -233,7 +324,7 @@ def _login_response(student: Student, redirect_to: str) -> RedirectResponse:
         httponly=True,
         samesite="lax",
         secure=not settings.DEBUG,
-        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        max_age=token_expire_minutes("student") * 60,
     )
     return response
 

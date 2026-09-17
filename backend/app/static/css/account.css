@@ -6,6 +6,156 @@
     border-radius: var(--radius-lg);
 }
 
+/* Student vs. Institution picker on /login: two front-facing cards side
+   by side; clicking one flips it (3D rotateY) to reveal that role's login
+   form on its back face, while the other card steps aside. */
+.login-select {
+    /* .split-hero-content is itself a column flex container, so an auto
+       left/right margin here (the cross axis, since the parent's main
+       axis is vertical) disables flex-stretch and shrink-wraps this box
+       to its content's width instead of filling the column - the same
+       gotcha .account-card--split works around with its own explicit
+       width: 100% below. Without it, the two cards inside collapse to
+       their narrowest possible (word-wrapped) content width. */
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    width: 100%;
+    max-width: 640px;
+    margin: 48px auto 0;
+}
+
+.login-flip-card {
+    flex: 1 1 0;
+    min-width: 0;
+    perspective: 1200px;
+    transition: flex-grow .3s ease, opacity .3s ease;
+}
+
+.login-flip-card.is-collapsed {
+    flex-grow: 0;
+    max-width: 0;
+    opacity: 0;
+    pointer-events: none;
+    overflow: hidden;
+    margin: 0;
+}
+
+.login-flip-card-inner {
+    position: relative;
+    width: 100%;
+    min-height: 480px;
+    transition: transform .6s cubic-bezier(.4, .2, .2, 1);
+    transform-style: preserve-3d;
+}
+
+.login-flip-card.is-flipped .login-flip-card-inner {
+    transform: rotateY(180deg);
+}
+
+.login-flip-card.is-flipped {
+    flex: 3 1 0;
+}
+
+.login-flip-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 28px 24px;
+    box-sizing: border-box;
+}
+
+.login-flip-face--front {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s ease, transform .15s ease;
+}
+
+.login-flip-face--front:hover,
+.login-flip-face--front:focus-visible {
+    border-color: var(--color-accent);
+    transform: translateY(-2px);
+    outline: none;
+}
+
+.login-flip-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--color-bg-muted);
+    color: var(--color-accent);
+    margin-bottom: 4px;
+}
+
+.login-flip-face--front h2 {
+    font-size: 18px;
+    margin: 0;
+}
+
+.login-flip-face--front p {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+.login-flip-face--back {
+    display: flex;
+    flex-direction: column;
+    transform: rotateY(180deg);
+    overflow-y: auto;
+}
+
+.login-flip-card:not(.is-flipped) .login-flip-face--back {
+    visibility: hidden;
+}
+
+.login-flip-back {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 16px;
+    padding: 0;
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    align-self: flex-start;
+}
+
+.login-flip-back:hover {
+    color: var(--color-accent);
+}
+
+@media (max-width: 640px) {
+    .login-select {
+        /* .login-select's align-items: flex-start (desktop: stop the two
+           row cards from stretching taller than their content) becomes
+           the wrong axis once flex-direction flips to column - it then
+           shrink-wraps each card's WIDTH to its content instead of
+           letting it fill the row, which is what produced the ~40px-wide,
+           word-per-line card reported after the flip-card UI shipped. */
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .login-flip-card.is-collapsed {
+        max-width: none;
+        max-height: 0;
+    }
+}
+
 .account-card h1 {
     font-size: 26px;
     margin-bottom: 6px;

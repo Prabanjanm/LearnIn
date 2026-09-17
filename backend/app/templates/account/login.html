@@ -2,41 +2,93 @@
 {% from "components/icons.html" import icon %}
 
 {% block title %}Log In | LearnIn{% endblock %}
-{% block description %}Log in to your LearnIn account to track your mock test results.{% endblock %}
+{% block description %}Log in to your LearnIn account.{% endblock %}
 
-{% block css %}<link rel="stylesheet" href="/static/css/account.css?v=2">{% endblock %}
+{% block css %}<link rel="stylesheet" href="/static/css/account.css?v=3">{% endblock %}
 
 {% block content %}
 <section class="split-hero">
     <div class="split-hero-content">
-        <div class="account-card account-card--split">
-            <h1>Welcome back</h1>
-            <p class="section-subtitle">Log in to see your mock test results and progress.</p>
+        <div class="login-select" data-login-select data-active-role="{{ role or '' }}">
 
-            {% if error %}<p class="account-error">{{ error }}</p>{% endif %}
+            <div class="login-flip-card" data-flip-card="student">
+                <div class="login-flip-card-inner">
+                    <div class="login-flip-face login-flip-face--front" data-flip-trigger tabindex="0" role="button" aria-label="Log in as a student">
+                        <span class="login-flip-icon">{{ icon('student', 30) }}</span>
+                        <h2>Student</h2>
+                        <p>Track your mock test results and progress.</p>
+                    </div>
+                    <div class="login-flip-face login-flip-face--back">
+                        <h1>Student Log In</h1>
+                        <p class="section-subtitle">Log in to see your mock test results and progress.</p>
 
-            <form method="post" action="/login" class="account-form" data-account-form>
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" required autofocus>
+                        {% if error and role == "student" %}<p class="account-error">{{ error }}</p>{% endif %}
 
-                <label for="password">Password</label>
-                <div class="password-input-wrapper">
-                    <input type="password" id="password" name="password" required>
-                    <button type="button" class="password-toggle" data-password-toggle aria-pressed="false" aria-label="Show password">
-                        <span class="password-toggle-icon password-toggle-icon--show">{{ icon('eye', 18) }}</span>
-                        <span class="password-toggle-icon password-toggle-icon--hide">{{ icon('eye-off', 18) }}</span>
-                    </button>
+                        <form method="post" action="/login" class="account-form" data-account-form>
+                            <label for="student-email">Email</label>
+                            <input type="email" id="student-email" name="email" required>
+
+                            <label for="student-password">Password</label>
+                            <div class="password-input-wrapper">
+                                <input type="password" id="student-password" name="password" required>
+                                <button type="button" class="password-toggle" data-password-toggle aria-pressed="false" aria-label="Show password">
+                                    <span class="password-toggle-icon password-toggle-icon--show">{{ icon('eye', 18) }}</span>
+                                    <span class="password-toggle-icon password-toggle-icon--hide">{{ icon('eye-off', 18) }}</span>
+                                </button>
+                            </div>
+
+                            <button type="submit" class="btn btn-lg" data-submit-label="Log In">Log In</button>
+                        </form>
+
+                        <button type="button" class="login-flip-back" data-flip-back>{{ icon('chevron-left', 16) }} Choose a different account</button>
+                    </div>
                 </div>
+            </div>
 
-                <button type="submit" class="btn btn-lg" data-submit-label="Log In">Log In</button>
-            </form>
+            <div class="login-flip-card" data-flip-card="institution">
+                <div class="login-flip-card-inner">
+                    <div class="login-flip-face login-flip-face--front" data-flip-trigger tabindex="0" role="button" aria-label="Log in as an institution">
+                        <span class="login-flip-icon">{{ icon('institution', 30) }}</span>
+                        <h2>Institution</h2>
+                        <p>Manage your institution's Conducted Tests.</p>
+                    </div>
+                    <div class="login-flip-face login-flip-face--back">
+                        <h1>Institution Log In</h1>
+                        <p class="section-subtitle">Log in to manage your institution's Conducted Tests.</p>
 
-            <p class="account-switch">New to LearnIn? <a href="/signup">Create an account</a></p>
-            <p class="account-switch">Represent an institution? <a href="/institution/signup">Request access</a></p>
+                        {% if error and role == "institution" %}<p class="account-error">{{ error }}</p>{% endif %}
+
+                        <form method="post" action="/institution/login" class="account-form" data-account-form>
+                            <label for="institution-email">Email</label>
+                            <input type="email" id="institution-email" name="email" required>
+
+                            <label for="institution-password">Password</label>
+                            <div class="password-input-wrapper">
+                                <input type="password" id="institution-password" name="password" required>
+                                <button type="button" class="password-toggle" data-password-toggle aria-pressed="false" aria-label="Show password">
+                                    <span class="password-toggle-icon password-toggle-icon--show">{{ icon('eye', 18) }}</span>
+                                    <span class="password-toggle-icon password-toggle-icon--hide">{{ icon('eye-off', 18) }}</span>
+                                </button>
+                            </div>
+
+                            <button type="submit" class="btn btn-lg" data-submit-label="Log In">Log In</button>
+                        </form>
+
+                        <p class="account-switch">Not yet registered? <a href="/institution/signup">Request access</a></p>
+                        <button type="button" class="login-flip-back" data-flip-back>{{ icon('chevron-left', 16) }} Choose a different account</button>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <p class="account-switch">New to LearnIn? <a href="/signup">Create an account</a></p>
     </div>
     <div class="split-hero-panel">
         <img class="split-hero-illustration" src="/static/img/illustrations/login.webp" alt="Student walking back to their study desk">
     </div>
 </section>
+{% endblock %}
+
+{% block js %}
+<script src="/static/js/components/login-select.js" defer></script>
 {% endblock %}

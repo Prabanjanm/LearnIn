@@ -25,7 +25,25 @@ class Settings:
 
     JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 
+    # Fallback default (also still used directly by any caller that doesn't
+    # care which role it's for). Each role below can override its own
+    # session length independently - e.g. a shorter-lived admin session
+    # without touching how long a student or institution user stays logged
+    # in.
     ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
+    STUDENT_ACCESS_TOKEN_EXPIRE_MINUTES = int(
+        os.getenv("STUDENT_ACCESS_TOKEN_EXPIRE_MINUTES", str(ACCESS_TOKEN_EXPIRE_MINUTES))
+    )
+    INSTITUTION_ACCESS_TOKEN_EXPIRE_MINUTES = int(
+        os.getenv("INSTITUTION_ACCESS_TOKEN_EXPIRE_MINUTES", str(ACCESS_TOKEN_EXPIRE_MINUTES))
+    )
+    ADMIN_ACCESS_TOKEN_EXPIRE_MINUTES = int(
+        os.getenv("ADMIN_ACCESS_TOKEN_EXPIRE_MINUTES", str(ACCESS_TOKEN_EXPIRE_MINUTES))
+    )
+
+    # How long a signup/login OTP (and the pending-signup cookie carrying
+    # it - see app/modules/student/pending_signup.py) stays valid.
+    OTP_EXPIRE_MINUTES = int(os.getenv("OTP_EXPIRE_MINUTES", "10"))
 
     GOOGLE_DRIVE_FOLDER_ID = os.getenv("GOOGLE_DRIVE_FOLDER_ID")
 

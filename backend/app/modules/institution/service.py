@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.common.exceptions.exceptions import AlreadyExistsException, InvalidCredentialsException
 from app.common.services.base_service import BaseService
+from app.common.utils.account_lookup import is_email_registered
 from app.common.utils.email_templates import (
     institution_request_confirmation_email,
     institution_status_update_email,
@@ -155,7 +156,7 @@ class InstitutionUserService(BaseService):
         full_name: str | None = None,
         phone: str | None = None,
     ) -> InstitutionUser:
-        if self.repository.get_by_email(db, email):
+        if is_email_registered(db, email):
             raise AlreadyExistsException("An institution user with this email already exists")
 
         user = InstitutionUser(
@@ -191,7 +192,7 @@ def request_institution_signup(
     on create_institution_user's own check, so a duplicate email fails
     before a throwaway Institution row is created for nothing.
     """
-    if institution_user_service.repository.get_by_email(db, email):
+    if is_email_registered(db, email):
         raise AlreadyExistsException("An account with this email already exists")
 
     institution = institution_service.create_pending_institution(db, institution_name)

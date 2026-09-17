@@ -1,4 +1,5 @@
 {% extends "admin/_layout.html" %}
+{% from "components/icons.html" import icon %}
 
 {% block title %}Admin Login - LearnIn{% endblock %}
 
@@ -16,7 +17,13 @@
         <input type="email" id="email" name="email" required autofocus>
 
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" required>
+        <div class="password-input-wrapper">
+            <input type="password" id="password" name="password" required>
+            <button type="button" class="password-toggle" data-password-toggle aria-pressed="false" aria-label="Show password">
+                <span class="password-toggle-icon password-toggle-icon--show">{{ icon('eye', 18) }}</span>
+                <span class="password-toggle-icon password-toggle-icon--hide">{{ icon('eye-off', 18) }}</span>
+            </button>
+        </div>
 
         <button type="submit">Sign in</button>
     </form>

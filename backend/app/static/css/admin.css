@@ -1545,3 +1545,63 @@ body.admin-drawer-open {
 .admin-auth-form button:hover {
     background: var(--color-primary-dark);
 }
+
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    width: 100%;
+}
+
+.admin-auth-form .password-input-wrapper input {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding-right: 44px;
+}
+
+.admin-auth-form button.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    transform: translateY(-50%);
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background .12s ease, color .12s ease;
+}
+
+.admin-auth-form button.password-toggle:hover {
+    background: var(--color-bg-alt);
+    color: var(--color-dark);
+}
+
+.password-toggle:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+}
+
+.password-toggle-icon {
+    display: flex;
+}
+
+.password-toggle-icon--hide {
+    display: none;
+}
+
+.password-toggle[aria-pressed="true"] .password-toggle-icon--show {
+    display: none;
+}
+
+.password-toggle[aria-pressed="true"] .password-toggle-icon--hide {
+    display: flex;
+}

@@ -5,15 +5,17 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from app.common.exceptions.exceptions import AlreadyExistsException, GoogleDriveConfigError
+from app.common.exceptions.exceptions import AlreadyExistsException, GoogleDriveConfigError, InvalidCredentialsException
 from app.common.rate_limit import rate_limit
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.google_drive import get_drive_client
+from app.core.security import create_access_token, token_expire_minutes
 from app.core.upload_policy import UploadValidationError, sanitize_filename, validate_upload
 
 from .dependencies import INSTITUTION_ACCESS_TOKEN_COOKIE_NAME, get_current_institution_user, get_optional_institution_user
 from .model import InstitutionUser
-from .service import request_institution_signup
+from .service import institution_user_service, request_institution_signup
 
 logger = logging.getLogger(__name__)
 
@@ -23,13 +25,51 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/institution/login", response_class=HTMLResponse)
-def login_page():
+def login_page(user: InstitutionUser | None = Depends(get_optional_institution_user)):
     """
-    Institution users log in through the same form as students at /login -
-    this old URL is kept working as a redirect so existing links/bookmarks
-    (and the reference in admin_detail.html) don't 404.
+    Old direct link (email templates, institution/signup.html) - the
+    Institution card now lives on /login itself (see account/login.html's
+    flip-card picker), so this just lands the visitor there with that card
+    already open instead of rendering its own separate page.
     """
-    return RedirectResponse("/login", status_code=307)
+    if user is not None:
+        return RedirectResponse("/institution/dashboard", status_code=303)
+
+    return RedirectResponse("/login?as=institution", status_code=307)
+
+
+@router.post("/institution/login", response_class=HTMLResponse, dependencies=[Depends(rate_limit(10, 60))])
+def login_submit(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    try:
+        user = institution_user_service.authenticate(db, email, password)
+    except InvalidCredentialsException as exc:
+        return templates.TemplateResponse(
+            request=request,
+            name="account/login.html",
+            context={"error": str(exc), "role": "institution"},
+            status_code=401,
+        )
+
+    token = create_access_token(
+        subject=str(user.id),
+        token_type="institution_user",
+        token_version=user.token_version,
+    )
+    response = RedirectResponse("/institution/dashboard", status_code=303)
+    response.set_cookie(
+        key=INSTITUTION_ACCESS_TOKEN_COOKIE_NAME,
+        value=token,
+        httponly=True,
+        samesite="lax",
+        secure=not settings.DEBUG,
+        max_age=token_expire_minutes("institution_user") * 60,
+    )
+    return response
 
 
 @router.get("/institution/signup", response_class=HTMLResponse)

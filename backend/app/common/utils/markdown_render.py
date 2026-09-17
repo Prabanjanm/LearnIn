@@ -9,13 +9,15 @@ admins only (not public user input), but a compromised or careless admin
 account is still a real stored-XSS path against every student who reads
 the post, so it's sanitized regardless of the trust level of the author.
 
-nh3 (an allowlist HTML sanitizer) strips everything not on the allowlist
-- unknown tags, all `on*` event-handler attributes, `javascript:` hrefs,
-<script>/<style> content, etc. - while keeping the formatting elements
-Markdown actually produces.
+bleach (an allowlist HTML sanitizer) strips everything not on the
+allowlist - unknown tags, all `on*` event-handler attributes,
+`javascript:` hrefs, <script>/<style> content, etc. - while keeping the
+formatting elements Markdown actually produces.
 """
+import re
+
 import markdown
-import nh3
+import bleach
 
 _ALLOWED_TAGS = {
     "p", "br", "hr",
@@ -27,8 +29,9 @@ _ALLOWED_TAGS = {
     "table", "thead", "tbody", "tr", "th", "td",
 }
 
+_LINK_REL = "noopener noreferrer nofollow"
+
 _ALLOWED_ATTRIBUTES = {
-    # "rel" deliberately excluded - nh3's link_rel option manages it.
     "a": {"href", "title"},
     "img": {"src", "alt", "title"},
 }
@@ -37,9 +40,12 @@ _ALLOWED_ATTRIBUTES = {
 def render_markdown(text: str) -> str:
     html = markdown.markdown(text, extensions=["extra"])
 
-    return nh3.clean(
+    cleaned = bleach.clean(
         html,
         tags=_ALLOWED_TAGS,
         attributes=_ALLOWED_ATTRIBUTES,
-        link_rel="noopener noreferrer nofollow",
+        strip=True,
     )
+    # bleach has no built-in equivalent of nh3's link_rel option, so <a>
+    # tags get rel="noopener noreferrer nofollow" added by hand.
+    return re.sub(r"<a\b", f'<a rel="{_LINK_REL}"', cleaned)
